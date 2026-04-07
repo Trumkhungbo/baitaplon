@@ -9,5 +9,9 @@
         <module name="baitaplon" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="client" target="21" />
+      <module name="server" target="21" />
+    </bytecodeTargetLevel>
   </component>
 </project>
