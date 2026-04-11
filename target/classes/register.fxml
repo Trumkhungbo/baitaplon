@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.Pane?>
+
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <TextField layoutX="48.0" layoutY="99.0" promptText="SDT" />
+      <TextField layoutX="48.0" layoutY="149.0" promptText="Email" />
+      <TextField layoutX="48.0" layoutY="51.0" promptText="Ho va Ten" />
+      <PasswordField layoutX="48.0" layoutY="288.0" promptText="MatKhau" />
+      <PasswordField layoutX="48.0" layoutY="328.0" promptText="NhapLaiMatKhau" />
+      <TextField layoutX="48.0" layoutY="200.0" promptText="CCCD" />
+      <TextField layoutX="48.0" layoutY="239.0" />
+   </children>
+</Pane>
