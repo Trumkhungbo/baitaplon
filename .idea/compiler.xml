@@ -6,6 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+<<<<<<< HEAD
         <module name="auction-system" />
         <module name="baitaplon" />
       </profile>
@@ -13,6 +14,14 @@
     <bytecodeTargetLevel>
       <module name="client" target="21" />
       <module name="server" target="21" />
+=======
+        <module name="client" />
+        <module name="server" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="baitaplon" target="21" />
+>>>>>>> eca275a834150c2329515eea791f5351aaf2819d
     </bytecodeTargetLevel>
   </component>
 </project>
