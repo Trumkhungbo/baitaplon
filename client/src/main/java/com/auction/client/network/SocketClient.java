@@ -22,36 +22,38 @@ public class SocketClient {
         ) {
             System.out.println("Connected to AuctionServer at " + SERVER_HOST + ":" + SERVER_PORT);
 
-            String serverMessage;
-
-            // Read initial messages from server
-            for (int i = 0; i < 2; i++) {
-                serverMessage = serverReader.readLine();
-                if (serverMessage != null) {
-                    System.out.println("Server: " + serverMessage);
+            Thread listenerThread = new Thread(() -> {
+                try {
+                    String serverMessage;
+                    while ((serverMessage = serverReader.readLine()) != null) {
+                        System.out.println("\nServer: " + serverMessage);
+                        System.out.print("Enter command: ");
+                    }
+                } catch (IOException e) {
+                    System.out.println("\nDisconnected from server.");
                 }
-            }
+            });
+
+            listenerThread.setDaemon(true);
+            listenerThread.start();
 
             while (true) {
                 System.out.print("Enter command: ");
                 String userInput = keyboardReader.readLine();
 
-                if (userInput == null || userInput.trim().isEmpty()) {
+                if (userInput == null) {
+                    break;
+                }
+
+                userInput = userInput.trim();
+                if (userInput.isEmpty()) {
                     System.out.println("Command cannot be empty.");
                     continue;
                 }
 
                 serverWriter.println(userInput);
 
-                serverMessage = serverReader.readLine();
-                if (serverMessage == null) {
-                    System.out.println("Server disconnected.");
-                    break;
-                }
-
-                System.out.println("Server: " + serverMessage);
-
-                if ("QUIT".equalsIgnoreCase(userInput.trim())) {
+                if ("QUIT".equalsIgnoreCase(userInput)) {
                     break;
                 }
             }

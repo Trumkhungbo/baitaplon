@@ -6,12 +6,12 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="baitaplon" />
+        <module name="client" />
+        <module name="server" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="client" target="21" />
-      <module name="server" target="21" />
+      <module name="baitaplon" target="21" />
     </bytecodeTargetLevel>
   </component>
 </project>
