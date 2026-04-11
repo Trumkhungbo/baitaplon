@@ -5,11 +5,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import com.auction.server.service.AuthService;
+import com.auction.server.service.AuctionService;
 
 public class ClientHandler implements Runnable {
 
     private final Socket clientSocket;
     private final AuctionServer server;
+    private final AuthService authService;
+    private final AuctionService auctionService;
 
     private BufferedReader reader;
     private PrintWriter writer;
@@ -22,6 +26,8 @@ public class ClientHandler implements Runnable {
         this.clientSocket = clientSocket;
         this.server = server;
         this.connected = true;
+        this.authService = new AuthService();
+        this.auctionService = new AuctionService();
     }
 
     @Override
@@ -98,19 +104,17 @@ public class ClientHandler implements Runnable {
         String inputUsername = parts[1];
         String inputPassword = parts[2];
 
-        if ("admin".equals(inputUsername) && "123".equals(inputPassword)) {
+        String response = authService.login(inputUsername, inputPassword);
+
+        if (response.startsWith("LOGIN_SUCCESS")) {
             this.username = inputUsername;
-            sendMessage("LOGIN_SUCCESS|Welcome " + username);
-        } else if (!inputUsername.isBlank() && !inputPassword.isBlank()) {
-            this.username = inputUsername;
-            sendMessage("LOGIN_SUCCESS|Welcome " + username);
-        } else {
-            sendMessage("LOGIN_FAILED|Invalid username or password");
         }
+
+        sendMessage(response);
     }
 
     private void handleListAuctions() {
-        sendMessage("AUCTION_LIST|1:iPhone 15:15000000:OPEN;2:MacBook Pro:25000000:OPEN;3:Oil Painting:5000000:OPEN");
+        sendMessage(auctionService.getAuctionList());
     }
 
     private void handleWatchAuction(String[] parts) {
