@@ -5,6 +5,5 @@ import javafx.application.Application;
 public class laucher {
     public static void main(String[] args) {
         Application.launch(StartScence.class, args);
-        System.out.println(StoreDataInput.username+" "+StoreDataInput.password);
     }
 }

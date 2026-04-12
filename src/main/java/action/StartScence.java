@@ -16,4 +16,5 @@ public class StartScence extends Application {
     stage.show();
     Image icon = new Image(StartScence.class.getResourceAsStream("/icon.png"));
     stage.getIcons().add(icon);
+    stage.setFullScreen(true);
 }}

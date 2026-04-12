@@ -23,13 +23,17 @@ public class LoginHandle {
         String user1 = login.getText();
         StoreDataInput.username=user1;
         StoreDataInput.password=password1;
-        if (StoreDataInput.username==null || StoreDataInput.password==null) {
-            System.out.println("U dump?");
+        if (password1.isBlank() || user1.isBlank()) {
+            sceneSwitch.SwitchToLockPage(clicked,"/SomeThingUnFill.fxml");
+
         }
 
 
     }
     public void Register(ActionEvent clicked) throws IOException {
         sceneSwitch.SwitchToRegister(clicked);
+    }
+    public void ForgotPassword(ActionEvent clicked) throws IOException {
+        sceneSwitch.SwitchToAnyWhere(clicked,"/ForgotPassword.fxml");
     }
 }
