@@ -23,7 +23,7 @@ public class ForgotPasswordHandle implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        file = new File("C:\\Users\\DELL 5530\\baitaplon\\src\\main\\resources\\memecat.mp4");
+        file = new File("/memecat.mp4");
         media = new Media(file.toURI().toString());
         mediaPlayer = new MediaPlayer(media);
         mediaView.setMediaPlayer(mediaPlayer);
