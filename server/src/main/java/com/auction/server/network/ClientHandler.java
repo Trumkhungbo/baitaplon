@@ -150,9 +150,10 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        synchronized (this) {
-            sendMessage("BID_SUCCESS|auctionId=" + auctionId + "|user=" + bidUsername + "|amount=" + amount);
+        String response = auctionService.placeBid(auctionId, bidUsername, amount);
+        sendMessage(response);
 
+        if (response.startsWith("BID_SUCCESS")) {
             server.broadcastToAuctionRoom(
                     "BID_UPDATE|auctionId=" + auctionId + "|highestBid=" + amount + "|bidder=" + bidUsername,
                     auctionId
