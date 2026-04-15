@@ -1,5 +1,4 @@
-package com.bidding.common.model.item;
-
+package com.bidding.common.model;
 
 public abstract class Item extends Entity {
     private String name;
@@ -7,16 +6,16 @@ public abstract class Item extends Entity {
     private double startingPrice;
 
     public Item(String name, String description, double startingPrice) {
-        super(); // Gọi constructor của Entity để lấy id và createdAt
+        super();
         this.name = name;
         this.description = description;
         this.startingPrice = startingPrice;
     }
 
-    // Getters và Setters cho name, description, startingPrice
     public String getName() { return name; }
+    public String getDescription() { return description; }
     public double getStartingPrice() { return startingPrice; }
 
-    // Polymorphism: Phương thức trừu tượng bắt buộc các lớp con phải ghi đè
-    public abstract void printDetails();
+    // Polymorphism
+    public abstract String getItemDetails();
 }
