@@ -1,4 +1,4 @@
-package com.bidding.common.model;
+package com.bidding.common.model.item;
 
 public class Art extends Item {
     private String artist;

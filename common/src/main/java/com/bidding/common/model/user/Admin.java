@@ -1,4 +1,4 @@
-package com.bidding.common.model;
+package com.bidding.common.model.user;
 
 public class Admin extends User {
     

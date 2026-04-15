@@ -1,4 +1,4 @@
-package com.bidding.common.model;
+package com.bidding.common.model.user;
 
 public class Bidder extends User {
     private double balance; // Số dư tài khoản để tham gia đấu giá
