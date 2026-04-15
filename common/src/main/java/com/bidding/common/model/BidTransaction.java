@@ -1,5 +1,7 @@
 package com.bidding.common.model;
 
+import java.time.LocalDateTime;
+
 public class BidTransaction extends Entity {
     private String auctionId; // Khóa ngoại liên kết tới phiên đấu giá
     private String bidderUsername; 
