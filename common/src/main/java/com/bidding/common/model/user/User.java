@@ -1,5 +1,6 @@
-package com.bidding.common.model;
-
+package com.bidding.common.model.user;
+import com.bidding.common.model.Entity;
+    
 // Inheritance: User kế thừa Entity để có id và createdAt
 public abstract class User extends Entity {
     private String username;
