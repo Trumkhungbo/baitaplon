@@ -1,4 +1,5 @@
-package com.bidding.common.model;
+package com.bidding.common.model.item;
+import com.bidding.common.model.Entity;
 
 public abstract class Item extends Entity {
     private String name;

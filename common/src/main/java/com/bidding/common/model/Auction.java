@@ -1,9 +1,10 @@
 package com.bidding.common.model;
-
-import com.bidding.common.enums.AuctionStatus;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.bidding.common.enums.AuctionStatus;
+import com.bidding.common.model.item.Item;
 
 public class Auction extends Entity {
     private Item item;
