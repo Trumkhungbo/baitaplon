@@ -27,6 +27,11 @@ public class LoginHandle {
             sceneSwitch.SwitchToLockPage(clicked,"/SomeThingUnFill.fxml");
 
         }
+        //else-if(false){
+        // sceneSwitch.SwitchToLockPage(clicked,"/SomeThingUnFill.fxml")}
+        else{
+            sceneSwitch.SwitchToAnyWhere(clicked,"/Lobby.fxml");
+        }
 
 
     }
