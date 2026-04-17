@@ -7,10 +7,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import com.auction.server.service.AuctionService;
 
 public class AuctionServer {
 
-    private static final int DEFAULT_PORT = 5000;
+    private static final int DEFAULT_PORT = 88;
     private static final int MAX_CLIENT_THREADS = 50;
 
     private final int port;
@@ -19,6 +20,7 @@ public class AuctionServer {
 
     private ServerSocket serverSocket;
     private volatile boolean running;
+    private final AuctionService auctionService;
 
     public AuctionServer() {
         this(DEFAULT_PORT);
@@ -28,6 +30,7 @@ public class AuctionServer {
         this.port = port;
         this.clientPool = Executors.newFixedThreadPool(MAX_CLIENT_THREADS);
         this.connectedClients = ConcurrentHashMap.newKeySet();
+        this.auctionService = new AuctionService();
     }
 
     public void start() {
@@ -41,7 +44,7 @@ public class AuctionServer {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("New client connected: " + clientSocket.getInetAddress());
 
-                ClientHandler handler = new ClientHandler(clientSocket, this);
+                ClientHandler handler = new ClientHandler(clientSocket, this, auctionService);
                 connectedClients.add(handler);
                 clientPool.submit(handler);
             }

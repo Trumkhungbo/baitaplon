@@ -5,12 +5,14 @@ public class Auction {
     private final String itemName;
     private double currentPrice;
     private String status;
+    private String highestBidder;
 
     public Auction(String id, String itemName, double currentPrice, String status) {
         this.id = id;
         this.itemName = itemName;
         this.currentPrice = currentPrice;
         this.status = status;
+        this.highestBidder = null;
     }
 
     public String getId() {
@@ -35,5 +37,13 @@ public class Auction {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getHighestBidder() {
+        return highestBidder;
+    }
+
+    public void setHighestBidder(String highestBidder) {
+        this.highestBidder = highestBidder;
     }
 }

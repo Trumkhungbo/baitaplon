@@ -22,12 +22,12 @@ public class ClientHandler implements Runnable {
     private String username;
     private String watchingAuctionId;
 
-    public ClientHandler(Socket clientSocket, AuctionServer server) {
+    public ClientHandler(Socket clientSocket, AuctionServer server, AuctionService auctionService) {
         this.clientSocket = clientSocket;
         this.server = server;
         this.connected = true;
         this.authService = new AuthService();
-        this.auctionService = new AuctionService();
+        this.auctionService = auctionService;
     }
 
     @Override
@@ -154,8 +154,11 @@ public class ClientHandler implements Runnable {
         sendMessage(response);
 
         if (response.startsWith("BID_SUCCESS")) {
+            var auction = auctionService.findAuctionById(auctionId);
             server.broadcastToAuctionRoom(
-                    "BID_UPDATE|auctionId=" + auctionId + "|highestBid=" + amount + "|bidder=" + bidUsername,
+                    "BID_UPDATE|auctionId=" + auctionId
+                            + "|highestBid=" + (long) auction.getCurrentPrice()
+                            + "|bidder=" + auction.getHighestBidder(),
                     auctionId
             );
         }

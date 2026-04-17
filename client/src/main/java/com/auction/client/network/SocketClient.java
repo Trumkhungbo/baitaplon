@@ -9,7 +9,7 @@ import java.net.Socket;
 public class SocketClient {
 
     private static final String SERVER_HOST = "127.0.0.1";
-    private static final int SERVER_PORT = 5000;
+    private static final int SERVER_PORT = 88;
 
     public static void main(String[] args) {
         try (

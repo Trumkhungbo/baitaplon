@@ -54,18 +54,21 @@ public class AuctionService {
             return "ERROR|Auction not found";
         }
 
-        if (!"OPEN".equalsIgnoreCase(auction.getStatus())) {
-            return "ERROR|Auction is not open";
+        synchronized (auction) {
+            if (!"OPEN".equalsIgnoreCase(auction.getStatus())) {
+                return "ERROR|Auction is not open";
+            }
+
+            if (amount <= auction.getCurrentPrice()) {
+                return "ERROR|Bid amount must be greater than current price (" + (long) auction.getCurrentPrice() + ")";
+            }
+
+            auction.setCurrentPrice(amount);
+            auction.setHighestBidder(username);
+
+            return "BID_SUCCESS|auctionId=" + auctionId
+                    + "|user=" + username
+                    + "|amount=" + amount;
         }
-
-        if (amount <= auction.getCurrentPrice()) {
-            return "ERROR|Bid amount must be greater than current price (" + (long) auction.getCurrentPrice() + ")";
-        }
-
-        auction.setCurrentPrice(amount);
-
-        return "BID_SUCCESS|auctionId=" + auctionId
-                + "|user=" + username
-                + "|amount=" + amount;
     }
 }
