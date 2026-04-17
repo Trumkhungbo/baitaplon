@@ -36,7 +36,7 @@ public class ClientHandler implements Runnable {
             initStreams();
 
             sendMessage("CONNECTED|Welcome to the Auction Server");
-            sendMessage("INFO|Supported commands: PING, LOGIN|user|pass, LIST_AUCTIONS, WATCH|auctionId, BID|auctionId|user|amount, QUIT");
+            sendMessage("INFO|Supported commands: PING, LOGIN|user|pass, LIST_AUCTIONS, GET_AUCTION_DETAIL|auctionId, ADD_AUCTION|seller|itemName|startPrice, WATCH|auctionId, BID|auctionId|user|amount, QUIT");
 
             String clientMessage;
             while (connected && (clientMessage = reader.readLine()) != null) {
@@ -88,6 +88,13 @@ public class ClientHandler implements Runnable {
             case "QUIT":
                 sendMessage("BYE|Disconnected from server");
                 connected = false;
+
+            case "GET_AUCTION_DETAIL":
+                handleGetAuctionDetail(parts);
+                break;
+
+            case "ADD_AUCTION":
+                handleAddAuction(parts);
                 break;
 
             default:
@@ -115,6 +122,36 @@ public class ClientHandler implements Runnable {
 
     private void handleListAuctions() {
         sendMessage(auctionService.getAuctionList());
+    }
+    private void handleGetAuctionDetail(String[] parts) {
+        if (parts.length < 2) {
+            sendMessage("ERROR|Invalid syntax. Use: GET_AUCTION_DETAIL|auctionId");
+            return;
+        }
+
+        String auctionId = parts[1];
+        sendMessage(auctionService.getAuctionDetail(auctionId));
+    }
+
+    private void handleAddAuction(String[] parts) {
+        if (parts.length < 4) {
+            sendMessage("ERROR|Invalid syntax. Use: ADD_AUCTION|sellerUsername|itemName|startPrice");
+            return;
+        }
+
+        String sellerUsername = parts[1];
+        String itemName = parts[2];
+        String startPriceText = parts[3];
+
+        double startPrice;
+        try {
+            startPrice = Double.parseDouble(startPriceText);
+        } catch (NumberFormatException e) {
+            sendMessage("ERROR|Start price must be a number");
+            return;
+        }
+
+        sendMessage(auctionService.addAuction(sellerUsername, itemName, startPrice));
     }
 
     private void handleWatchAuction(String[] parts) {
