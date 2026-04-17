@@ -1,6 +1,7 @@
 package com.auction.server.service;
 
 import com.auction.server.model.Auction;
+import com.auction.server.model.AuctionStatus;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,14 +18,49 @@ public class AuctionService {
     }
 
     private void seedData() {
-        addInitialAuction("seller1", "iPhone 15", 15000000, "OPEN");
-        addInitialAuction("seller2", "MacBook Pro", 25000000, "OPEN");
-        addInitialAuction("seller3", "Oil Painting", 5000000, "OPEN");
+        addInitialAuction("seller1", "iPhone 15", 15000000, AuctionStatus.OPEN);
+        addInitialAuction("seller2", "MacBook Pro", 25000000, AuctionStatus.OPEN);
+        addInitialAuction("seller3", "Oil Painting", 5000000, AuctionStatus.OPEN);
     }
 
-    private void addInitialAuction(String sellerUsername, String itemName, double startPrice, String status) {
+    private void addInitialAuction(String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
         String id = String.valueOf(nextAuctionId++);
         auctions.put(id, new Auction(id, sellerUsername, itemName, startPrice, status));
+    }
+    public String closeAuction(String auctionId) {
+        Auction auction = auctions.get(auctionId);
+
+        if (auction == null) {
+            return "ERROR|Auction not found";
+        }
+
+        synchronized (auction) {
+            if (auction.getStatus() != AuctionStatus.OPEN) {
+                return "ERROR|Auction is not open";
+            }
+
+            auction.setStatus(AuctionStatus.FINISHED);
+
+            String winner = auction.getHighestBidder() == null ? "NONE" : auction.getHighestBidder();
+
+            return "CLOSE_AUCTION_SUCCESS|auctionId=" + auctionId
+                    + "|winner=" + winner
+                    + "|finalPrice=" + (long) auction.getCurrentPrice();
+        }
+    }
+    public String getWinner(String auctionId) {
+        Auction auction = auctions.get(auctionId);
+
+        if (auction == null) {
+            return "ERROR|Auction not found";
+        }
+
+        String winner = auction.getHighestBidder() == null ? "NONE" : auction.getHighestBidder();
+
+        return "WINNER_INFO|auctionId=" + auctionId
+                + "|winner=" + winner
+                + "|finalPrice=" + (long) auction.getCurrentPrice()
+                + "|status=" + auction.getStatus();
     }
 
     public String getAuctionList() {
@@ -86,7 +122,7 @@ public class AuctionService {
         }
 
         String id = String.valueOf(nextAuctionId++);
-        Auction auction = new Auction(id, sellerUsername, itemName, startPrice, "OPEN");
+        Auction auction = new Auction(id, sellerUsername, itemName, startPrice, AuctionStatus.OPEN);
         auctions.put(id, auction);
 
         return "ADD_AUCTION_SUCCESS|id=" + id
@@ -103,7 +139,7 @@ public class AuctionService {
         }
 
         synchronized (auction) {
-            if (!"OPEN".equalsIgnoreCase(auction.getStatus())) {
+            if (auction.getStatus() != AuctionStatus.OPEN) {
                 return "ERROR|Auction is not open";
             }
 

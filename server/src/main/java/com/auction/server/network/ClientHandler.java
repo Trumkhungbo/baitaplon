@@ -95,6 +95,12 @@ public class ClientHandler implements Runnable {
 
             case "ADD_AUCTION":
                 handleAddAuction(parts);
+            case "CLOSE_AUCTION":
+                handleCloseAuction(parts);
+                break;
+
+            case "GET_WINNER":
+                handleGetWinner(parts);
                 break;
 
             default:
@@ -231,6 +237,25 @@ public class ClientHandler implements Runnable {
         }
 
         server.removeClient(this);
+    }
+    private void handleCloseAuction(String[] parts) {
+        if (parts.length < 2) {
+            sendMessage("ERROR|Invalid syntax. Use: CLOSE_AUCTION|auctionId");
+            return;
+        }
+
+        String auctionId = parts[1];
+        sendMessage(auctionService.closeAuction(auctionId));
+    }
+
+    private void handleGetWinner(String[] parts) {
+        if (parts.length < 2) {
+            sendMessage("ERROR|Invalid syntax. Use: GET_WINNER|auctionId");
+            return;
+        }
+
+        String auctionId = parts[1];
+        sendMessage(auctionService.getWinner(auctionId));
     }
 
     public String getUsername() {

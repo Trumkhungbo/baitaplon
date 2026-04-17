@@ -1,5 +1,7 @@
 package com.auction.server.model;
 
+import com.auction.server.model.AuctionStatus;
+
 public class Auction {
 
     private final String id;
@@ -8,10 +10,10 @@ public class Auction {
     private final double startPrice;
 
     private double currentPrice;
-    private String status;
+    private AuctionStatus status;
     private String highestBidder;
 
-    public Auction(String id, String sellerUsername, String itemName, double startPrice, String status) {
+    public Auction(String id, String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
         this.id = id;
         this.sellerUsername = sellerUsername;
         this.itemName = itemName;
@@ -45,11 +47,11 @@ public class Auction {
         this.currentPrice = currentPrice;
     }
 
-    public String getStatus() {
+    public AuctionStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(AuctionStatus status) {
         this.status = status;
     }
 

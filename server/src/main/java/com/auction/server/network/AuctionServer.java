@@ -11,7 +11,7 @@ import com.auction.server.service.AuctionService;
 
 public class AuctionServer {
 
-    private static final int DEFAULT_PORT = 88;
+    private static final int DEFAULT_PORT = 888;
     private static final int MAX_CLIENT_THREADS = 50;
 
     private final int port;
