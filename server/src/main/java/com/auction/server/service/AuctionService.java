@@ -1,5 +1,8 @@
 package com.auction.server.service;
 
+import com.auction.server.exception.AuctionClosedException;
+import com.auction.server.exception.AuctionNotFoundException;
+import com.auction.server.exception.InvalidBidException;
 import com.auction.server.model.Auction;
 import com.auction.server.model.AuctionStatus;
 
@@ -135,16 +138,18 @@ public class AuctionService {
         Auction auction = auctions.get(auctionId);
 
         if (auction == null) {
-            return "ERROR|Auction not found";
+            throw new AuctionNotFoundException("Auction not found");
         }
 
         synchronized (auction) {
             if (auction.getStatus() != AuctionStatus.OPEN) {
-                return "ERROR|Auction is not open";
+                throw new AuctionClosedException("Auction is not open");
             }
 
             if (amount <= auction.getCurrentPrice()) {
-                return "ERROR|Bid amount must be greater than current price (" + (long) auction.getCurrentPrice() + ")";
+                throw new InvalidBidException(
+                        "Bid amount must be greater than current price (" + (long) auction.getCurrentPrice() + ")"
+                );
             }
 
             auction.setCurrentPrice(amount);

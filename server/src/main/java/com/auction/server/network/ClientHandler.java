@@ -193,17 +193,21 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        String response = auctionService.placeBid(auctionId, bidUsername, amount);
-        sendMessage(response);
+        try {
+            String response = auctionService.placeBid(auctionId, bidUsername, amount);
+            sendMessage(response);
 
-        if (response.startsWith("BID_SUCCESS")) {
-            var auction = auctionService.findAuctionById(auctionId);
-            server.broadcastToAuctionRoom(
-                    "BID_UPDATE|auctionId=" + auctionId
-                            + "|highestBid=" + (long) auction.getCurrentPrice()
-                            + "|bidder=" + auction.getHighestBidder(),
-                    auctionId
-            );
+            if (response.startsWith("BID_SUCCESS")) {
+                var auction = auctionService.findAuctionById(auctionId);
+                server.broadcastToAuctionRoom(
+                        "BID_UPDATE|auctionId=" + auctionId
+                                + "|highestBid=" + (long) auction.getCurrentPrice()
+                                + "|bidder=" + auction.getHighestBidder(),
+                        auctionId
+                );
+            }
+        } catch (RuntimeException e) {
+            sendMessage("ERROR|" + e.getMessage());
         }
     }
 
