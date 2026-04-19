@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import com.auction.server.service.AuctionService;
+import com.auction.server.AuctionService;
 
 public class AuctionServer {
 

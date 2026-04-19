@@ -1,4 +1,4 @@
-package com.auction.server.service;
+package com.auction.server;
 
 import com.auction.server.exception.AuctionClosedException;
 import com.auction.server.exception.AuctionNotFoundException;

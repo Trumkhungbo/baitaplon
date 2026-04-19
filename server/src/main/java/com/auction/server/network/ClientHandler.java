@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import com.auction.server.service.AuthService;
-import com.auction.server.service.AuctionService;
+import com.auction.server.AuthService;
+import com.auction.server.AuctionService;
 
 public class ClientHandler implements Runnable {
 
