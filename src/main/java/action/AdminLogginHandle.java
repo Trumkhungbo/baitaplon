@@ -33,5 +33,9 @@ public class AdminLogginHandle {
 
         }
 
+
+    }
+    public void ReturnLogin(ActionEvent event) throws IOException {
+        sceneSwitch.SwitchToLogin(event);
     }
 }

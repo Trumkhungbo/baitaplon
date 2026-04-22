@@ -42,6 +42,6 @@ public class LoginHandle {
         sceneSwitch.SwitchToAnyWhere(clicked,"/ForgotPassword.fxml");
     }
     public void Adminloggin(ActionEvent clicked) throws IOException {
-        sceneSwitch.SwitchToLockPage(clicked,"/AdminLoggin.fxml");
+        sceneSwitch.SwitchToAnyWhere(clicked,"/AdminLoggin.fxml");
     }
 }
