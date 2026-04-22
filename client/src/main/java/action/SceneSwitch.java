@@ -47,7 +47,6 @@ public class SceneSwitch {
     }
     public void SwitchToLobby(Node currentNode) throws IOException {
         Parent root = FXMLLoader.load(getClass().getResource("/Lobby.fxml"));
-        // Lấy cửa sổ (Stage) hiện tại thông qua một thành phần (Node) bất kỳ trên màn hình
         stage = (Stage) currentNode.getScene().getWindow();
         scene = new Scene(root);
         stage.setScene(scene);

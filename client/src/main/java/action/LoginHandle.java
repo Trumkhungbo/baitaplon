@@ -15,47 +15,46 @@ public class LoginHandle {
 
     @FXML
     public void initialize() {
-        // Cài đặt "tai nghe" để bắt kết quả từ Server
         StartScence.client.setServerListener(message -> {
-            // QUAN TRỌNG: Mạng chạy luồng phụ, Giao diện chạy luồng chính.
-            // Phải dùng Platform.runLater để nhờ UI đổi trang an toàn.
             Platform.runLater(() -> {
                 if (message.startsWith("LOGIN_SUCCESS")) {
-                    System.out.println("Đăng nhập thành công, chuẩn bị chuyển trang...");
+                    System.out.println("Login Success!");
                     try {
-                        // Gọi hàm chuyển sang Lobby.fxml của Dev UI
                         sceneSwitch.SwitchToLobby(login);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 } else if (message.startsWith("ERROR")) {
-                    System.out.println("Đăng nhập thất bại: " + message);
-                    // Ở đây em có thể gọi code hiện Pop-up báo sai mật khẩu
+                    System.out.println("Login Failed: " + message);
                 }
             });
         });
     }
 
     public void Login(ActionEvent clicked) throws IOException {
-        String username = login.getText();
-        String password = pass.getText();
+        String user1 = login.getText();
+        String password1 = pass.getText();
 
-        if (!username.isEmpty() && !password.isEmpty()) {
-            // Đẩy lệnh xuống mạng
-            StartScence.client.sendMessage("LOGIN|" + username + "|" + password);
+        StoreDataInput.username = user1;
+        StoreDataInput.password = password1;
+
+        if (user1.isBlank() || password1.isBlank()) {
+            sceneSwitch.SwitchToLockPage(clicked, "/SomeThingUnFill.fxml");
+        }
+        else {
+            StartScence.client.sendMessage("LOGIN|" + user1 + "|" + password1);
         }
     }
-    @FXML
-    public void ForgotPassword(ActionEvent event) throws IOException {
-        System.out.println("Đang mở trang Quên Mật Khẩu...");
-        // Gọi hàm SwitchToAnyWhere có sẵn của em để mở giao diện có video con mèo
-        // (Lưu ý: Đổi chữ "/ForgotPassword.fxml" thành tên file FXML chính xác của em nếu khác nhé)
-        sceneSwitch.SwitchToAnyWhere(event, "/ForgotPassword.fxml");
+
+    public void Register(ActionEvent clicked) throws IOException {
+        sceneSwitch.SwitchToRegister(clicked);
     }
-    @FXML
-    public void Register(ActionEvent event) throws IOException {
-        System.out.println("Đang chuyển sang trang Đăng ký...");
-        // Gọi hàm SwitchToRegister có sẵn trong SceneSwitch của em
-        sceneSwitch.SwitchToRegister(event);
+
+    public void ForgotPassword(ActionEvent clicked) throws IOException {
+        sceneSwitch.SwitchToAnyWhere(clicked, "/ForgotPassword.fxml");
+    }
+
+    public void Adminloggin(ActionEvent clicked) throws IOException {
+        sceneSwitch.SwitchToAnyWhere(clicked, "/AdminLoggin.fxml");
     }
 }

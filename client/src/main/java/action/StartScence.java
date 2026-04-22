@@ -8,15 +8,13 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 public class StartScence extends Application {
-    // Trạm thu phát toàn cục, bất kỳ màn hình nào cũng gọi được StartScence.client
+
     public static final SocketClient client = new SocketClient();
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        // 1. Khởi động mạng trước
         client.connect("127.0.0.1", 888);
 
-        // 2. Tải màn hình Đăng nhập
         FXMLLoader fxmloader = new FXMLLoader(StartScence.class.getResource("/login.fxml"));
         Scene scene = new Scene(fxmloader.load());
 
@@ -26,7 +24,7 @@ public class StartScence extends Application {
             Image icon = new Image(StartScence.class.getResourceAsStream("/Icon.png"));
             primaryStage.getIcons().add(icon);
         } catch (Exception e) {
-            System.out.println("Không tìm thấy Icon.png");
+            System.out.println("Undiscovered Icon.png");
         }
         primaryStage.show();
     }
