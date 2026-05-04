@@ -10,11 +10,9 @@ import java.util.List;
 public class ItemDAO extends BaseDAO {
 
     public Item save(Item item, String sellerUsername) {
-        String sql = """
-            INSERT INTO items (name, description, starting_price, item_type, seller_username,
-                               artist, creation_year, brand, warranty_months, engine_type, mileage)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """;
+        String sql = "INSERT INTO items (name, description, starting_price, item_type, seller_username,"
+                + " artist, creation_year, brand, warranty_months, engine_type, mileage)"
+                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = getConn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, item.getName());
             ps.setString(2, item.getDescription());
@@ -22,19 +20,22 @@ public class ItemDAO extends BaseDAO {
             ps.setString(4, item.getItemType().name());
             ps.setString(5, sellerUsername);
 
-            if (item instanceof Art a) {
+            if (item instanceof Art) {
+                Art a = (Art) item;
                 ps.setString(6, a.getArtist());
                 ps.setInt(7, a.getCreationYear());
-                ps.setNull(8, Types.TEXT); ps.setNull(9, Types.INTEGER);
-                ps.setNull(10, Types.TEXT); ps.setNull(11, Types.INTEGER);
-            } else if (item instanceof Electronics e) {
-                ps.setNull(6, Types.TEXT); ps.setNull(7, Types.INTEGER);
+                ps.setNull(8, Types.VARCHAR); ps.setNull(9, Types.INTEGER);
+                ps.setNull(10, Types.VARCHAR); ps.setNull(11, Types.INTEGER);
+            } else if (item instanceof Electronics) {
+                Electronics e = (Electronics) item;
+                ps.setNull(6, Types.VARCHAR); ps.setNull(7, Types.INTEGER);
                 ps.setString(8, e.getBrand());
                 ps.setInt(9, e.getWarrantyMonths());
-                ps.setNull(10, Types.TEXT); ps.setNull(11, Types.INTEGER);
-            } else if (item instanceof Vehicle v) {
-                ps.setNull(6, Types.TEXT); ps.setNull(7, Types.INTEGER);
-                ps.setNull(8, Types.TEXT); ps.setNull(9, Types.INTEGER);
+                ps.setNull(10, Types.VARCHAR); ps.setNull(11, Types.INTEGER);
+            } else if (item instanceof Vehicle) {
+                Vehicle v = (Vehicle) item;
+                ps.setNull(6, Types.VARCHAR); ps.setNull(7, Types.INTEGER);
+                ps.setNull(8, Types.VARCHAR); ps.setNull(9, Types.INTEGER);
                 ps.setString(10, v.getEngineType());
                 ps.setInt(11, v.getMileage());
             } else {
@@ -92,27 +93,30 @@ public class ItemDAO extends BaseDAO {
 
     private Item map(ResultSet rs) throws SQLException {
         ItemType type = ItemType.valueOf(rs.getString("item_type"));
-        Item item = switch (type) {
-            case ART -> {
+        Item item;
+        switch (type) {
+            case ART:
                 Art a = new Art();
                 a.setArtist(rs.getString("artist"));
                 a.setCreationYear(rs.getInt("creation_year"));
-                yield a;
-            }
-            case ELECTRONICS -> {
+                item = a;
+                break;
+            case ELECTRONICS:
                 Electronics e = new Electronics();
                 e.setBrand(rs.getString("brand"));
                 e.setWarrantyMonths(rs.getInt("warranty_months"));
-                yield e;
-            }
-            case VEHICLE -> {
+                item = e;
+                break;
+            case VEHICLE:
                 Vehicle v = new Vehicle();
                 v.setEngineType(rs.getString("engine_type"));
                 v.setMileage(rs.getInt("mileage"));
-                yield v;
-            }
-            default -> new Art(); // fallback
-        };
+                item = v;
+                break;
+            default:
+                item = new Art(); // fallback
+                break;
+        }
         item.setId(rs.getLong("id"));
         item.setName(rs.getString("name"));
         item.setDescription(rs.getString("description"));
