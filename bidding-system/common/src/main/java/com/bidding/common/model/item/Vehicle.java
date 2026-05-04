@@ -1,16 +1,21 @@
 package com.bidding.common.model.item;
 
+import com.bidding.common.enums.ItemType;
+
 public class Vehicle extends Item {
+
     private String engineType;
     private int mileage;
 
-    public Vehicle(String name, String description, double startingPrice, String engineType, int mileage) {
-        super(name, description, startingPrice);
+    public Vehicle() { super(); }
+
+    public Vehicle(String name, String description, double startingPrice,
+                   String engineType, int mileage) {
+        super(name, description, startingPrice, ItemType.VEHICLE);
         this.engineType = engineType;
         this.mileage = mileage;
     }
 
-    // Getters & Setters
     public String getEngineType() { return engineType; }
     public void setEngineType(String engineType) { this.engineType = engineType; }
 
@@ -19,6 +24,7 @@ public class Vehicle extends Item {
 
     @Override
     public String getItemDetails() {
-        return "Vehicle: " + getName() + " | Engine: " + engineType + " | Mileage: " + mileage + " km | Starting Price: $" + getStartingPrice();
+        return String.format("Xe: %s | Động cơ: %s | Số km: %d | Giá: $%.2f",
+                getName(), engineType, mileage, getStartingPrice());
     }
 }

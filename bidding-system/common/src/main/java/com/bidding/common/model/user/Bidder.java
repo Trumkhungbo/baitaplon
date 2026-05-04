@@ -1,10 +1,16 @@
 package com.bidding.common.model.user;
 
-public class Bidder extends User {
-    private double balance; // Số dư tài khoản để tham gia đấu giá
+import com.bidding.common.enums.UserRole;
 
-    public Bidder(String username, String password, String email, double balance) {
-        super(username, password, email);
+public class Bidder extends User {
+
+    private double balance; // Số dư tài khoản
+
+    public Bidder() {}
+
+    public Bidder(String username, String passwordHash, String email,
+                  String fullName, double balance) {
+        super(username, passwordHash, email, fullName, UserRole.BIDDER);
         this.balance = balance;
     }
 
@@ -12,7 +18,7 @@ public class Bidder extends User {
     public void setBalance(double balance) { this.balance = balance; }
 
     @Override
-    public String getRole() {
-        return "BIDDER";
+    public String getDescription() {
+        return String.format("Người đặt giá: %s | Số dư: $%.2f", getUsername(), balance);
     }
 }

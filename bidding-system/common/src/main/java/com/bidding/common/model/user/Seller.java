@@ -1,18 +1,23 @@
 package com.bidding.common.model.user;
 
-public class Seller extends User {
-    private double rating; // Đánh giá uy tín của người bán
+import com.bidding.common.enums.UserRole;
 
-    public Seller(String username, String password, String email) {
-        super(username, password, email);
-        this.rating = 5.0; // Mặc định 5 sao
+public class Seller extends User {
+
+    private double rating; // Đánh giá uy tín 0–5
+
+    public Seller() {}
+
+    public Seller(String username, String passwordHash, String email, String fullName) {
+        super(username, passwordHash, email, fullName, UserRole.SELLER);
+        this.rating = 5.0;
     }
 
     public double getRating() { return rating; }
     public void setRating(double rating) { this.rating = rating; }
 
     @Override
-    public String getRole() {
-        return "SELLER";
+    public String getDescription() {
+        return String.format("Người bán: %s | Đánh giá: %.1f⭐", getUsername(), rating);
     }
 }

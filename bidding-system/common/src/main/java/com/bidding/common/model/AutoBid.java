@@ -1,0 +1,40 @@
+package com.bidding.common.model;
+
+/** Cấu hình đặt giá tự động của một người dùng cho một phiên */
+public class AutoBid {
+
+    private long id;
+    private long auctionId;
+    private String bidderUsername;
+    private double maxBid;       // Mức giá tối đa chấp nhận trả
+    private double increment;    // Bước tăng mỗi lần auto-bid
+    private boolean active;
+
+    public AutoBid() {}
+
+    public AutoBid(long auctionId, String bidderUsername, double maxBid, double increment) {
+        this.auctionId = auctionId;
+        this.bidderUsername = bidderUsername;
+        this.maxBid = maxBid;
+        this.increment = increment;
+        this.active = true;
+    }
+
+    public long getId() { return id; }
+    public void setId(long id) { this.id = id; }
+
+    public long getAuctionId() { return auctionId; }
+    public void setAuctionId(long auctionId) { this.auctionId = auctionId; }
+
+    public String getBidderUsername() { return bidderUsername; }
+    public void setBidderUsername(String bidderUsername) { this.bidderUsername = bidderUsername; }
+
+    public double getMaxBid() { return maxBid; }
+    public void setMaxBid(double maxBid) { this.maxBid = maxBid; }
+
+    public double getIncrement() { return increment; }
+    public void setIncrement(double increment) { this.increment = increment; }
+
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
+}
