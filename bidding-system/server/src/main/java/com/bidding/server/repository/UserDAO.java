@@ -21,6 +21,8 @@ public class UserDAO extends BaseDAO {
             ps.setString(5, user.getRole().name());
             ps.setDouble(6, user instanceof Bidder ? ((Bidder) user).getBalance() : 0);
             ps.setDouble(7, user instanceof Seller ? ((Seller) user).getRating() : 0);
+            ps.setDouble(6, user instanceof Bidder b ? b.getBalance() : 0);
+            ps.setDouble(7, user instanceof Seller s ? s.getRating() : 0);
             ps.setLong(8, user.getCreatedAt());
             ps.executeUpdate();
 
