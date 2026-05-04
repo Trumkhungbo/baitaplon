@@ -10,12 +10,14 @@ public class AutoBidDAO extends BaseDAO {
 
     /** Tạo mới hoặc cập nhật auto-bid (upsert) */
     public void upsert(AutoBid ab) {
-        String sql = "INSERT INTO auto_bid_settings (auction_id, bidder_username, max_bid, increment, is_active) "
-                + "VALUES (?, ?, ?, ?, 1) "
-                + "ON CONFLICT(auction_id, bidder_username) "
-                + "DO UPDATE SET max_bid = excluded.max_bid, "
-                + "increment = excluded.increment, "
-                + "is_active = 1";
+        String sql = """
+            INSERT INTO auto_bid_settings (auction_id, bidder_username, max_bid, increment, is_active)
+            VALUES (?, ?, ?, ?, 1)
+            ON CONFLICT(auction_id, bidder_username)
+            DO UPDATE SET max_bid = excluded.max_bid,
+                          increment = excluded.increment,
+                          is_active = 1
+        """;
         try (PreparedStatement ps = getConn().prepareStatement(sql)) {
             ps.setLong(1, ab.getAuctionId());
             ps.setString(2, ab.getBidderUsername());
@@ -39,9 +41,11 @@ public class AutoBidDAO extends BaseDAO {
     }
 
     public List<AutoBid> findActiveByAuction(long auctionId) {
-        String sql = "SELECT * FROM auto_bid_settings "
-                + "WHERE auction_id = ? AND is_active = 1 "
-                + "ORDER BY max_bid DESC";
+        String sql = """
+            SELECT * FROM auto_bid_settings
+            WHERE auction_id = ? AND is_active = 1
+            ORDER BY max_bid DESC
+        """;
         List<AutoBid> list = new ArrayList<>();
         try (PreparedStatement ps = getConn().prepareStatement(sql)) {
             ps.setLong(1, auctionId);

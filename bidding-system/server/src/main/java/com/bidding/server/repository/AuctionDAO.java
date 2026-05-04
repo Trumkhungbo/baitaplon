@@ -1,17 +1,14 @@
 package com.bidding.server.repository;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.bidding.common.enums.AuctionStatus;
 import com.bidding.common.model.Auction;
 import com.bidding.common.model.BidTransaction;
 import com.bidding.common.model.item.Item;
+
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AuctionDAO extends BaseDAO {
 
@@ -20,9 +17,11 @@ public class AuctionDAO extends BaseDAO {
     // ---- CREATE ----
 
     public Auction save(Auction auction) {
-        String sql = "INSERT INTO auctions (item_id, seller_username, start_time, end_time, " +
-                     "status, current_highest_bid, highest_bidder_username) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = """
+            INSERT INTO auctions (item_id, seller_username, start_time, end_time,
+                                  status, current_highest_bid, highest_bidder_username)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """;
         try (PreparedStatement ps = getConn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setLong(1, auction.getItem().getId());
             ps.setString(2, auction.getSellerUsername());
@@ -110,7 +109,10 @@ public class AuctionDAO extends BaseDAO {
     // ---- BID HISTORY ----
 
     public void saveBidTransaction(BidTransaction bt) {
-        String sql = "INSERT INTO bid_transactions (auction_id, bidder_username, bid_amount, bid_time) VALUES (?, ?, ?, ?)";
+        String sql = """
+            INSERT INTO bid_transactions (auction_id, bidder_username, bid_amount, bid_time)
+            VALUES (?, ?, ?, ?)
+        """;
         try (PreparedStatement ps = getConn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setLong(1, bt.getAuctionId());
             ps.setString(2, bt.getBidderUsername());

@@ -12,8 +12,7 @@ public class UserDAO extends BaseDAO {
     // ---- CREATE ----
 
     public User save(User user) {
-        String sql = "INSERT INTO users (username, password_hash, email, full_name, role, balance, rating, created_at) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO users (username, password_hash, email, full_name, role, balance, rating, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = getConn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getPasswordHash());
@@ -129,24 +128,19 @@ public class UserDAO extends BaseDAO {
 
     private User map(ResultSet rs) throws SQLException {
         UserRole role = UserRole.valueOf(rs.getString("role"));
-        User user;
-        switch (role) {
-            case BIDDER:
+        User user = switch (role) {
+            case BIDDER -> {
                 Bidder b = new Bidder();
                 b.setBalance(rs.getDouble("balance"));
-                user = b;
-                break;
-            case SELLER:
+                yield b;
+            }
+            case SELLER -> {
                 Seller s = new Seller();
                 s.setRating(rs.getDouble("rating"));
-                user = s;
-                break;
-            case ADMIN:
-                user = new Admin();
-                break;
-            default:
-                throw new IllegalStateException("Unexpected role: " + role);
-        }
+                yield s;
+            }
+            case ADMIN -> new Admin();
+        };
         user.setId(rs.getLong("id"));
         user.setUsername(rs.getString("username"));
         user.setPasswordHash(rs.getString("password_hash"));

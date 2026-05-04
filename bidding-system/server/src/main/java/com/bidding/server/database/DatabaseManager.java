@@ -20,7 +20,7 @@ public class DatabaseManager {
             connection = DriverManager.getConnection(DB_URL);
             connection.setAutoCommit(true);
             System.out.println("[DB] Kết nối SQLite thành công: " + DB_URL);
-        } catch (Exception e) {
+        } catch (ClassNotFoundException | SQLException e) {
             throw new RuntimeException("Không thể kết nối database: " + e.getMessage(), e);
         }
     }
