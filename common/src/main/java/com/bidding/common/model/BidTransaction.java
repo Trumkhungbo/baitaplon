@@ -3,18 +3,53 @@ package com.bidding.common.model;
 import java.time.LocalDateTime;
 
 public class BidTransaction extends Entity {
-    private String auctionId; // Khóa ngoại liên kết tới phiên đấu giá
-    private String bidderUsername; 
+    private long auctionId;
+    private String bidderUsername;
     private double bidAmount;
+    private LocalDateTime bidTime;
 
-    public BidTransaction(String auctionId, String bidderUsername, double bidAmount) {
-        super(); // Lấy sẵn id và thời gian đặt giá (createdAt) từ Entity
+    public BidTransaction() {
+        super();
+        this.bidTime = LocalDateTime.now();
+    }
+
+    public BidTransaction(long auctionId, String bidderUsername, double bidAmount) {
+        super();
         this.auctionId = auctionId;
         this.bidderUsername = bidderUsername;
         this.bidAmount = bidAmount;
+        this.bidTime = LocalDateTime.now();
     }
 
-    public String getAuctionId() { return auctionId; }
-    public String getBidderUsername() { return bidderUsername; }
-    public double getBidAmount() { return bidAmount; }
+    public long getAuctionId() {
+        return auctionId;
+    }
+
+    public void setAuctionId(long auctionId) {
+        this.auctionId = auctionId;
+    }
+
+    public String getBidderUsername() {
+        return bidderUsername;
+    }
+
+    public void setBidderUsername(String bidderUsername) {
+        this.bidderUsername = bidderUsername;
+    }
+
+    public double getBidAmount() {
+        return bidAmount;
+    }
+
+    public void setBidAmount(double bidAmount) {
+        this.bidAmount = bidAmount;
+    }
+
+    public LocalDateTime getBidTime() {
+        return bidTime;
+    }
+
+    public void setBidTime(LocalDateTime bidTime) {
+        this.bidTime = bidTime;
+    }
 }

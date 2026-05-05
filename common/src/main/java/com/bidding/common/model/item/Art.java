@@ -4,21 +4,34 @@ public class Art extends Item {
     private String artist;
     private int creationYear;
 
+    public Art() {
+        super();
+        setItemType(com.bidding.common.enums.ItemType.ART);
+    }
+
     public Art(String name, String description, double startingPrice, String artist, int creationYear) {
-        // Gọi super() để truyền name, description, startingPrice lên lớp cha Item
-        super(name, description, startingPrice); 
+        super(name, description, startingPrice);
+        setItemType(com.bidding.common.enums.ItemType.ART);
         this.artist = artist;
         this.creationYear = creationYear;
     }
 
-    // Getters & Setters
-    public String getArtist() { return artist; }
-    public void setArtist(String artist) { this.artist = artist; }
+    public String getArtist() {
+        return artist;
+    }
 
-    public int getCreationYear() { return creationYear; }
-    public void setCreationYear(int creationYear) { this.creationYear = creationYear; }
+    public void setArtist(String artist) {
+        this.artist = artist;
+    }
 
-    // Tính đa hình (Polymorphism): Ghi đè phương thức của lớp cha
+    public int getCreationYear() {
+        return creationYear;
+    }
+
+    public void setCreationYear(int creationYear) {
+        this.creationYear = creationYear;
+    }
+
     @Override
     public String getItemDetails() {
         return "Art: " + getName() + " | Artist: " + artist + " | Year: " + creationYear + " | Starting Price: $" + getStartingPrice();

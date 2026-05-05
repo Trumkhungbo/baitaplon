@@ -1,0 +1,10 @@
+target/
+*.jar
+*.war
+.idea/
+*.iml
+*.iws
+.DS_Store
+Thumbs.db
+*.db
+*.sqlite

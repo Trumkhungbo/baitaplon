@@ -1,24 +1,27 @@
 package com.bidding.common.model;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 public abstract class Entity {
-    // Thuộc tính private (Encapsulation)
-    private String id;
-    private LocalDateTime createdAt;
+    private long id;
+    private long createdAt;
 
     public Entity() {
-        // Tự động sinh ID duy nhất và lấy thời gian hiện tại khi khởi tạo
-        this.id = UUID.randomUUID().toString(); 
-        this.createdAt = LocalDateTime.now();
+        this.id = 0;
+        this.createdAt = System.currentTimeMillis();
     }
 
-    // Chỉ cung cấp Getter, không cung cấp Setter để bảo vệ dữ liệu gốc
-    public String getId() {
+    public long getId() {
         return id;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public long getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(long createdAt) {
+        this.createdAt = createdAt;
     }
 }
