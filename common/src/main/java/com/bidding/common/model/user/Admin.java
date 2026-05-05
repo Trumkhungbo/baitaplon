@@ -1,13 +1,16 @@
 package com.bidding.common.model.user;
 
+import com.bidding.common.enums.UserRole;
+
 public class Admin extends User {
-    
-    public Admin(String username, String password, String email) {
-        super(username, password, email);
+
+    public Admin() {
+        super();
+        setRole(UserRole.ADMIN);
     }
 
-    @Override
-    public String getRole() {
-        return "ADMIN";
+    public Admin(String username, String passwordHash, String email) {
+        super(username, passwordHash, email);
+        setRole(UserRole.ADMIN);
     }
 }

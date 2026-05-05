@@ -1,10 +1,16 @@
 package com.bidding.common.model.item;
-import com.bidding.common.model.Entity;
 
-public abstract class Item extends Entity {
+import com.bidding.common.enums.ItemType;
+
+public abstract class Item extends com.bidding.common.model.Entity {
     private String name;
     private String description;
     private double startingPrice;
+    private ItemType itemType;
+
+    public Item() {
+        super();
+    }
 
     public Item(String name, String description, double startingPrice) {
         super();
@@ -13,10 +19,37 @@ public abstract class Item extends Entity {
         this.startingPrice = startingPrice;
     }
 
-    public String getName() { return name; }
-    public String getDescription() { return description; }
-    public double getStartingPrice() { return startingPrice; }
+    public String getName() {
+        return name;
+    }
 
-    // Polymorphism
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public double getStartingPrice() {
+        return startingPrice;
+    }
+
+    public void setStartingPrice(double startingPrice) {
+        this.startingPrice = startingPrice;
+    }
+
+    public ItemType getItemType() {
+        return itemType;
+    }
+
+    public void setItemType(ItemType itemType) {
+        this.itemType = itemType;
+    }
+
     public abstract String getItemDetails();
 }
