@@ -1,18 +1,21 @@
 package com.bidding.common.model;
 
 /** Cấu hình đặt giá tự động của một người dùng cho một phiên */
-public class AutoBid {
+public class AutoBid extends Entity { // 1. Thêm kế thừa từ Entity
 
-    private long id;
+    // 2. Đã xóa biến 'id' vì nó đã có sẵn trong lớp cha Entity
     private long auctionId;
     private String bidderUsername;
     private double maxBid;       // Mức giá tối đa chấp nhận trả
     private double increment;    // Bước tăng mỗi lần auto-bid
     private boolean active;
 
-    public AutoBid() {}
+    public AutoBid() {
+        super(); // 3. Gọi hàm khởi tạo của Entity để gán id=0 và createdAt
+    }
 
     public AutoBid(long auctionId, String bidderUsername, double maxBid, double increment) {
+        super(); // 4. Gọi hàm khởi tạo của Entity
         this.auctionId = auctionId;
         this.bidderUsername = bidderUsername;
         this.maxBid = maxBid;
@@ -20,8 +23,7 @@ public class AutoBid {
         this.active = true;
     }
 
-    public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
+    // 5. Đã xóa các hàm getId() và setId() vì kế thừa từ Entity
 
     public long getAuctionId() { return auctionId; }
     public void setAuctionId(long auctionId) { this.auctionId = auctionId; }
