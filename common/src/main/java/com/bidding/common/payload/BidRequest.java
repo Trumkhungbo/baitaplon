@@ -4,7 +4,7 @@ public class BidRequest {
     private long auctionId;
     private double bidAmount;
 
-    // Phải viết thêm Getters và Setters cho chuẩn bảo mật
+  
     public long getAuctionId() { return auctionId; }
     public void setAuctionId(long auctionId) { this.auctionId = auctionId; }
 
