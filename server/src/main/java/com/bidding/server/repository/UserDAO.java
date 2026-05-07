@@ -1,11 +1,19 @@
+
 package com.bidding.server.repository;
 
-import com.bidding.common.enums.UserRole;
-import com.bidding.common.model.user.*;
-
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.bidding.common.enums.UserRole;
+import com.bidding.common.model.user.Admin;
+import com.bidding.common.model.user.Bidder;
+import com.bidding.common.model.user.Seller;
+import com.bidding.common.model.user.User;
 
 public class UserDAO extends BaseDAO {
 
@@ -13,7 +21,9 @@ public class UserDAO extends BaseDAO {
 
     public User save(User user) {
         String sql = "INSERT INTO users (username, password_hash, email, full_name, role, balance, rating, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement ps = getConn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getPasswordHash());
             ps.setString(3, user.getEmail());
@@ -37,7 +47,9 @@ public class UserDAO extends BaseDAO {
 
     public User findByUsername(String username) {
         String sql = "SELECT * FROM users WHERE username = ?";
-        try (PreparedStatement ps = getConn().prepareStatement(sql)) {
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return map(rs);
@@ -50,7 +62,9 @@ public class UserDAO extends BaseDAO {
 
     public User findById(long id) {
         String sql = "SELECT * FROM users WHERE id = ?";
-        try (PreparedStatement ps = getConn().prepareStatement(sql)) {
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return map(rs);
@@ -64,8 +78,10 @@ public class UserDAO extends BaseDAO {
     public List<User> findAll() {
         String sql = "SELECT * FROM users ORDER BY id";
         List<User> list = new ArrayList<>();
-        try (Statement st = getConn().createStatement();
+        try (Connection conn = getConn();
+             Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
+
             while (rs.next()) list.add(map(rs));
         } catch (SQLException e) {
             throw new RuntimeException("Lỗi list users: " + e.getMessage(), e);
@@ -77,7 +93,9 @@ public class UserDAO extends BaseDAO {
 
     public void updateBalance(String username, double newBalance) {
         String sql = "UPDATE users SET balance = ? WHERE username = ?";
-        try (PreparedStatement ps = getConn().prepareStatement(sql)) {
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setDouble(1, newBalance);
             ps.setString(2, username);
             ps.executeUpdate();
@@ -90,7 +108,9 @@ public class UserDAO extends BaseDAO {
 
     public boolean delete(long id) {
         String sql = "DELETE FROM users WHERE id = ?";
-        try (PreparedStatement ps = getConn().prepareStatement(sql)) {
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -102,7 +122,9 @@ public class UserDAO extends BaseDAO {
 
     public boolean existsByUsername(String username) {
         String sql = "SELECT 1 FROM users WHERE username = ?";
-        try (PreparedStatement ps = getConn().prepareStatement(sql)) {
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
@@ -114,7 +136,9 @@ public class UserDAO extends BaseDAO {
 
     public boolean existsByEmail(String email) {
         String sql = "SELECT 1 FROM users WHERE email = ?";
-        try (PreparedStatement ps = getConn().prepareStatement(sql)) {
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setString(1, email);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();

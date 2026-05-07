@@ -1,10 +1,12 @@
 package com.bidding.server.repository;
 
-import com.bidding.common.model.AutoBid;
-
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.bidding.common.model.AutoBid;
 
 public class AutoBidDAO extends BaseDAO {
 
