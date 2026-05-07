@@ -8,7 +8,6 @@ import javafx.scene.control.TextField;
 import java.io.IOException;
 import java.sql.Time;
 import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
 
 public class InvesterSellHandle {
     @FXML
@@ -37,7 +36,7 @@ public class InvesterSellHandle {
             ShopDataBase.danhSachSanPham.add(item);
         }
         catch (Exception e) {
-            sceneSwitch.SwitchToLockPage(actionEvent,"WrongInputShow.fxml");
+            sceneSwitch.SwitchToLockPage(actionEvent, "views/WrongInputShow.fxml");
         }
     }
 }

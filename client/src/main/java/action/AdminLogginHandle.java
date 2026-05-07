@@ -21,11 +21,11 @@ public class AdminLogginHandle {
     public void Submitting(ActionEvent event) throws IOException {
         LocalDate currentDate = datePicker.getValue();
         if(currentDate==null){
-            sceneSwitch.SwitchToLockPage(event,"/SomeThingUnFill.fxml");
+            sceneSwitch.SwitchToLockPage(event, "/views/SomeThingUnFill.fxml");
         }
         else{
             if(currentDate.equals(IndependentDay)){
-                sceneSwitch.SwitchToAnyWhere(event, "/AdminPage.fxml");
+                sceneSwitch.SwitchToAnyWhere(event, "/views/AdminPage.fxml");
             }
             else{
                 label.setText(currentDate.getDayOfMonth()+"/"+currentDate.getMonthValue()+"/"+currentDate.getYear());

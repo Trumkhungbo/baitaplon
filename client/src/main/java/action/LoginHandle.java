@@ -2,13 +2,8 @@ package action;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.stage.Stage;
 
 import java.io.IOException;
 
@@ -24,13 +19,13 @@ public class LoginHandle {
         StoreDataInput.username=user1;
         StoreDataInput.password=password1;
         if (password1.isBlank() || user1.isBlank()) {
-            sceneSwitch.SwitchToLockPage(clicked,"/SomeThingUnFill.fxml");
+            sceneSwitch.SwitchToLockPage(clicked, "/views/SomeThingUnFill.fxml");
 
         }
         //else-if(false){
         // sceneSwitch.SwitchToLockPage(clicked,"/SomeThingUnFill.fxml")}
         else{
-            sceneSwitch.SwitchToAnyWhere(clicked,"/Lobby.fxml");
+            sceneSwitch.SwitchToAnyWhere(clicked, "/views/Lobby.fxml");
         }
 
 
@@ -39,9 +34,9 @@ public class LoginHandle {
         sceneSwitch.SwitchToRegister(clicked);
     }
     public void ForgotPassword(ActionEvent clicked) throws IOException {
-        sceneSwitch.SwitchToAnyWhere(clicked,"/ForgotPassword.fxml");
+        sceneSwitch.SwitchToAnyWhere(clicked, "/views/ForgotPassword.fxml");
     }
     public void Adminloggin(ActionEvent clicked) throws IOException {
-        sceneSwitch.SwitchToAnyWhere(clicked,"/AdminLoggin.fxml");
+        sceneSwitch.SwitchToAnyWhere(clicked, "/views/AdminLoggin.fxml");
     }
 }
