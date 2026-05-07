@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 
 public class AdminLogginHandle {
-    LocalDate IndependentDay = LocalDate.of(2026,4,30);
+    LocalDate IndependentDay = LocalDate.of(1975,4,30);
     @FXML
     private Button button;
     @FXML
@@ -19,16 +19,14 @@ public class AdminLogginHandle {
     @FXML
     private Label label;
     public void Submitting(ActionEvent event) throws IOException {
-        LocalDate currentDate = datePicker.getValue();
-        if(currentDate==null){
+        if(datePicker.getValue()==null){
             sceneSwitch.SwitchToLockPage(event,"/SomeThingUnFill.fxml");
         }
         else{
-            if(currentDate.equals(IndependentDay)){
-                sceneSwitch.SwitchToAnyWhere(event, "/AdminPage.fxml");
+            if(datePicker.getValue().equals(IndependentDay)){
+                sceneSwitch.SwitchToAnyWhere(event,"/Adminpage.fxml");
             }
             else{
-                label.setText(currentDate.getDayOfMonth()+"/"+currentDate.getMonthValue()+"/"+currentDate.getYear());
                 label.setText("");
                 label.setText("WRONG!!!!");
             }
