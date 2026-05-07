@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StartScence extends Application {
+    public static SocketClient client = new SocketClient();
     @Override
     public void start(Stage primaryStage) throws Exception {
     FXMLLoader fxmloader = new FXMLLoader(StartScence.class.getResource("/login.fxml"));
@@ -21,4 +22,4 @@ public class StartScence extends Application {
     stage.show();
     Image icon = new Image(StartScence.class.getResourceAsStream("/icon.png"));
     stage.getIcons().add(icon);
-}}
+}
