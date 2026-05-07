@@ -13,7 +13,7 @@ public class DatabaseInitializer {
         Connection conn = DatabaseManager.getInstance().getConnection();
         try (Statement st = conn.createStatement()) {
 
-            // Bảng users
+            // Bảng users 
             st.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,7 +45,8 @@ public class DatabaseInitializer {
                     warranty_months INTEGER,
                     -- Vehicle
                     engine_type     TEXT,
-                    mileage         INTEGER
+                    mileage         INTEGER,
+                    image_url       TEXT
                 )
             """);
 
@@ -92,10 +93,9 @@ public class DatabaseInitializer {
             // Seed admin mặc định nếu chưa có
             st.execute("""
                 INSERT OR IGNORE INTO users (username, password_hash, email, full_name, role, created_at)
-                VALUES ('admin', 'admin123', 'admin@bidding.com', 'Administrator', 'ADMIN',
+                VALUES ('admin', 'admin123', 'admin@bidding.vnu.edu.vn', 'Administrator', 'ADMIN',
                         strftime('%s','now') * 1000)
             """);
-
             System.out.println("[DB] Schema khởi tạo thành công.");
 
         } catch (Exception e) {

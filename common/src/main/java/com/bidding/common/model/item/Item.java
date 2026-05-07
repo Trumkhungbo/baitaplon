@@ -1,3 +1,4 @@
+
 package com.bidding.common.model.item;
 
 import com.bidding.common.enums.ItemType;
@@ -7,6 +8,7 @@ public abstract class Item extends com.bidding.common.model.Entity {
     private String description;
     private double startingPrice;
     private ItemType itemType;
+    private String imageUrl;
 
     public Item() {
         super();
@@ -49,6 +51,14 @@ public abstract class Item extends com.bidding.common.model.Entity {
 
     public void setItemType(ItemType itemType) {
         this.itemType = itemType;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public abstract String getItemDetails();
