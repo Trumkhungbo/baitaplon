@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.Pane?>
+
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="517.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <DatePicker layoutX="59.0" layoutY="311.0" />
+      <TextField layoutX="59.0" layoutY="35.0" promptText="ten" />
+      <TextField layoutX="59.0" layoutY="84.0" promptText="phan loai" />
+      <TextField layoutX="59.0" layoutY="133.0" promptText="Gia Tien" />
+      <TextField layoutX="59.0" layoutY="188.0" promptText="Gio:Phut:Giay" />
+      <TextField layoutX="59.0" layoutY="234.0" promptText="Gio:Phut:Giay" />
+   </children>
+</Pane>
