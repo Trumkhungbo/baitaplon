@@ -7,9 +7,10 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 public class StartScence extends Application {
-    public static Client client;
+    public static final action.SocketClient client = new action.SocketClient();
     @Override
     public void start(Stage primaryStage) throws Exception {
+        client.connect("127.0.0.1", 888);
     FXMLLoader fxmloader = new FXMLLoader(StartScence.class.getResource("/views/login.fxml"));
     Scene scene = new Scene(fxmloader.load());
     Stage stage = new Stage();

@@ -52,16 +52,36 @@ public class RegisterHandle {
             {
                 sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
             }
-        else
-        {
-            StoreSignUpInput.name=name;
-            StoreSignUpInput.phoneNumber=phoneNumber;
-            StoreSignUpInput.email=email;
-            StoreSignUpInput.personalID=personalID;
-            StoreSignUpInput.password=password;
-            SceneSwitch sceneswitch = new SceneSwitch();
-            sceneswitch.SwitchToLogin(event);
-            sceneswitch.SwitchToLockPage(event, "/views/RegisterPopUp.fxml");
+        else {
+            StoreSignUpInput.name = name;
+            StoreSignUpInput.phoneNumber = phoneNumber;
+            StoreSignUpInput.email = email;
+            StoreSignUpInput.personalID = personalID;
+            StoreSignUpInput.password = password;
+
+            StartScence.client.setServerListener(message -> {
+                javafx.application.Platform.runLater(() -> {
+                    if (message.startsWith("REGISTER_SUCCESS")) {
+                        try {
+                            SceneSwitch sceneswitch = new SceneSwitch();
+                            sceneswitch.SwitchToLogin(event);
+                            sceneswitch.SwitchToLockPage(event, "/views/RegisterPopUp.fxml");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    } else if (message.startsWith("REGISTER_FAILED")) {
+                        try {
+                            // Tài khoản đã tồn tại hoặc lỗi
+                            SceneSwitch sceneswitch = new SceneSwitch();
+                            sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            });
+
+            StartScence.client.sendMessage("REGISTER|" + name + "|" + password);
         }
 
     }
