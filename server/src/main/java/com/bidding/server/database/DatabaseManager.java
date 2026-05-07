@@ -9,19 +9,19 @@ import java.sql.SQLException;
  */
 public class DatabaseManager {
 
-    private static final String DB_URL = "jdbc:sqlite:data/auction.db";
-    private static DatabaseManager instance;
-    private Connection connection;
+    private static final String DB_URL = "jdbc:sqlite:data/auction.db";// file SQLite sẽ nằm trong thư mục data/ của dự án
+    private static DatabaseManager instance;// instance duy nhất của DatabaseManager
+    private Connection connection;// kết nối tới database
 
     private DatabaseManager() {
         try {
             Class.forName("org.sqlite.JDBC");
             new java.io.File("data").mkdirs(); // tạo thư mục data/ nếu chưa có
-            connection = DriverManager.getConnection(DB_URL);
-            connection.setAutoCommit(true);
-            System.out.println("[DB] Kết nối SQLite thành công: " + DB_URL);
-        } catch (ClassNotFoundException | SQLException e) {
-            throw new RuntimeException("Không thể kết nối database: " + e.getMessage(), e);
+            connection = DriverManager.getConnection(DB_URL);// kết nối tới SQLite
+            connection.setAutoCommit(true);// tự động commit sau mỗi câu lệnh SQL
+            System.out.println("[DB] Kết nối SQLite thành công: " + DB_URL);//
+        } catch (ClassNotFoundException | SQLException e) {//
+            throw new RuntimeException("Không thể kết nối database: " + e.getMessage(), e);//
         }
     }
 
