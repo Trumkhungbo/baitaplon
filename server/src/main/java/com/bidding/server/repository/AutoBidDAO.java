@@ -1,5 +1,7 @@
+
 package com.bidding.server.repository;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,7 +22,9 @@ public class AutoBidDAO extends BaseDAO {
                           increment = excluded.increment,
                           is_active = 1
         """;
-        try (PreparedStatement ps = getConn().prepareStatement(sql)) {
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setLong(1, ab.getAuctionId());
             ps.setString(2, ab.getBidderUsername());
             ps.setDouble(3, ab.getMaxBid());
@@ -33,7 +37,9 @@ public class AutoBidDAO extends BaseDAO {
 
     public boolean disable(long auctionId, String bidderUsername) {
         String sql = "UPDATE auto_bid_settings SET is_active = 0 WHERE auction_id = ? AND bidder_username = ?";
-        try (PreparedStatement ps = getConn().prepareStatement(sql)) {
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setLong(1, auctionId);
             ps.setString(2, bidderUsername);
             return ps.executeUpdate() > 0;
@@ -49,7 +55,9 @@ public class AutoBidDAO extends BaseDAO {
             ORDER BY max_bid DESC
         """;
         List<AutoBid> list = new ArrayList<>();
-        try (PreparedStatement ps = getConn().prepareStatement(sql)) {
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setLong(1, auctionId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(map(rs));
@@ -62,7 +70,9 @@ public class AutoBidDAO extends BaseDAO {
 
     public AutoBid findOne(long auctionId, String bidderUsername) {
         String sql = "SELECT * FROM auto_bid_settings WHERE auction_id = ? AND bidder_username = ?";
-        try (PreparedStatement ps = getConn().prepareStatement(sql)) {
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setLong(1, auctionId);
             ps.setString(2, bidderUsername);
             try (ResultSet rs = ps.executeQuery()) {
