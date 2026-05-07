@@ -36,12 +36,12 @@
                   </Pane>
                   <ImageView fitHeight="52.0" fitWidth="57.0" layoutX="90.0" layoutY="63.0" pickOnBounds="true" preserveRatio="true">
                      <image>
-                        <Image url="@Icon.png" />
+                        <Image url="@../assets/Icon.png" />
                      </image>
                   </ImageView>
                   <ImageView fitHeight="45.0" fitWidth="50.0" layoutX="642.0" layoutY="6.0" pickOnBounds="true" preserveRatio="true">
                      <image>
-                        <Image url="@profilepic.jpg" />
+                        <Image url="@../assets/profilepic.jpg" />
                      </image></ImageView>
                   <Button layoutX="639.0" layoutY="4.0" mnemonicParsing="false" onAction="#AccountInformation" opacity="0.0" prefHeight="47.0" prefWidth="52.0" />
                </children>

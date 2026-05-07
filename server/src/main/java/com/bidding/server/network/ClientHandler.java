@@ -71,6 +71,10 @@ public class ClientHandler implements Runnable {
                 sendMessage("PONG");
                 break;
 
+            case "REGISTER":
+                handleRegister(parts);
+                break;
+
             case "LOGIN":
                 handleLogin(parts);
                 break;
@@ -110,6 +114,18 @@ public class ClientHandler implements Runnable {
             default:
                 sendMessage("ERROR|Invalid command: " + command);
         }
+    }
+
+    private void handleRegister(String[] parts) {
+        if (parts.length < 3) {
+            sendMessage("ERROR|Invalid syntax. Use: REGISTER|username|password");
+            return;
+        }
+        String inputUsername = parts[1];
+        String inputPassword = parts[2];
+
+        String response = authService.register(inputUsername, inputPassword);
+        sendMessage(response);
     }
 
     private void handleLogin(String[] parts) {

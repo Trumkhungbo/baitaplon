@@ -24,14 +24,14 @@ public class SceneSwitch {
     }
 
     public void SwitchToRegister(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("/register.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("/views/register.fxml"));
         stage = (Stage)((Node)event.getSource()).getScene().getWindow();
         scene = new Scene(root);
         stage.setScene(scene);
         stage.show();
     }
     public void SwitchToLogin(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("/login.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("/views/login.fxml"));
         stage = (Stage)((Node)event.getSource()).getScene().getWindow();
         scene = new Scene(root);
         stage.setScene(scene);

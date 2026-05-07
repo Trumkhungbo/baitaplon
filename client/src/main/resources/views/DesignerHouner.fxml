@@ -17,7 +17,7 @@
                      <children>
                          <ImageView fitHeight="200.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
                              <image> <!-- Chữ 'i' viết thường -->
-                                 <Image url="@download.jfif" /> <!-- Nên thêm dấu @ vào đường dẫn -->
+                                 <Image url="@../assets/download.jfif" /> <!-- Nên thêm dấu @ vào đường dẫn -->
                              </image>
                          </ImageView> <!-- Đã sửa lại cách đóng thẻ -->
                      </children>
@@ -26,7 +26,7 @@
                      <children>
                         <ImageView fitHeight="200.0" fitWidth="200.0" pickOnBounds="true">
                                 <image>
-                                    <Image url="@download (1).jfif" />
+                                    <Image url="@../assets/download (1).jfif" />
                                 </image>
                         </ImageView>
                      </children>
@@ -35,7 +35,7 @@
                      <children>
                         <ImageView fitHeight="200.0" fitWidth="200.0" pickOnBounds="true">
                                 <image>
-                                    <Image url="@download (2).jfif" />
+                                    <Image url="@../assets/download (2).jfif" />
                                 </image>
                         </ImageView>
                      </children>
@@ -44,7 +44,7 @@
                      <children>
                         <ImageView fitHeight="200.0" fitWidth="200.0" pickOnBounds="true">
                                 <image>
-                                    <Image url="@download (3).jfif" />
+                                    <Image url="@../assets/download (3).jfif" />
                                 </image>
                         </ImageView>
                      </children>
