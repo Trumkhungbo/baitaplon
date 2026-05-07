@@ -1,6 +1,4 @@
-package com.auction.server.model;
-
-import com.auction.server.model.AuctionStatus;
+package com.bidding.server.model;
 
 public class Auction {
 

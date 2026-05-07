@@ -1,13 +1,13 @@
-package com.auction.server;
-
-import com.auction.server.exception.AuctionClosedException;
-import com.auction.server.exception.AuctionNotFoundException;
-import com.auction.server.exception.InvalidBidException;
-import com.auction.server.model.Auction;
-import com.auction.server.model.AuctionStatus;
+package com.bidding.server;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import com.bidding.server.exception.AuctionClosedException;
+import com.bidding.server.exception.AuctionNotFoundException;
+import com.bidding.server.exception.InvalidBidException;
+import com.bidding.server.model.Auction;
+import com.bidding.server.model.AuctionStatus;
 
 public class AuctionService {
 

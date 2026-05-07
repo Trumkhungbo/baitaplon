@@ -1,4 +1,4 @@
-package com.auction.server;
+package com.bidding.server;
 
 public class AuthService {
 
