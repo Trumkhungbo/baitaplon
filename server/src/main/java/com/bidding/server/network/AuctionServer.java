@@ -1,4 +1,4 @@
-package com.auction.server.network;
+package com.bidding.server.network;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -7,7 +7,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import com.auction.server.AuctionService;
+import com.bidding.server.core.AuctionService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class AuctionServer {
 
@@ -21,6 +23,7 @@ public class AuctionServer {
     private ServerSocket serverSocket;
     private volatile boolean running;
     private final AuctionService auctionService;
+    private final ScheduledExecutorService auctionMonitor;
 
     public AuctionServer() {
         this(DEFAULT_PORT);
@@ -31,6 +34,7 @@ public class AuctionServer {
         this.clientPool = Executors.newFixedThreadPool(MAX_CLIENT_THREADS);
         this.connectedClients = ConcurrentHashMap.newKeySet();
         this.auctionService = new AuctionService();
+        this.auctionMonitor = Executors.newSingleThreadScheduledExecutor();
     }
 
     public void start() {
@@ -39,10 +43,11 @@ public class AuctionServer {
         try {
             serverSocket = new ServerSocket(port);
             System.out.println("AuctionServer is running on port " + port);
+            startAuctionMonitor();
 
             while (running) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("New client connected: " + clientSocket.getInetAddress());
+                System.out.println("[SERVER] New client connected: " + clientSocket.getInetAddress());
 
                 ClientHandler handler = new ClientHandler(clientSocket, this, auctionService);
                 connectedClients.add(handler);
@@ -73,6 +78,7 @@ public class AuctionServer {
         }
 
         clientPool.shutdownNow();
+        auctionMonitor.shutdownNow();
         System.out.println("AuctionServer has stopped.");
     }
 
@@ -94,22 +100,31 @@ public class AuctionServer {
             }
         }
     }
+    private void startAuctionMonitor() {
+        auctionMonitor.scheduleAtFixedRate(() -> {
+            var messages = auctionService.closeExpiredAuctions();
 
-    public int getConnectedClientCount() {
-        return connectedClients.size();
+            for (String message : messages) {
+                String auctionId = extractAuctionId(message);
+                broadcastToAuctionRoom(message, auctionId);
+                System.out.println("[AUCTION MONITOR] " + message);
+            }
+        }, 1, 1, TimeUnit.SECONDS);
     }
 
-    public static void main(String[] args) {
-        int port = DEFAULT_PORT;
+    private String extractAuctionId(String message) {
+        String[] parts = message.split("\\|");
 
-        if (args.length > 0) {
-            try {
-                port = Integer.parseInt(args[0]);
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid port. Using default port " + DEFAULT_PORT);
+        for (String part : parts) {
+            if (part.startsWith("auctionId=")) {
+                return part.substring("auctionId=".length());
             }
         }
 
-        new AuctionServer(port).start();
+        return null;
+    }
+
+    public int getConnectedClientCount() {
+        return connectedClients.size();
     }
 }

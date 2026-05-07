@@ -1,8 +1,9 @@
-package com.auction.server.model;
+package com.bidding.server.core;
 
 public enum AuctionStatus {
     OPEN,
+    RUNNING,
     FINISHED,
+    PAID,
     CANCELED
 }
-

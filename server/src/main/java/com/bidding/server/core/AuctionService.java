@@ -1,22 +1,22 @@
-package com.auction.server;
+package com.bidding.server.core;
 
-import com.auction.server.exception.AuctionClosedException;
-import com.auction.server.exception.AuctionNotFoundException;
-import com.auction.server.exception.InvalidBidException;
-import com.auction.server.model.Auction;
-import com.auction.server.model.AuctionStatus;
+import com.bidding.server.exception.AuctionClosedException;
+import com.bidding.server.exception.AuctionNotFoundException;
+import com.bidding.server.exception.InvalidBidException;
 
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AuctionService {
 
-    private final Map<String, Auction> auctions;
-    private int nextAuctionId;
+    private final Map<String, Auction> auctions = new ConcurrentHashMap<>();
+    private final AtomicInteger nextAuctionId;
 
     public AuctionService() {
-        this.auctions = new LinkedHashMap<>();
-        this.nextAuctionId = 1;
+        this.nextAuctionId = new AtomicInteger(1);
         seedData();
     }
 
@@ -27,9 +27,10 @@ public class AuctionService {
     }
 
     private void addInitialAuction(String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
-        String id = String.valueOf(nextAuctionId++);
+        String id = String.valueOf(nextAuctionId.getAndIncrement());
         auctions.put(id, new Auction(id, sellerUsername, itemName, startPrice, status));
     }
+
     public String closeAuction(String auctionId) {
         Auction auction = auctions.get(auctionId);
 
@@ -38,19 +39,14 @@ public class AuctionService {
         }
 
         synchronized (auction) {
-            if (auction.getStatus() != AuctionStatus.OPEN) {
+            if (!isActiveAuction(auction)) {
                 return "ERROR|Auction is not open";
             }
 
-            auction.setStatus(AuctionStatus.FINISHED);
-
-            String winner = auction.getHighestBidder() == null ? "NONE" : auction.getHighestBidder();
-
-            return "CLOSE_AUCTION_SUCCESS|auctionId=" + auctionId
-                    + "|winner=" + winner
-                    + "|finalPrice=" + (long) auction.getCurrentPrice();
+            return finishAuction(auction, "CLOSE_AUCTION_SUCCESS");
         }
     }
+
     public String getWinner(String auctionId) {
         Auction auction = auctions.get(auctionId);
 
@@ -108,7 +104,8 @@ public class AuctionService {
                 + "|startPrice=" + (long) auction.getStartPrice()
                 + "|currentPrice=" + (long) auction.getCurrentPrice()
                 + "|highestBidder=" + bidder
-                + "|status=" + auction.getStatus();
+                + "|status=" + auction.getStatus()
+                + "|endTime=" + auction.getEndTime();
     }
 
     public String addAuction(String sellerUsername, String itemName, double startPrice) {
@@ -124,7 +121,7 @@ public class AuctionService {
             return "ERROR|Start price must be greater than 0";
         }
 
-        String id = String.valueOf(nextAuctionId++);
+        String id = String.valueOf(nextAuctionId.getAndIncrement());
         Auction auction = new Auction(id, sellerUsername, itemName, startPrice, AuctionStatus.OPEN);
         auctions.put(id, auction);
 
@@ -132,6 +129,21 @@ public class AuctionService {
                 + "|seller=" + sellerUsername
                 + "|itemName=" + itemName
                 + "|startPrice=" + (long) startPrice;
+    }
+    public List<String> closeExpiredAuctions() {
+        List<String> notifications = new ArrayList<>();
+        long now = System.currentTimeMillis();
+
+        for (Auction auction : auctions.values()) {
+            synchronized (auction) {
+                if (isActiveAuction(auction)
+                        && now >= auction.getEndTime()) {
+                    notifications.add(finishAuction(auction, "AUCTION_CLOSED"));
+                }
+            }
+        }
+
+        return notifications;
     }
 
     public String placeBid(String auctionId, String username, double amount) {
@@ -142,22 +154,61 @@ public class AuctionService {
         }
 
         synchronized (auction) {
-            if (auction.getStatus() != AuctionStatus.OPEN) {
-                throw new AuctionClosedException("Auction is not open");
+            long now = System.currentTimeMillis();
+
+            if (isActiveAuction(auction) && now >= auction.getEndTime()) {
+                finishAuction(auction, "AUCTION_CLOSED");
+                throw new AuctionClosedException("Auction is not available");
+            }
+
+            if (auction.getStatus() == AuctionStatus.FINISHED
+                    || auction.getStatus() == AuctionStatus.PAID
+                    || auction.getStatus() == AuctionStatus.CANCELED) {
+                throw new AuctionClosedException("Auction is not available");
+            }
+
+            if (auction.getStatus() == AuctionStatus.OPEN) {
+                auction.setStatus(AuctionStatus.RUNNING);
             }
 
             if (amount <= auction.getCurrentPrice()) {
                 throw new InvalidBidException(
-                        "Bid amount must be greater than current price (" + (long) auction.getCurrentPrice() + ")"
+                        "Bid amount must be greater than current price ("
+                                + (long) auction.getCurrentPrice() + ")"
                 );
             }
 
             auction.setCurrentPrice(amount);
             auction.setHighestBidder(username);
 
+            long remaining = auction.getEndTime() - now;
+            long oldEndTime = auction.getEndTime();
+
+            if (remaining > 0 && remaining < 30000) {
+                auction.extendEndTime(60000);
+                System.out.println("[ANTI-SNIPING] Auction " + auctionId
+                        + " extended from " + oldEndTime
+                        + " to " + auction.getEndTime());
+            }
+
             return "BID_SUCCESS|auctionId=" + auctionId
                     + "|user=" + username
                     + "|amount=" + (long) amount;
         }
+    }
+
+    private boolean isActiveAuction(Auction auction) {
+        return auction.getStatus() == AuctionStatus.OPEN
+                || auction.getStatus() == AuctionStatus.RUNNING;
+    }
+
+    private String finishAuction(Auction auction, String messageType) {
+        auction.setStatus(AuctionStatus.FINISHED);
+
+        String winner = auction.getHighestBidder() == null ? "NONE" : auction.getHighestBidder();
+
+        return messageType + "|auctionId=" + auction.getId()
+                + "|winner=" + winner
+                + "|finalPrice=" + (long) auction.getCurrentPrice();
     }
 }

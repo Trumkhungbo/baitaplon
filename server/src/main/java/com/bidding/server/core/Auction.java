@@ -1,6 +1,4 @@
-package com.auction.server.model;
-
-import com.auction.server.model.AuctionStatus;
+package com.bidding.server.core;
 
 public class Auction {
 
@@ -12,8 +10,9 @@ public class Auction {
     private double currentPrice;
     private AuctionStatus status;
     private String highestBidder;
+    private long endTime;
 
-    public Auction(String id, String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
+    public Auction(String id, String sellerUsername, String itemName, double startPrice, AuctionStatus status){
         this.id = id;
         this.sellerUsername = sellerUsername;
         this.itemName = itemName;
@@ -21,6 +20,7 @@ public class Auction {
         this.currentPrice = startPrice;
         this.status = status;
         this.highestBidder = null;
+        this.endTime = System.currentTimeMillis() + 5 * 60 * 1000; // 5 phút
     }
 
     public String getId() {
@@ -61,5 +61,17 @@ public class Auction {
 
     public void setHighestBidder(String highestBidder) {
         this.highestBidder = highestBidder;
+    }
+
+    public long getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(long endTime) {
+        this.endTime = endTime;
+    }
+
+    public void extendEndTime(long extraTime) {
+        this.endTime += extraTime;
     }
 }

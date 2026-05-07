@@ -1,4 +1,4 @@
-package com.auction.server.exception;
+package com.bidding.server.exception;
 
 public class InvalidBidException extends RuntimeException {
     public InvalidBidException(String message) {
