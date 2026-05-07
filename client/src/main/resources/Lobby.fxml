@@ -8,35 +8,52 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
 
-<BorderPane fx:id="ShowingStage" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="516.0" prefWidth="728.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.LobbyHandle">
-   <top>
-      <Pane prefHeight="214.0" prefWidth="728.0" BorderPane.alignment="CENTER">
-         <children>
-            <Pane layoutX="12.0" layoutY="14.0" prefHeight="37.0" prefWidth="690.0" style="-fx-background-color: #D3D3D3;" />
-            <TextArea layoutX="189.0" layoutY="57.0" prefHeight="57.0" prefWidth="471.0" text="Công Ty TNHH MiniBoom&#10;">
-               <effect>
-                  <Glow level="0.0">
-                     <input>
-                        <InnerShadow />
-                     </input>
-                  </Glow>
-               </effect>
-            </TextArea>
-            <Pane layoutX="6.0" layoutY="124.0" prefHeight="48.0" prefWidth="717.0" style="-fx-background-color: #D3D3D3;">
+<StackPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.LobbyHandle">
+   <children>
+      <BorderPane fx:id="ShowingStage" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity">
+         <top>
+            <Pane BorderPane.alignment="TOP_CENTER">
                <children>
-                  <Button layoutX="65.0" layoutY="12.0" mnemonicParsing="false" onAction="#ReturnLobby" text="Trang Chủ" />
-                  <Button layoutX="165.0" layoutY="12.0" mnemonicParsing="false" onAction="#ReturnDesiner" text="Giới Thiệu" />
-                  <Button layoutX="262.0" layoutY="12.0" mnemonicParsing="false" onAction="#ReturnInvesmentWait" text="Phòng Chuẩn Bị Đấu Giá" />
-                  <Button layoutX="432.0" layoutY="12.0" mnemonicParsing="false" onAction="#ReturnInvesmentSite" text="Phòng Đấu Giá" />
+                  <Pane layoutX="12.0" layoutY="14.0" style="-fx-background-color: #D3D3D3;" />
+                  <TextArea layoutX="189.0" layoutY="57.0" prefHeight="57.0" prefWidth="471.0" text="Công Ty TNHH MiniBoom&#10;">
+                     <effect>
+                        <Glow level="0.0">
+                           <input>
+                              <InnerShadow />
+                           </input>
+                        </Glow>
+                     </effect>
+                  </TextArea>
+                  <Pane layoutX="6.0" layoutY="124.0" prefHeight="48.0" prefWidth="717.0" style="-fx-background-color: #D3D3D3;">
+                     <children>
+                        <Button layoutX="65.0" layoutY="12.0" mnemonicParsing="false" onAction="#ReturnLobby" text="Trang Chủ" />
+                        <Button layoutX="165.0" layoutY="12.0" mnemonicParsing="false" onAction="#ReturnDesiner" text="Giới Thiệu" />
+                        <Button layoutX="262.0" layoutY="12.0" mnemonicParsing="false" onAction="#ReturnInvesmentWait" text="Phòng Chuẩn Bị Đấu Giá" />
+                        <Button layoutX="432.0" layoutY="12.0" mnemonicParsing="false" onAction="#ReturnInvesmentSite" text="Phòng Đấu Giá" />
+                     </children>
+                  </Pane>
+                  <ImageView fitHeight="52.0" fitWidth="57.0" layoutX="90.0" layoutY="63.0" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@Icon.png" />
+                     </image>
+                  </ImageView>
+                  <ImageView fitHeight="45.0" fitWidth="50.0" layoutX="642.0" layoutY="6.0" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@profilepic.jpg" />
+                     </image></ImageView>
+                  <Button layoutX="639.0" layoutY="4.0" mnemonicParsing="false" onAction="#AccountInformation" opacity="0.0" prefHeight="47.0" prefWidth="52.0" />
                </children>
             </Pane>
-            <ImageView fitHeight="52.0" fitWidth="57.0" layoutX="90.0" layoutY="63.0" pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@Icon.png" />
-               </image>
-            </ImageView>
-         </children>
-      </Pane>
-   </top>
-</BorderPane>
+         </top>
+         <center>
+            <StackPane BorderPane.alignment="CENTER">
+               <children>
+                  <Pane prefHeight="500.0" prefWidth="500.0" />
+               </children>
+            </StackPane>
+         </center>
+      </BorderPane>
+   </children>
+</StackPane>

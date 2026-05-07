@@ -23,20 +23,13 @@ public class ForgotPasswordHandle implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        try {
-            URL videoUrl = getClass().getResource("/memecat.mp4");
+        file = new File("src/main/resources/memecat.mp4");
+        media = new Media(file.toURI().toString());
+        mediaPlayer = new MediaPlayer(media);
+        mediaView.setMediaPlayer(mediaPlayer);
+        mediaPlayer.play();
 
-            if (videoUrl == null) {
-                System.err.println("Báo động đỏ: Không tìm thấy memecat.mp4 trong thư mục client/src/main/resources!");
-                return;
-            }
 
-            media = new Media(videoUrl.toExternalForm());
-            mediaPlayer = new MediaPlayer(media);
-            mediaView.setMediaPlayer(mediaPlayer);
-            mediaPlayer.play();
 
-        } catch (Exception e) {
-            System.err.println("Lỗi phát video: " + e.getMessage());
-        }
-    }}
+
+}}

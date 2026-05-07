@@ -1,14 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.shape.Rectangle?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="CONTROLLER_NAME"
-            prefHeight="400.0" prefWidth="600.0">
-
-</AnchorPane>
+<StackPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.ActionInformationHandle">
+   <children>
+      <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" prefHeight="400.0" prefWidth="600.0" vbarPolicy="NEVER">
+        <content>
+          <AnchorPane minHeight="0.0" minWidth="0.0">
+               <children>
+                  <Label fx:id="name" layoutX="89.0" layoutY="49.0" text="Name" />
+                  <Label fx:id="personalID" layoutX="89.0" layoutY="77.0" text="ID" />
+                  <Label fx:id="phone" layoutX="90.0" layoutY="110.0" text="Phone Number" />
+                  <Label fx:id="email" layoutX="89.0" layoutY="140.0" text="Gmail" />
+                  <Label fx:id="password" layoutX="89.0" layoutY="171.0" text="Password" />
+                  <Label layoutX="90.0" layoutY="204.0" text="Balance" />
+                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="DODGERBLUE" height="368.0" layoutX="-1.0" layoutY="29.0" stroke="BLACK" strokeType="INSIDE" width="88.0" />
+               </children>
+            </AnchorPane>
+        </content>
+      </ScrollPane>
+   </children>
+</StackPane>
