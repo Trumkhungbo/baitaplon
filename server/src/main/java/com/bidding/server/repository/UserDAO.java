@@ -9,11 +9,11 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.bidding.server.model.user.Admin;
-import com.bidding.server.model.user.Bidder;  
-import com.bidding.server.model.user.Seller;    
-import com.bidding.server.enums.UserRole;
-import com.bidding.server.model.user.User;
+import com.bidding.common.enums.UserRole;
+import com.bidding.common.model.user.Admin;
+import com.bidding.common.model.user.Bidder;
+import com.bidding.common.model.user.Seller;
+import com.bidding.common.model.user.User;
 
 public class UserDAO extends BaseDAO {
 
