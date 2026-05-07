@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.bidding.server.AuctionService;
+import com.bidding.server.core.AuctionService;
 
 class AuctionServiceTest {
 
@@ -105,7 +105,7 @@ class AuctionServiceTest {
                 auctionService.placeBid("1", "abc", 20000000)
         );
 
-        assertEquals("Auction is not open", ex.getMessage());
+        assertEquals("Auction is not available", ex.getMessage());
     }
 
     @Test
