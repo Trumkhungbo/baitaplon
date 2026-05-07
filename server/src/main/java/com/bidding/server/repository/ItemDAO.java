@@ -16,6 +16,7 @@ import com.bidding.common.model.item.Electronics;
 import com.bidding.common.model.item.Item;
 import com.bidding.common.model.item.Vehicle;
 
+
 public class ItemDAO extends BaseDAO {
 
     public Item save(Item item, String sellerUsername) {

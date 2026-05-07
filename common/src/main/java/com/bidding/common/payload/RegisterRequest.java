@@ -10,7 +10,7 @@ public class RegisterRequest {
     private UserRole role; // BIDDER hoặc SELLER
     private double initialBalance; // chỉ dùng khi role = BIDDER
 
-    // Nhớ thêm Getters và Setters ở đây
+  
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
 

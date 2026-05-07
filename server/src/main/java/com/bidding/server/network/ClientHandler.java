@@ -1,12 +1,13 @@
-package com.auction.server.network;
+package com.bidding.server.network;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import com.auction.server.AuthService;
-import com.auction.server.AuctionService;
+
+import com.bidding.server.AuctionService;
+import com.bidding.server.AuthService;
 
 public class ClientHandler implements Runnable {
 
@@ -201,8 +202,9 @@ public class ClientHandler implements Runnable {
                 var auction = auctionService.findAuctionById(auctionId);
                 server.broadcastToAuctionRoom(
                         "BID_UPDATE|auctionId=" + auctionId
-                                + "|highestBid=" + (long) auction.getCurrentPrice()
-                                + "|bidder=" + auction.getHighestBidder(),
+                                + "|currentPrice=" + (long) auction.getCurrentPrice()
+                                + "|highestBidder=" + auction.getHighestBidder(),
+                            
                         auctionId
                 );
             }

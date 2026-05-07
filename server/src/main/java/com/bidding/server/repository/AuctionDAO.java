@@ -11,9 +11,9 @@ import java.util.List;
 
 import com.bidding.common.enums.AuctionStatus;
 import com.bidding.common.enums.ItemType;
-import com.bidding.common.model.Auction;
+import com.bidding.common.model.Auction;    
 import com.bidding.common.model.BidTransaction;
-import com.bidding.common.model.item.Art;
+import com.bidding.common.model.item.Art;   
 import com.bidding.common.model.item.Electronics;
 import com.bidding.common.model.item.Item;
 import com.bidding.common.model.item.Vehicle;

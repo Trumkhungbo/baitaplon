@@ -1,4 +1,4 @@
-package com.auction.server.network;
+package com.bidding.server.network;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -7,7 +7,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import com.auction.server.AuctionService;
+
+import com.bidding.server.AuctionService;
 
 public class AuctionServer {
 
