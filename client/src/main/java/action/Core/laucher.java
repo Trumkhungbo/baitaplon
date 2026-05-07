@@ -1,6 +1,5 @@
-package action;
+package action.Core;
 
-import action.StartScence;
 import javafx.application.Application;
 
 public class laucher {

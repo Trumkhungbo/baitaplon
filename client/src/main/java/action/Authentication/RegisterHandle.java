@@ -1,5 +1,7 @@
-package action;
+package action.Authentication;
 
+import action.Core.SceneSwitch;
+import action.Core.StartScence;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -58,7 +60,6 @@ public class RegisterHandle {
             StoreSignUpInput.personalID=personalID;
             StoreSignUpInput.password=password;
             SceneSwitch sceneswitch = new SceneSwitch();
-            StartScence.client.sendMessage("REGISTER|" + name + "|" + password);
             sceneswitch.SwitchToLogin(event);
             sceneswitch.SwitchToLockPage(event, "/views/RegisterPopUp.fxml");
         }

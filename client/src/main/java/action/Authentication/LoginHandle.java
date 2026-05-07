@@ -1,5 +1,6 @@
-package action;
+package action.Authentication;
 
+import action.Core.SceneSwitch;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.PasswordField;

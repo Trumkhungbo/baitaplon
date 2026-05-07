@@ -1,21 +1,21 @@
-package action;
+package action.MainUI;
 
+import java.net.URL;
+import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ResourceBundle;
+
+import action.SellingJobs.AcceptedSellingData;
+import action.SellingJobs.ItemsHolder;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-
 import javafx.fxml.Initializable;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.sql.Time;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ResourceBundle;
 
 public class AdminpageHandle implements Initializable {
     ItemsHolder Product = new ItemsHolder("a","b",9.0, LocalDate.of(2026,4,30), LocalTime.of(16,0), Time.valueOf(LocalTime.of(1,30)));

@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.Pane?>
 
 
-<Pane prefHeight="650.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.AdminpageHandle">
+<Pane prefHeight="650.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.AdminpageHandle">
    <children>
       <TableView fx:id="ItemsTable" maxHeight="626.0" prefHeight="624.0" prefWidth="700.0">
         <columns>

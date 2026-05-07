@@ -1,4 +1,4 @@
-package action;
+package action.SellingJobs;
 
 import java.util.ArrayList;
 import java.util.List;
