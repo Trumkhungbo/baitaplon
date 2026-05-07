@@ -1,4 +1,4 @@
-package action;
+package action.SellingJobs;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

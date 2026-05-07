@@ -1,4 +1,4 @@
-package action;
+package action.Authentication;
 
 import javafx.event.ActionEvent;
 import javafx.scene.Node;

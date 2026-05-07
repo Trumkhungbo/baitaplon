@@ -1,4 +1,4 @@
-package action;
+package action.Authentication;
 
 public class StoreSignUpInput {
     static String name;

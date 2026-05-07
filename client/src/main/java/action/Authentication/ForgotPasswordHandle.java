@@ -1,4 +1,4 @@
-package action;
+package action.Authentication;
 import javafx.fxml.FXML;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;

@@ -1,5 +1,7 @@
-package action;
+package action.MainUI;
 
+import action.SellingJobs.AcceptedSellingData;
+import action.SellingJobs.ItemsHolder;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 
@@ -11,7 +13,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;

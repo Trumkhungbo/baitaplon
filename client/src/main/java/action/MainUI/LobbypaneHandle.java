@@ -1,4 +1,4 @@
-package action;
+package action.MainUI;
 
 public class LobbypaneHandle {
 }
