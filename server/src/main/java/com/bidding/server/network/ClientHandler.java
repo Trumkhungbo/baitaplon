@@ -5,9 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-
-import com.bidding.server.AuctionService;
-import com.bidding.server.AuthService;
+import com.bidding.server.core.AuthService;
+import com.bidding.server.core.AuctionService;
 
 public class ClientHandler implements Runnable {
 
@@ -22,6 +21,8 @@ public class ClientHandler implements Runnable {
     private volatile boolean connected;
     private String username;
     private String watchingAuctionId;
+    private String currentUsername;
+    private boolean loggedIn = false;
 
     public ClientHandler(Socket clientSocket, AuctionServer server, AuctionService auctionService) {
         this.clientSocket = clientSocket;
@@ -41,7 +42,7 @@ public class ClientHandler implements Runnable {
 
             String clientMessage;
             while (connected && (clientMessage = reader.readLine()) != null) {
-                System.out.println("Received from client: " + clientMessage);
+                System.out.println("[REQUEST] " + clientMessage);
                 handleRequest(clientMessage.trim());
             }
         } catch (IOException e) {
@@ -89,6 +90,7 @@ public class ClientHandler implements Runnable {
             case "QUIT":
                 sendMessage("BYE|Disconnected from server");
                 connected = false;
+                break;
 
             case "GET_AUCTION_DETAIL":
                 handleGetAuctionDetail(parts);
@@ -96,6 +98,7 @@ public class ClientHandler implements Runnable {
 
             case "ADD_AUCTION":
                 handleAddAuction(parts);
+                break;
             case "CLOSE_AUCTION":
                 handleCloseAuction(parts);
                 break;
@@ -121,6 +124,7 @@ public class ClientHandler implements Runnable {
         String response = authService.login(inputUsername, inputPassword);
 
         if (response.startsWith("LOGIN_SUCCESS")) {
+            this.loggedIn = true;
             this.username = inputUsername;
         }
 
@@ -172,14 +176,18 @@ public class ClientHandler implements Runnable {
     }
 
     private void handlePlaceBid(String[] parts) {
-        if (parts.length < 4) {
-            sendMessage("ERROR|Invalid syntax. Use: BID|auctionId|username|amount");
+        if (!loggedIn) {
+            sendMessage("ERROR|You must login first");
+            return;
+        }
+
+        if (parts.length < 3) {
+            sendMessage("ERROR|Invalid syntax. Use: BID|auctionId|amount");
             return;
         }
 
         String auctionId = parts[1];
-        String bidUsername = parts[2];
-        String amountText = parts[3];
+        String amountText = parts[2];
 
         double amount;
         try {
@@ -195,16 +203,16 @@ public class ClientHandler implements Runnable {
         }
 
         try {
-            String response = auctionService.placeBid(auctionId, bidUsername, amount);
+            String response = auctionService.placeBid(auctionId, username, amount);
             sendMessage(response);
 
             if (response.startsWith("BID_SUCCESS")) {
                 var auction = auctionService.findAuctionById(auctionId);
                 server.broadcastToAuctionRoom(
                         "BID_UPDATE|auctionId=" + auctionId
-                                + "|currentPrice=" + (long) auction.getCurrentPrice()
-                                + "|highestBidder=" + auction.getHighestBidder(),
-                            
+                                + "|highestBid=" + (long) auction.getCurrentPrice()
+                                + "|bidder=" + auction.getHighestBidder()
+                                + "|endTime=" + auction.getEndTime(),
                         auctionId
                 );
             }
@@ -251,7 +259,20 @@ public class ClientHandler implements Runnable {
         }
 
         String auctionId = parts[1];
-        sendMessage(auctionService.closeAuction(auctionId));
+
+        String response = auctionService.closeAuction(auctionId);
+        sendMessage(response);
+
+        if (response.startsWith("CLOSE_AUCTION_SUCCESS")) {
+            var auction = auctionService.findAuctionById(auctionId);
+
+            server.broadcastToAuctionRoom(
+                    "AUCTION_CLOSED|auctionId=" + auctionId
+                            + "|winner=" + auction.getHighestBidder()
+                            + "|finalPrice=" + (long) auction.getCurrentPrice(),
+                    auctionId
+            );
+        }
     }
 
     private void handleGetWinner(String[] parts) {
