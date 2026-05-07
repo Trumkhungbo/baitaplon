@@ -18,23 +18,38 @@ public class LobbyHandle {
     public void ReturnLobby(ActionEvent event) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/Lobbypane.fxml"));
         Parent root = loader.load();
+        root.prefWidth(500);
+        root.prefHeight(500);
         ShowingStage.setCenter(root);
     }
     public void ReturnInvesmentSite(ActionEvent event) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/InvesmentSite.fxml"));
         Parent root = loader.load();
+        root.prefWidth(500);
+        root.prefHeight(500);
         ShowingStage.setCenter(root);
     }
     public void ReturnInvesmentWait(ActionEvent event) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/InvesmentWait.fxml"));
         Parent root = loader.load();
+        root.prefWidth(500);
+        root.prefHeight(500);
         ShowingStage.setCenter(root);
     }
     public void ReturnDesiner(ActionEvent event) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/DesignerHouner.fxml"));
         Parent root = loader.load();
+        root.prefWidth(500);
+        root.prefHeight(500);
         ShowingStage.setCenter(root);
 
+    }
+    public void AccountInformation(ActionEvent event) throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/AccountInformation.fxml"));
+        Parent root = loader.load();
+        root.prefWidth(500);
+        root.prefHeight(500);
+        ShowingStage.setCenter(root);
     }
 
 }

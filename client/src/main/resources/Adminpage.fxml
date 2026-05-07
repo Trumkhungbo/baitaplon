@@ -1,14 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.Pane?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="action.AdminpageHandle"
-            prefHeight="400.0" prefWidth="600.0">
 
-</AnchorPane>
+<Pane prefHeight="650.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.AdminpageHandle">
+   <children>
+      <TableView fx:id="ItemsTable" maxHeight="626.0" prefHeight="624.0" prefWidth="700.0">
+        <columns>
+          <TableColumn fx:id="STTColumn" prefWidth="38.400026738643646" text="STT" />
+          <TableColumn fx:id="ProductName" minWidth="15.0" prefWidth="144.00003814697266" text="ProductName" />
+            <TableColumn fx:id="ProductDescription" prefWidth="116.0" text="ProductDes" />
+            <TableColumn fx:id="ProductPrice" prefWidth="87.199951171875" text="ProductPrice" />
+            <TableColumn fx:id="ProductDate" prefWidth="80.79998779296875" text="ProductDate" />
+            <TableColumn fx:id="ProductTime" prefWidth="83.19992065429688" text="ProductTime" />
+            <TableColumn fx:id="SellingTime" prefWidth="77.5999755859375" text="SellingTime" />
+            <TableColumn fx:id="CheckBox" prefWidth="58.4000244140625" text="Confirm" />
+        </columns>
+      </TableView>
+      <Button onAction="#Confirm" layoutX="634.0" layoutY="623.0" mnemonicParsing="false" text="Button" />
+   </children>
+</Pane>

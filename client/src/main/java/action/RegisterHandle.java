@@ -40,7 +40,18 @@ public class RegisterHandle {
         else if(!password.equals(confirmPassword)) {
             System.out.println("Passwords do not match");
         }
-        else{
+        else if (!email.matches("^[a-zA-Z0-9._%+-]+@gmail\\.com$")) {
+            sceneswitch.SwitchToLockPage(event,"/WrongInputShow.fxml");
+        }
+        else if (!phoneNumber.matches("^[0-9]{10}$")) {
+            sceneswitch.SwitchToLockPage(event,"/WrongInputShow.fxml");
+        }
+        else if (!personalID.matches("[0-9]{12}$"))
+            {
+                sceneswitch.SwitchToLockPage(event,"/WrongInputShow.fxml");
+            }
+        else
+        {
             StoreSignUpInput.name=name;
             StoreSignUpInput.phoneNumber=phoneNumber;
             StoreSignUpInput.email=email;

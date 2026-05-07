@@ -45,11 +45,4 @@ public class SceneSwitch {
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.showAndWait();
     }
-    public void SwitchToLobby(Node currentNode) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("/Lobby.fxml"));
-        stage = (Stage) currentNode.getScene().getWindow();
-        scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
-    }
 }
