@@ -9,14 +9,14 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.bidding.common.enums.AuctionStatus;
-import com.bidding.common.enums.ItemType;
-import com.bidding.common.model.Auction;
-import com.bidding.common.model.BidTransaction;
-import com.bidding.common.model.item.Art;
-import com.bidding.common.model.item.Electronics;
-import com.bidding.common.model.item.Item;
-import com.bidding.common.model.item.Vehicle;
+import com.bidding.server.enums.AuctionStatus;
+import com.bidding.server.enums.ItemType;
+import com.bidding.server.model.Auction;
+import com.bidding.server.model.BidTransaction;
+import com.bidding.server.model.item.Art;
+import com.bidding.server.model.item.Electronics;
+import com.bidding.server.model.item.Item;
+import com.bidding.server.model.item.Vehicle;
 
 public class AuctionDAO extends BaseDAO {
 
