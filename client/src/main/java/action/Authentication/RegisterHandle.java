@@ -81,7 +81,7 @@ public class RegisterHandle {
                 });
             });
 
-            StartScence.client.sendMessage("REGISTER|" + name + "|" + password);
+            StartScence.client.sendMessage("REGISTER|" + name + "|" + password +"|" + phoneNumber + "|" + email + "|" + personalID);
         }
 
     }

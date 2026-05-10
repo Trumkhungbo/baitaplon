@@ -5,6 +5,7 @@ import action.Core.StartScence;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
@@ -16,6 +17,8 @@ public class LoginHandle {
     private TextField login;
     @FXML
     private PasswordField pass;
+    @FXML
+    private Label label;
     public void Login(ActionEvent clicked) throws IOException {
         String password1 = pass.getText();
         String user1 = login.getText();
@@ -37,12 +40,10 @@ public class LoginHandle {
                             e.printStackTrace();
                         }
                     } else if (message.startsWith("LOGIN_FAILED")) {
-                        try {
-                            sceneSwitch.SwitchToLockPage(clicked, "/views/SomeThingUnFill.fxml");
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                            label.setText("Wrong !");
+
                         }
-                    }
+
                 });
             });
 

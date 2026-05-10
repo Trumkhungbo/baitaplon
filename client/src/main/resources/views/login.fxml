@@ -17,7 +17,8 @@
             </Button>
             <Button layoutX="65.0" layoutY="236.0" mnemonicParsing="false" onAction="#ForgotPassword" style="-fx-background-color: round;" text="Forget Password?" />
             <Button layoutX="235.0" layoutY="236.0" mnemonicParsing="false" onAction="#Register" prefHeight="25.0" prefWidth="100.0" style="-fx-shape: round;" text="Sign Up" />
-            <Button layoutX="322.0" layoutY="351.0" mnemonicParsing="false" onAction="#Adminloggin" opacity="0.0" prefHeight="35.0" prefWidth="73.0" text="Admin" />
+            <Button layoutX="322.0" layoutY="351.0" mnemonicParsing="false" onAction="#Adminloggin" prefHeight="35.0" prefWidth="73.0" text="Admin" />
+            <Label layoutX="197.0" layoutY="14.0" prefHeight="17.0" prefWidth="6.0" textFill="#e7832c" />
          </children>
       </Pane>
    </children>

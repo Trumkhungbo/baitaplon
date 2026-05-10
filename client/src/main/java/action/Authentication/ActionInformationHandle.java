@@ -5,9 +5,7 @@ import javafx.scene.control.Label;
 
 public class ActionInformationHandle {
     @FXML
-    private Label personalID ;
-    @FXML
-    private Label personalName = new Label((String) (StoreSignUpInput.personalID));
+    private Label personalID = new Label((String) (StoreSignUpInput.personalID));
     @FXML
     private Label name = new Label((String) (StoreSignUpInput.name));
     @FXML
@@ -18,10 +16,6 @@ public class ActionInformationHandle {
     private Label password = new Label( (String)(StoreSignUpInput.password));
     @FXML
     private Label balance;
-
-    public Label getPersonalName() {
-        return personalName;
-    }
     public Label getPersonalID() {
         return personalID;
     }
