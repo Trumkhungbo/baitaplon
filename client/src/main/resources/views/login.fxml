@@ -1,25 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
 
-<StackPane prefHeight="700.0" prefWidth="700.0" style="-fx-background-color: #FF7F50;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.Authentication.LoginHandle">
+<StackPane prefHeight="700.0" prefWidth="900.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.Authentication.LoginHandle">
    <children>
-      <Pane maxHeight="400.0" maxWidth="400.0" prefHeight="400.0" prefWidth="400.0" style="-fx-background-color: #00FFFF;">
+      <VBox alignment="CENTER" maxHeight="500.0" maxWidth="400.0" spacing="20.0" styleClass="card">
+         <padding>
+            <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
+         </padding>
          <children>
-            <TextField fx:id="login" layoutX="65.0" layoutY="50.0" prefHeight="25.0" prefWidth="270.0" promptText="UserName" />
-            <PasswordField fx:id="pass" layoutX="65.0" layoutY="106.0" prefHeight="25.0" prefWidth="270.0" promptText="Password" />
-            <Button layoutX="65.0" layoutY="293.0" mnemonicParsing="false" onAction="#Login" prefHeight="25.0" prefWidth="270.0" text="Login">
-               <opaqueInsets>
-                  <Insets />
-               </opaqueInsets>
+
+            <VBox alignment="CENTER" spacing="8.0">
+               <children>
+                  <Circle fill="#FACC15" radius="24.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" />
+                  <Label style="-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;" text="Auction" />
+                  <Label style="-fx-text-fill: #666666; -fx-font-size: 11px;" text="Hệ thống đấu giá MiniBoom" />
+               </children>
+            </VBox>
+
+            <Label style="-fx-text-fill: #FACC15; -fx-font-size: 22px; -fx-font-weight: bold;" text="Đăng nhập">
+               <VBox.margin>
+                  <Insets bottom="10.0" top="10.0" />
+               </VBox.margin>
+            </Label>
+
+            <VBox spacing="15.0">
+               <children>
+                  <TextField fx:id="login" promptText="UserName" styleClass="input-field" />
+                  <PasswordField fx:id="pass" promptText="Password" styleClass="input-field" />
+               </children>
+            </VBox>
+
+            <HBox alignment="CENTER_LEFT">
+               <children>
+                  <CheckBox mnemonicParsing="false" style="-fx-text-fill: #A0A0A0; -fx-font-size: 12px;" text="Ghi nhớ" />
+                  <Region HBox.hgrow="ALWAYS" />
+                  <Button mnemonicParsing="false" onAction="#ForgotPassword" style="-fx-background-color: transparent; -fx-text-fill: #A0A0A0; -fx-font-size: 12px; -fx-cursor: hand;" text="Quên mật khẩu?" />
+               </children>
+            </HBox>
+
+            <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#Login" styleClass="btn-gold" text="Login">
+               <VBox.margin>
+                  <Insets top="10.0" />
+               </VBox.margin>
             </Button>
-            <Button layoutX="65.0" layoutY="236.0" mnemonicParsing="false" onAction="#ForgotPassword" style="-fx-background-color: round;" text="Forget Password?" />
-            <Button layoutX="235.0" layoutY="236.0" mnemonicParsing="false" onAction="#Register" prefHeight="25.0" prefWidth="100.0" style="-fx-shape: round;" text="Sign Up" />
-            <Button layoutX="322.0" layoutY="351.0" mnemonicParsing="false" onAction="#Adminloggin" prefHeight="35.0" prefWidth="73.0" text="Admin" />
-            <Label layoutX="197.0" layoutY="14.0" prefHeight="17.0" prefWidth="6.0" textFill="#e7832c" />
+
+            <HBox alignment="CENTER" spacing="5.0">
+               <children>
+                  <Label style="-fx-text-fill: #666666; -fx-font-size: 13px;" text="Chưa có tài khoản?" />
+                  <Button mnemonicParsing="false" onAction="#Register" style="-fx-background-color: transparent; -fx-text-fill: #FACC15; -fx-font-weight: bold; -fx-cursor: hand;" text="Sign Up" />
+               </children>
+            </HBox>
+
+            <Button mnemonicParsing="false" onAction="#Adminloggin" style="-fx-background-color: transparent; -fx-text-fill: #333333; -fx-font-size: 10px;" text="Admin Access" />
+
          </children>
-      </Pane>
+      </VBox>
    </children>
 </StackPane>

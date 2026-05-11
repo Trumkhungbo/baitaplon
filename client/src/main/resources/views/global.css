@@ -1,0 +1,41 @@
+/* Định nghĩa các biến màu dùng chung (Palette) */
+.root {
+    -fx-primary-gold: #FACC15;
+    -fx-dark-bg: #0F0F0F;
+    -fx-card-bg: #1A1A1A;
+    -fx-text-white: #FFFFFF;
+    -fx-text-gray: #A0A0A0;
+
+    /* Áp dụng nền tối cho tất cả màn hình dùng file này */
+    -fx-background-color: -fx-dark-bg;
+    -fx-font-family: 'Segoe UI', sans-serif;
+}
+
+/* Các Class dùng chung cho toàn bộ App */
+
+/* Nút bấm vàng đặc trưng - dùng cho Login, Đấu giá, Profile... */
+.btn-gold {
+    -fx-background-color: -fx-primary-gold;
+    -fx-text-fill: #1A1A1A;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+}
+.btn-gold:hover {
+    -fx-background-color: #EAB308;
+}
+
+/* Ô nhập liệu hiện đại */
+.input-field {
+    -fx-background-color: #262626;
+    -fx-background-radius: 8px;
+    -fx-text-fill: -fx-text-white;
+    -fx-padding: 10px;
+}
+
+/* Thẻ Card (cho sản phẩm, thông tin người dùng) */
+.card {
+    -fx-background-color: -fx-card-bg;
+    -fx-background-radius: 15px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 5);
+}

@@ -1,18 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.layout.Pane?>
-<?import javafx.scene.text.Text?>
-
-
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.StackPane?>
-<StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.Utilities.SomeThingUnFillHandle">
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+<StackPane prefHeight="700.0" prefWidth="900.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.Utilities.SomeThingUnFillHandle">
    <children>
-      <Pane fx:id="ReturnPreviousPage" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0">
+      <VBox alignment="CENTER" maxHeight="350.0" maxWidth="450.0" spacing="25.0" styleClass="card">
+         <padding>
+            <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
+         </padding>
          <children>
-            <Button layoutX="257.0" layoutY="175.0" mnemonicParsing="false" onAction="#ReturnPreviousPage" text="Back To Refill" />
-            <Text fill="#fc0606" layoutX="236.0" layoutY="112.0" strokeType="OUTSIDE" strokeWidth="0.0" text="You missing something?" />
+
+            <StackPane>
+               <children>
+                  <Circle fill="TRANSPARENT" radius="35.0" stroke="#FACC15" strokeType="INSIDE" strokeWidth="3.0" />
+                  <Label text="!" textFill="#FACC15">
+                     <font>
+                        <Font name="System Bold" size="40.0" />
+                     </font>
+                  </Label>
+               </children>
+            </StackPane>
+
+            <VBox alignment="CENTER" spacing="10.0">
+               <children>
+                  <Label style="-fx-text-fill: #FACC15; -fx-font-size: 22px; -fx-font-weight: bold;" text="Thiếu thông tin!" />
+                  <Label style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px; -fx-text-alignment: center;" text="Hình như bạn đã bỏ sót điều gì đó.&#10;Vui lòng kiểm tra lại các trường nhập liệu." wrapText="true" />
+               </children>
+            </VBox>
+
+            <Button fx:id="ReturnPreviousPage" maxWidth="250.0" mnemonicParsing="false" onAction="#ReturnPreviousPage" styleClass="btn-gold" text="Back To Refill">
+               <VBox.margin>
+                  <Insets top="10.0" />
+               </VBox.margin>
+            </Button>
+
          </children>
-      </Pane>
+      </VBox>
    </children>
 </StackPane>
