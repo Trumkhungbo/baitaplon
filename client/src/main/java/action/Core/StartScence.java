@@ -34,6 +34,10 @@ public class StartScence extends Application {
 
             // Sau này bạn sẽ thêm logic kết nối Socket vào đây
         }
+
+    } @Override
+    public void stop() throws Exception {
+        System.exit(0);
     }
 
     }
