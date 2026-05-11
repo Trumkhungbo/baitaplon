@@ -108,7 +108,7 @@ public class AuctionDAO extends BaseDAO {
         }
         return list;
     }
-
+    
     public List<Auction> findByStatus(AuctionStatus status) {
         List<Auction> list = new ArrayList<>();
         String sql = """
@@ -233,7 +233,7 @@ public class AuctionDAO extends BaseDAO {
     }
 
     // ---- MAPPER ----
-
+    
     private Auction map(ResultSet rs) throws SQLException {
         Auction a = new Auction();
         a.setId(rs.getLong("id"));

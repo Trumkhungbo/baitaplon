@@ -1,36 +1,37 @@
 package com.bidding.server.core;
 
-import com.bidding.server.exception.AuctionClosedException;
-import com.bidding.server.exception.AuctionNotFoundException;
-import com.bidding.server.exception.InvalidBidException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import com.bidding.server.exception.AuctionClosedException;
+import com.bidding.server.exception.AuctionNotFoundException;
+import com.bidding.server.exception.InvalidBidException;
+// Dịch vụ quản lý các hoạt động liên quan đến đấu giá
 public class AuctionService {
 
     private final Map<String, Auction> auctions = new ConcurrentHashMap<>();
     private final AtomicInteger nextAuctionId;
-
+    // Khởi tạo dịch vụ đấu giá với một số dữ liệu mẫu
     public AuctionService() {
         this.nextAuctionId = new AtomicInteger(1);
         seedData();
     }
-
+    // Hàm khởi tạo một số đấu giá mẫu để có dữ liệu ban đầu khi server chạy
     private void seedData() {
         addInitialAuction("seller1", "iPhone 15", 15000000, AuctionStatus.OPEN);
         addInitialAuction("seller2", "MacBook Pro", 25000000, AuctionStatus.OPEN);
         addInitialAuction("seller3", "Oil Painting", 5000000, AuctionStatus.OPEN);
     }
-
+    // Hàm hỗ trợ thêm đấu giá ban đầu vào hệ thống, chỉ dùng trong quá trình khởi tạo dữ liệu mẫu
     private void addInitialAuction(String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
         String id = String.valueOf(nextAuctionId.getAndIncrement());
         auctions.put(id, new Auction(id, sellerUsername, itemName, startPrice, status));
     }
 
+    // Đóng đấu giá, trả về thông báo để gửi cho client
     public String closeAuction(String auctionId) {
         Auction auction = auctions.get(auctionId);
 
@@ -46,7 +47,7 @@ public class AuctionService {
             return finishAuction(auction, "CLOSE_AUCTION_SUCCESS");
         }
     }
-
+    // Lấy thông tin người thắng cuộc của một đấu giá, trả về thông báo để gửi cho client
     public String getWinner(String auctionId) {
         Auction auction = auctions.get(auctionId);
 
@@ -61,7 +62,7 @@ public class AuctionService {
                 + "|finalPrice=" + (long) auction.getCurrentPrice()
                 + "|status=" + auction.getStatus();
     }
-
+    // Lấy danh sách đấu giá, trả về thông báo để gửi cho client
     public String getAuctionList() {
         StringBuilder sb = new StringBuilder("AUCTION_LIST|");
         boolean first = true;
@@ -84,11 +85,11 @@ public class AuctionService {
 
         return sb.toString();
     }
-
+    // Tìm đấu giá theo ID, trả về đối tượng Auction hoặc null nếu không tìm thấy
     public Auction findAuctionById(String auctionId) {
         return auctions.get(auctionId);
     }
-
+    // Lấy thông tin chi tiết của một đấu giá, trả về thông báo để gửi cho client
     public String getAuctionDetail(String auctionId) {
         Auction auction = auctions.get(auctionId);
 
@@ -107,7 +108,7 @@ public class AuctionService {
                 + "|status=" + auction.getStatus()
                 + "|endTime=" + auction.getEndTime();
     }
-
+    //thêm auction mới, trả về thông báo để gửi cho client
     public String addAuction(String sellerUsername, String itemName, double startPrice) {
         if (sellerUsername == null || sellerUsername.trim().isEmpty()) {
             return "ERROR|Seller username is required";
@@ -130,6 +131,7 @@ public class AuctionService {
                 + "|itemName=" + itemName
                 + "|startPrice=" + (long) startPrice;
     }
+    //đóng auction khi hết thời gian, trả về list thông báo để gửi cho client
     public List<String> closeExpiredAuctions() {
         List<String> notifications = new ArrayList<>();
         long now = System.currentTimeMillis();
@@ -145,7 +147,7 @@ public class AuctionService {
 
         return notifications;
     }
-
+    // Đặt giá thầu cho một đấu giá, trả về thông báo để gửi cho client hoặc ném ngoại lệ nếu có lỗi
     public String placeBid(String auctionId, String username, double amount) {
         Auction auction = auctions.get(auctionId);
 
@@ -196,12 +198,12 @@ public class AuctionService {
                     + "|amount=" + (long) amount;
         }
     }
-
+    // Kiểm tra xem đấu giá có đang ở trạng thái mở hoặc đang chạy hay không
     private boolean isActiveAuction(Auction auction) {
         return auction.getStatus() == AuctionStatus.OPEN
                 || auction.getStatus() == AuctionStatus.RUNNING;
     }
-
+    // Hoàn tất đấu giá, cập nhật trạng thái và trả về thông báo để gửi cho client
     private String finishAuction(Auction auction, String messageType) {
         auction.setStatus(AuctionStatus.FINISHED);
 

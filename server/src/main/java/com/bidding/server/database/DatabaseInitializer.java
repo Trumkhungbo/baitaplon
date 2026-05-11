@@ -1,4 +1,4 @@
-package com.bidding.server.database;
+ package com.bidding.server.database;
 
 import java.sql.Connection;
 import java.sql.Statement;
