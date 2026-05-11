@@ -16,6 +16,7 @@ public class SocketClient {
         void onMessageReceived(String message);
     }
 
+
     public void setServerListener(ServerListener listener) {
         this.listener = listener;
     }

@@ -1,34 +1,33 @@
 package action.Authentication;
 
+import action.Core.StartScence;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
 public class ActionInformationHandle {
     @FXML
-    private Label personalID = new Label((String) (StoreSignUpInput.personalID));
+    private Label personalID ;
     @FXML
-    private Label name = new Label((String) (StoreSignUpInput.name));
+    private Label name ;
     @FXML
-    private Label email =  new Label((String) (StoreSignUpInput.email));
+    private Label email ;
     @FXML
-    private Label phone = new Label( (String)(StoreSignUpInput.phoneNumber));
+    private Label phone ;
     @FXML
-    private Label password = new Label( (String)(StoreSignUpInput.password));
+    private Label password ;
     @FXML
-    private Label balance;
-    public Label getPersonalID() {
-        return personalID;
-    }
-    public Label getName() {
-        return name;
-    }
-    public Label getEmail() {
-        return email;
-    }
-    public Label getPhone() {
-        return phone;
-    }
-    public Label getPassword() {
-        return password;
+    public void initialize(){
+        StartScence.client.sendMessage("GET_ACCOUNTINFORMATION|"+StoreDataInput.username);
+        StartScence.client.setServerListener(message -> {
+            Platform.runLater(() -> {
+                String[] box=message.split("\\|");
+                personalID.setText(box[6]);
+                email.setText(box[5]);
+                phone.setText(box[4]);
+                password.setText(box[3]);
+                name.setText(box[2]);
+            });
+       });
     }
 }

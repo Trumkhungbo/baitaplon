@@ -112,6 +112,9 @@ public class ClientHandler implements Runnable {
             case "GET_WINNER":
                 handleGetWinner(parts);
                 break;
+            case "GET_ACCOUNTINFORMATION":
+                handleGetAccountInformation(parts);
+                break;
 
             default:
                 sendMessage("ERROR|Invalid command: " + command);
@@ -305,6 +308,10 @@ public class ClientHandler implements Runnable {
 
         String auctionId = parts[1];
         sendMessage(auctionService.getWinner(auctionId));
+    }
+    private void handleGetAccountInformation(String[] parts) {
+        String response = authService.accoutInformation(parts[1]);
+        sendMessage(response);
     }
 
     public String getUsername() {

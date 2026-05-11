@@ -8,7 +8,7 @@ public class AuthService {
     private final Map<String, List<String>> userDatabase = new ConcurrentHashMap<>();
     public AuthService() {
         // Tài khoản User mặc định
-        userDatabase.put("admin", List.of("123","","","",""));
+        userDatabase.put("admin", List.of("123","0987654321","admin@gmail.com","123123123123"));
     }
 
     // Hàm đăng nhập
@@ -29,5 +29,12 @@ public class AuthService {
 
         userDatabase.put(username,infomation);
         return "REGISTER_SUCCESS|Register Success";
+    }
+    public String accoutInformation(String username){
+        return "ACCOUT_SUCCESS|Account_Information|"+username+"|"+
+                userDatabase.get(username).get(0)+"|"+
+                userDatabase.get(username).get(1)+"|"+
+                userDatabase.get(username).get(2)+"|"+
+                userDatabase.get(username).get(3);
     }
 }

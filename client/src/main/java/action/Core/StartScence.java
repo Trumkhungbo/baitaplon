@@ -15,8 +15,6 @@ public class StartScence extends Application {
     Scene scene = new Scene(fxmloader.load());
     Stage stage = new Stage();
     stage.setScene(scene);
-    stage.setWidth(700);
-    stage.setHeight(700);
     stage.show();
     Image icon = new Image(StartScence.class.getResourceAsStream("/assets/Icon.png"));
     stage.getIcons().add(icon);
