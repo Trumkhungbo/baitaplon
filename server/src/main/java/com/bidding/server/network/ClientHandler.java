@@ -5,9 +5,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.List;
 
-import com.bidding.server.core.AuctionService;
 import com.bidding.server.core.AuthService;
+import com.bidding.server.core.AuctionService;
 
 public class ClientHandler implements Runnable {
 
@@ -111,6 +112,9 @@ public class ClientHandler implements Runnable {
             case "GET_WINNER":
                 handleGetWinner(parts);
                 break;
+            case "GET_ACCOUNTINFORMATION":
+                handleGetAccountInformation(parts);
+                break;
 
             default:
                 sendMessage("ERROR|Invalid command: " + command);
@@ -124,8 +128,12 @@ public class ClientHandler implements Runnable {
         }
         String inputUsername = parts[1];
         String inputPassword = parts[2];
+        String inputPhone = parts[3];
+        String inputEmail = parts[4];
+        String inputID  = parts[5];
+        List<String> AccoutInformation = List.of(inputPassword, inputPhone, inputEmail, inputID);
 
-        String response = authService.register(inputUsername, inputPassword);
+        String response = authService.register(inputUsername, AccoutInformation);
         sendMessage(response);
     }
 
@@ -212,7 +220,7 @@ public class ClientHandler implements Runnable {
         } catch (NumberFormatException e) {
             sendMessage("ERROR|Bid amount must be a number");
             return;
-        } 
+        }
 
         if (amount <= 0) {
             sendMessage("ERROR|Bid amount must be greater than 0");
@@ -300,6 +308,10 @@ public class ClientHandler implements Runnable {
 
         String auctionId = parts[1];
         sendMessage(auctionService.getWinner(auctionId));
+    }
+    private void handleGetAccountInformation(String[] parts) {
+        String response = authService.accoutInformation(parts[1]);
+        sendMessage(response);
     }
 
     public String getUsername() {

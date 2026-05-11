@@ -3,7 +3,7 @@
 <?import javafx.scene.layout.*?>
 
 
-<StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.LobbypaneHandle">
+<StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.LobbypaneHandle">
    <children>
       <AnchorPane prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #DDD345;">
 
