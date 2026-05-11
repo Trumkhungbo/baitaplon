@@ -5,8 +5,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import com.bidding.server.core.AuthService;
+
 import com.bidding.server.core.AuctionService;
+import com.bidding.server.core.AuthService;
 
 public class ClientHandler implements Runnable {
 
@@ -211,7 +212,7 @@ public class ClientHandler implements Runnable {
         } catch (NumberFormatException e) {
             sendMessage("ERROR|Bid amount must be a number");
             return;
-        }
+        } 
 
         if (amount <= 0) {
             sendMessage("ERROR|Bid amount must be greater than 0");

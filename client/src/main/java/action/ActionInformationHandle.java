@@ -2,7 +2,7 @@ package action;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-
+ 
 public class ActionInformationHandle {
     @FXML
     private Label personalID ;

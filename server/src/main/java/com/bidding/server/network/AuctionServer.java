@@ -7,9 +7,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import com.bidding.server.core.AuctionService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import com.bidding.server.core.AuctionService;
 
 public class AuctionServer {
 
@@ -28,7 +29,7 @@ public class AuctionServer {
     public AuctionServer() {
         this(DEFAULT_PORT);
     }
-
+      
     public AuctionServer(int port) {
         this.port = port;
         this.clientPool = Executors.newFixedThreadPool(MAX_CLIENT_THREADS);
