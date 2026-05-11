@@ -1,5 +1,10 @@
 package com.bidding.server.network;
 
+import com.bidding.server.core.AuctionService;
+import com.bidding.server.core.AuthService;
+import com.bidding.server.network.command.CommandDispatcher;
+import com.bidding.server.network.service.BroadcastService;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -7,7 +12,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import com.bidding.server.core.AuctionService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -23,6 +27,9 @@ public class AuctionServer {
     private ServerSocket serverSocket;
     private volatile boolean running;
     private final AuctionService auctionService;
+    private final AuthService authService;
+    private final BroadcastService broadcastService;
+    private final CommandDispatcher commandDispatcher;
     private final ScheduledExecutorService auctionMonitor;
 
     public AuctionServer() {
@@ -34,6 +41,9 @@ public class AuctionServer {
         this.clientPool = Executors.newFixedThreadPool(MAX_CLIENT_THREADS);
         this.connectedClients = ConcurrentHashMap.newKeySet();
         this.auctionService = new AuctionService();
+        this.authService = new AuthService();
+        this.broadcastService = new BroadcastService(this, auctionService);
+        this.commandDispatcher = new CommandDispatcher(authService, auctionService, broadcastService);
         this.auctionMonitor = Executors.newSingleThreadScheduledExecutor();
     }
 
@@ -49,7 +59,7 @@ public class AuctionServer {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("[SERVER] New client connected: " + clientSocket.getInetAddress());
 
-                ClientHandler handler = new ClientHandler(clientSocket, this, auctionService);
+                ClientHandler handler = new ClientHandler(clientSocket, this, commandDispatcher);
                 connectedClients.add(handler);
                 clientPool.submit(handler);
             }
@@ -100,28 +110,29 @@ public class AuctionServer {
             }
         }
     }
+
+    public void broadcastToLobby(String message) {
+        for (ClientHandler client : connectedClients) {
+            if (client.getWatchingAuctionId() == null) {
+                client.sendMessage(message);
+            }
+        }
+    }
+
+    public void broadcastAuctionListUpdate() {
+        broadcastService.broadcastLobbyUpdate();
+    }
+
     private void startAuctionMonitor() {
         auctionMonitor.scheduleAtFixedRate(() -> {
             var messages = auctionService.closeExpiredAuctions();
 
             for (String message : messages) {
-                String auctionId = extractAuctionId(message);
-                broadcastToAuctionRoom(message, auctionId);
+                broadcastService.broadcastAuctionClosedMessage(message);
+                broadcastService.broadcastLobbyUpdate();
                 System.out.println("[AUCTION MONITOR] " + message);
             }
         }, 1, 1, TimeUnit.SECONDS);
-    }
-
-    private String extractAuctionId(String message) {
-        String[] parts = message.split("\\|");
-
-        for (String part : parts) {
-            if (part.startsWith("auctionId=")) {
-                return part.substring("auctionId=".length());
-            }
-        }
-
-        return null;
     }
 
     public int getConnectedClientCount() {
