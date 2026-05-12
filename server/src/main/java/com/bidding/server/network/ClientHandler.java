@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.bidding.server.core.AuthService;
@@ -115,7 +117,9 @@ public class ClientHandler implements Runnable {
             case "GET_ACCOUNTINFORMATION":
                 handleGetAccountInformation(parts);
                 break;
-
+            case "ADD_MONEY":
+                handleAddMoney(parts);
+                break;
             default:
                 sendMessage("ERROR|Invalid command: " + command);
         }
@@ -131,7 +135,7 @@ public class ClientHandler implements Runnable {
         String inputPhone = parts[3];
         String inputEmail = parts[4];
         String inputID  = parts[5];
-        List<String> AccoutInformation = List.of(inputPassword, inputPhone, inputEmail, inputID);
+        ArrayList<String> AccoutInformation = new ArrayList<>(Arrays.asList(inputPassword, inputPhone, inputEmail, inputID,"0"));
 
         String response = authService.register(inputUsername, AccoutInformation);
         sendMessage(response);
@@ -312,6 +316,10 @@ public class ClientHandler implements Runnable {
     private void handleGetAccountInformation(String[] parts) {
         String response = authService.accoutInformation(parts[1]);
         sendMessage(response);
+    }
+    private void handleAddMoney(String[] parts) {
+        String reponse = authService.addMoney(parts[1],parts[2]);
+        sendMessage(reponse);
     }
 
     public String getUsername() {

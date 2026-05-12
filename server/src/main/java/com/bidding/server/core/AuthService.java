@@ -1,4 +1,6 @@
 package com.bidding.server.core;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,7 +10,7 @@ public class AuthService {
     private final Map<String, List<String>> userDatabase = new ConcurrentHashMap<>();
     public AuthService() {
         // Tài khoản User mặc định
-        userDatabase.put("admin", List.of("123","0987654321","admin@gmail.com","123123123123"));
+        userDatabase.put("admin", new ArrayList<>(Arrays.asList("123","0987654321","admin@gmail.com","123123123123","0")));
     }
 
     // Hàm đăng nhập
@@ -35,6 +37,20 @@ public class AuthService {
                 userDatabase.get(username).get(0)+"|"+
                 userDatabase.get(username).get(1)+"|"+
                 userDatabase.get(username).get(2)+"|"+
-                userDatabase.get(username).get(3);
+                userDatabase.get(username).get(3)+"|"+
+                userDatabase.get(username).get(4);
     }
-}
+    public String addMoney(String username, String money) {
+
+                String cleanUsername = username.trim();
+                System.out.println("meomaybe - Dang check user: [" + cleanUsername + "]");
+                List<String> data = userDatabase.get(cleanUsername);
+                double moneyIn = Double.parseDouble(money.trim());
+                double moneyHave = Double.parseDouble(data.get(4).trim());
+                double total = moneyIn + moneyHave;
+                String moneyUpdate = String.format("%.2f", total);
+                data.set(4, moneyUpdate);
+                return "MONEY_UPDATE|" + moneyUpdate;
+
+        }
+    }

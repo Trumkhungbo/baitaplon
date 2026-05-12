@@ -13,8 +13,14 @@
             <Label fx:id="phone" layoutX="90.0" layoutY="110.0" text="Phone Number" />
             <Label fx:id="email" layoutX="89.0" layoutY="140.0" text="Gmail" />
             <Label fx:id="password" layoutX="89.0" layoutY="171.0" text="Password" />
-            <Label layoutX="90.0" layoutY="204.0" text="Balance" />
+            <Label fx:id="money" layoutX="90.0" layoutY="204.0" text="Balance" />
             <Rectangle arcHeight="5.0" arcWidth="5.0" fill="DODGERBLUE" height="554.0" layoutX="-1.0" layoutY="29.0" stroke="BLACK" strokeType="INSIDE" width="88.0" AnchorPane.bottomAnchor="0.0" AnchorPane.topAnchor="0.0" />
+            <Pane layoutX="110.0" layoutY="261.0" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #212323;">
+               <children>
+                  <TextField layoutY="33.0" fx:id="moneyIn" promptText="Nhập số tiền" />
+                  <Button layoutX="134.0" layoutY="147.0" mnemonicParsing="false" onAction="#addMoney" text="Thêm " />
+               </children>
+            </Pane>
          </children>
       </AnchorPane>
    </children>
