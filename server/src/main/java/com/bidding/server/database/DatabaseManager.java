@@ -9,7 +9,8 @@ import java.sql.SQLException;
  */
 public class DatabaseManager {
 
-    private static final String DB_URL = "jdbc:sqlite:data/auction.db";// file SQLite sẽ nằm trong thư mục data/ của dự án
+    private static final String DB_URL = "jdbc:sqlite:" + System.getProperty("user.dir") + "/data/auction.db";// file SQLite nằm trong <user.dir>/data
+
     private static DatabaseManager instance;// instance duy nhất của DatabaseManager
     private Connection connection;// kết nối tới database
 
