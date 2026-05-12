@@ -42,7 +42,7 @@ public class LobbyHandle {
 
     }
     public void ReturnSeller(ActionEvent event) throws IOException {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/InvesterSeller.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/InvesterSell.fxml"));
         Parent root = loader.load();
         root.prefWidth(500);
         root.prefHeight(500);
