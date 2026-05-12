@@ -59,5 +59,9 @@ public class ActionInformationHandle {
                 money.setText(box[1]);
             });
         });
-    }}
+
+    }}public void ReturnToLogin(ActionEvent event) throws IOException {
+        SceneSwitch sceneSwitch = new SceneSwitch();
+        sceneSwitch.SwitchToLogin(event);
+    }
 }

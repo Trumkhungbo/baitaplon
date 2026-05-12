@@ -41,6 +41,13 @@ public class LobbyHandle {
         ShowingStage.setCenter(root);
 
     }
+    public void ReturnSeller(ActionEvent event) throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/InvesterSeller.fxml"));
+        Parent root = loader.load();
+        root.prefWidth(500);
+        root.prefHeight(500);
+        ShowingStage.setCenter(root);
+    }
     public void AccountInformation(ActionEvent event) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/AccountInformation.fxml"));
         Parent root = loader.load();
