@@ -19,7 +19,7 @@ public class ServerApplication {
             }
         }
 
-        // Init database
+        // Init database 
         try {
             DatabaseManager.getInstance();
             DatabaseInitializer.initialize();

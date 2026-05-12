@@ -6,7 +6,8 @@ public abstract class User extends com.bidding.common.model.Entity {
     private String username;
     private String passwordHash;
     private String email;
-    private String fullName;
+    private String phone;
+    private String personalId;
     private UserRole role;
 
     public User() {
@@ -20,6 +21,7 @@ public abstract class User extends com.bidding.common.model.Entity {
         this.email = email;
     }
 
+    //Getter, Setter
     public String getUsername() {
         return username;
     }
@@ -52,13 +54,13 @@ public abstract class User extends com.bidding.common.model.Entity {
         this.passwordHash = password;
     }
 
-    public String getFullName() {
-        return fullName;
-    }
+    public String getPhone() { return phone; }
 
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
+    public void setPhone(String phone) { this.phone = phone; }
+
+    public String getPersonalId() { return personalId; }
+
+    public void setPersonalId(String personalId) { this.personalId = personalId; }
 
     public UserRole getRole() {
         return role;

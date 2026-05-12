@@ -106,7 +106,36 @@ public class AuctionService {
                 + "|currentPrice=" + (long) auction.getCurrentPrice()
                 + "|highestBidder=" + bidder
                 + "|status=" + auction.getStatus()
-                + "|endTime=" + auction.getEndTime();
+                + "|endTime=" + auction.getEndTime()
+                + "|bidCount=" + auction.getBidHistorySnapshot().size();
+    }
+
+    public String getBidHistory(String auctionId) {
+        Auction auction = auctions.get(auctionId);
+
+        if (auction == null) {
+            return "ERROR|Auction not found";
+        }
+
+        StringBuilder sb = new StringBuilder("BID_HISTORY|auctionId=")
+                .append(auctionId)
+                .append("|entries=");
+        boolean first = true;
+
+        for (BidRecord bidRecord : auction.getBidHistorySnapshot()) {
+            if (!first) {
+                sb.append(";");
+            }
+
+            sb.append(bidRecord.getBidderUsername())
+                    .append(",")
+                    .append((long) bidRecord.getAmount())
+                    .append(",")
+                    .append(bidRecord.getTimestamp());
+            first = false;
+        }
+
+        return sb.toString();
     }
     //thêm auction mới, trả về thông báo để gửi cho client
     public String addAuction(String sellerUsername, String itemName, double startPrice) {
@@ -182,6 +211,7 @@ public class AuctionService {
 
             auction.setCurrentPrice(amount);
             auction.setHighestBidder(username);
+            auction.addBidRecord(new BidRecord(username, amount, now));
 
             long remaining = auction.getEndTime() - now;
             long oldEndTime = auction.getEndTime();
