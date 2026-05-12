@@ -20,18 +20,19 @@ public class UserDAO extends BaseDAO {
     // ---- CREATE ----
 
     public User save(User user) {
-        String sql = "INSERT INTO users (username, password_hash, email, full_name, role, balance, rating, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO users (username, password_hash, email, phone, personal_id, role, balance, rating, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConn();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getPasswordHash());
             ps.setString(3, user.getEmail());
-            ps.setString(4, user.getFullName());
-            ps.setString(5, user.getRole().name());
-            ps.setDouble(6, user instanceof Bidder b ? b.getBalance() : 0);
-            ps.setDouble(7, user instanceof Seller s ? s.getRating() : 0);
-            ps.setLong(8, user.getCreatedAt());
+            ps.setString(4, user.getPhone());
+            ps.setString(5, user.getPersonalId());
+            ps.setString(6, user.getRole().name());
+            ps.setDouble(7, user instanceof Bidder b ? b.getBalance() : 0);
+            ps.setDouble(8, user instanceof Seller s ? s.getRating() : 0);
+            ps.setLong(9, user.getCreatedAt());
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -169,7 +170,8 @@ public class UserDAO extends BaseDAO {
         user.setUsername(rs.getString("username"));
         user.setPasswordHash(rs.getString("password_hash"));
         user.setEmail(rs.getString("email"));
-        user.setFullName(rs.getString("full_name"));
+        user.setPhone(rs.getString("phone"));
+        user.setPersonalId(rs.getString("personal_id"));
         user.setRole(role);
         user.setCreatedAt(rs.getLong("created_at"));
         return user;

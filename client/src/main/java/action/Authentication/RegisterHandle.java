@@ -2,6 +2,7 @@ package action.Authentication;
 
 import action.Core.SceneSwitch;
 import action.Core.StartScence;
+import com.google.gson.JsonObject;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -80,8 +81,14 @@ public class RegisterHandle {
                     }
                 });
             });
-
-            StartScence.client.sendMessage("REGISTER|" + name + "|" + password +"|" + phoneNumber + "|" + email + "|" + personalID);
+            JsonObject req = new JsonObject();
+            req.addProperty("command", "REGISTER");
+            req.addProperty("username", name);
+            req.addProperty("password", password);
+            req.addProperty("phone", phoneNumber);
+            req.addProperty("email", email);
+            req.addProperty("personalID", personalID);
+            StartScence.client.sendMessage(req.toString());
         }
 
     }

@@ -2,6 +2,8 @@ package com.bidding.server.network;
 
 import com.bidding.server.network.command.CommandDispatcher;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -35,8 +37,8 @@ public class ClientHandler implements Runnable {
         try {
             initStreams();
 
-            sendMessage("CONNECTED|Welcome to the Auction Server");
-            sendMessage("INFO|Supported commands: PING, LOGIN|user|pass, LIST_AUCTIONS, GET_AUCTION_DETAIL|auctionId, ADD_AUCTION|seller|itemName|startPrice, WATCH|auctionId, BID|auctionId|user|amount, QUIT");
+            sendMessage("{\"CONNECTED\"|\"Welcome to the Auction Server\"}");
+            sendMessage("{\"INFO\"|\"Supported commands: PING, LOGIN|user|pass, LIST_AUCTIONS, GET_AUCTION_DETAIL|auctionId, ADD_AUCTION|seller|itemName|startPrice, WATCH|auctionId, BID|auctionId|user|amount, QUIT\"}");
 
             String clientMessage;
             while (connected && (clientMessage = reader.readLine()) != null) {
@@ -63,8 +65,44 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        String[] parts = request.split("\\|");
-        String command = parts[0].toUpperCase();
+        String[] parts = null;
+        String command = "";
+
+        try {
+            // Cố gắng đọc theo chuẩn JSON trước
+            JsonObject json = JsonParser.parseString(request).getAsJsonObject();
+            command = json.get("command").getAsString().toUpperCase();
+
+            if (command.equals("GET_ACCOUNTINFORMATION")) {
+                parts = new String[]{"GET_ACCOUNTINFORMATION", json.get("username").getAsString()};
+            } else if (command.equals("ADD_MONEY")) {
+                parts = new String[]{"ADD_MONEY", json.get("username").getAsString(), json.get("money").getAsString()};
+            } else if (command.equals("LOGIN")) {
+                parts = new String[]{
+                        "LOGIN",
+                        json.has("username") ? json.get("username").getAsString() : "",
+                        json.has("password") ? json.get("password").getAsString() : ""
+                };
+
+            } else if (command.equals("REGISTER")) {
+                parts = new String[]{
+                        "REGISTER",
+                        json.has("username") ? json.get("username").getAsString() : "",
+                        json.has("password") ? json.get("password").getAsString() : "",
+                        json.has("phone") ? json.get("phone").getAsString() : "",
+                        json.has("email") ? json.get("email").getAsString() : "",
+                        json.has("personalID") ? json.get("personalID").getAsString() : ""
+                };
+
+            } else {
+                parts = new String[]{command};
+            }
+        }  catch (Exception e) {
+            //Không được về chia "|"
+            parts = request.split("\\|");
+            command = parts[0].toUpperCase();
+        }
+        // Giao cho Dispatcher xử lý
         commandDispatcher.dispatch(command, parts, this);
     }
 

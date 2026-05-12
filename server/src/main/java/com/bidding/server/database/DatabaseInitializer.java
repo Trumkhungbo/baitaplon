@@ -20,7 +20,8 @@ public class DatabaseInitializer {
                     username      TEXT    NOT NULL UNIQUE,
                     password_hash TEXT    NOT NULL,
                     email         TEXT    NOT NULL UNIQUE,
-                    full_name     TEXT,
+                    phone         TEXT,
+                    personal_id   TEXT,
                     role          TEXT    NOT NULL,
                     balance       REAL    DEFAULT 0,
                     rating        REAL    DEFAULT 5.0,
@@ -92,8 +93,8 @@ public class DatabaseInitializer {
 
             // Seed admin mặc định nếu chưa có
             st.execute("""
-                INSERT OR IGNORE INTO users (username, password_hash, email, full_name, role, created_at)
-                VALUES ('admin', 'admin123', 'admin@bidding.vnu.edu.vn', 'Administrator', 'ADMIN',
+                INSERT OR IGNORE INTO users (username, password_hash, email, phone, personal_id, role, created_at)
+                VALUES ('admin', 'admin123', 'admin@bidding.vnu.edu.vn', '0987654321', '123123123123', 'ADMIN',
                         strftime('%s','now') * 1000)
             """);
             System.out.println("[DB] Schema khởi tạo thành công.");

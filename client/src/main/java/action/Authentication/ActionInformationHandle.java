@@ -2,12 +2,13 @@ package action.Authentication;
 
 import action.Core.SceneSwitch;
 import action.Core.StartScence;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-
+import javafx.event.ActionEvent;
 import java.io.IOException;
 
 public class ActionInformationHandle {
@@ -27,16 +28,29 @@ public class ActionInformationHandle {
     private TextField moneyIn ;
     @FXML
     public void initialize(){
-        StartScence.client.sendMessage("GET_ACCOUNTINFORMATION|"+StoreDataInput.username);
+        JsonObject req = new JsonObject();
+        req.addProperty("command", "GET_ACCOUNTINFORMATION");
+        req.addProperty("username", StoreDataInput.username);
+        StartScence.client.sendMessage(req.toString());
+
         StartScence.client.setServerListener(message -> {
             Platform.runLater(() -> {
-                String[] box=message.split("\\|");
-                personalID.setText(box[6]);
-                email.setText(box[5]);
-                phone.setText(box[4]);
-                password.setText(box[3]);
-                name.setText(box[2]);
-                money.setText(box[7]);
+                try {
+                    // Dùng máy quét JSON để đọc tin nhắn
+                    JsonObject res = JsonParser.parseString(message).getAsJsonObject();
+
+                    // Nếu đúng là nhãn dán ACCOUNT_INFO thì mới bóc quà
+                    if (res.get("command").getAsString().equals("ACCOUNT_INFO")) {
+                        name.setText(res.get("username").getAsString());
+                        password.setText(res.get("password").getAsString());
+                        phone.setText(res.get("phone").getAsString());
+                        email.setText(res.get("email").getAsString());
+                        personalID.setText(res.get("personalID").getAsString());
+                        money.setText(res.get("balance").getAsString()); // Hiện BALANCE=0.0
+                    }
+                } catch (Exception e) {
+                    // Mọi lỗi định dạng sẽ bị bỏ qua
+                }
             });
        });
     }
@@ -52,16 +66,30 @@ public class ActionInformationHandle {
             sceneSwitch.SwitchToLockPage(event,"/views/WrongInputShow.fxml");
         }
         else{
-        StartScence.client.sendMessage("ADD_MONEY|"+StoreDataInput.username+"|"+moneyVao);
-        StartScence.client.setServerListener(message -> {
-            Platform.runLater(() -> {
-                String[] box = message.split("\\|");
-                money.setText(box[1]);
-            });
-        });
+            JsonObject addReq = new JsonObject();
+            addReq.addProperty("command", "ADD_MONEY");
+            addReq.addProperty("username", StoreDataInput.username);
+            addReq.addProperty("money", moneyVao);
+            StartScence.client.sendMessage(addReq.toString());
 
-    }}public void ReturnToLogin(ActionEvent event) throws IOException {
-        SceneSwitch sceneSwitch = new SceneSwitch();
-        sceneSwitch.SwitchToLogin(event);
+            StartScence.client.setServerListener(message -> {
+                Platform.runLater(() -> {
+                    try {
+                        // Bóc hộp quà JSON
+                        JsonObject res = JsonParser.parseString(message).getAsJsonObject();
+                        // Nếu đúng là nhãn MONEY_UPDATE
+                        if (res.has("command") && res.get("command").getAsString().equals("MONEY_UPDATE")) {
+                            // Lấy số dư mới và cập nhật lên Label
+                            money.setText(res.get("balance").getAsString());
+                            moneyIn.clear();
+                        }
+                    } catch (Exception e) {}
+                });
+            });
+        }
     }
+  public void ReturnToLogin(ActionEvent event) throws IOException {
+    SceneSwitch sceneSwitch = new SceneSwitch();
+    sceneSwitch.SwitchToLogin(event);
+  }
 }
