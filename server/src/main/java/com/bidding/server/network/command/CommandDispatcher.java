@@ -29,6 +29,7 @@ public class CommandDispatcher {
         register("GET_WINNER", new GetWinnerCommand(auctionService));
         register("GET_ACCOUNTINFORMATION", new GetAccountInformationCommand(authService));
         register("ADD_MONEY",new GetNewMoneyCommand(authService));
+        register("FORGOT_PASSWORD", new ForgotPasswordCommand(authService));
     }
 
     public void dispatch(String command, String[] parts, ClientHandler client) {

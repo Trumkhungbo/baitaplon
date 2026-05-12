@@ -1,4 +1,9 @@
 package action.Authentication;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import action.Core.SceneSwitch;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -22,17 +27,53 @@ public class ForgotPasswordHandle {
         String Username = username.getText();
         String id = Id.getText();
         String phone = phoneNumber.getText();
-        if(Username.isBlank()||id.isBlank()||phone.isBlank()){
-            SceneSwitch sceneswitch = new SceneSwitch();
+        SceneSwitch sceneswitch = new SceneSwitch();
+
+        if(Username.isBlank() || id.isBlank() || phone.isBlank()){
             sceneswitch.SwitchToLockPage(event, "/views/SomeThingUnFill.fxml");
         }
-        else if(phone.matches("^[0-9]{10}")){
-            SceneSwitch sceneswitch = new SceneSwitch();
-            sceneswitch.SwitchToLockPage(event,"/resources/views/WrongInputShow.fxml");
-        }
-        else if(id.matches("^[0-9]{12}")){
-            SceneSwitch sceneswitch = new SceneSwitch();
+        else if(!phone.matches("^[0-9]{10}$")){
             sceneswitch.SwitchToLockPage(event,"/views/WrongInputShow.fxml");
+        }
+        else if(!id.matches("^[0-9]{12}$")){
+            sceneswitch.SwitchToLockPage(event,"/views/WrongInputShow.fxml");
+        } else {
+            // 1. ĐÓNG GÓI JSON GỬI LÊN SERVER
+            JsonObject req = new JsonObject();
+            req.addProperty("command", "FORGOT_PASSWORD");
+            req.addProperty("username", Username);
+            req.addProperty("phone", phone);
+            req.addProperty("personalID", id);
+
+            action.Core.StartScence.client.sendMessage(req.toString());
+
+            // 2. LẮNG NGHE KẾT QUẢ TỪ SERVER
+            action.Core.StartScence.client.setServerListener(message -> {
+                Platform.runLater(() -> {
+                    try {
+                        JsonObject res = JsonParser.parseString(message).getAsJsonObject();
+
+                        if (res.has("command") && res.get("command").getAsString().equals("FORGOT_PASSWORD_RESULT")) {
+                            if (res.get("status").getAsString().equals("SUCCESS")) {
+
+                                // HIỂN THỊ MẬT KHẨU BẰNG POPUP THÔNG BÁO
+                                String recoveredPass = res.get("password").getAsString();
+                                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                                alert.setTitle("Thành công");
+                                alert.setHeaderText("Đã tìm thấy tài khoản!");
+                                alert.setContentText("Mật khẩu của bạn là: " + recoveredPass);
+                                alert.showAndWait();
+
+                            } else {
+                                // Sai thông tin -> Hiện màn hình lỗi
+                                try {
+                                    sceneswitch.SwitchToLockPage(event, "/views/WrongValueShow.fxml");
+                                } catch (IOException e) { e.printStackTrace(); }
+                            }
+                        }
+                    } catch (Exception e) {}
+                });
+            });
         }
 
     }
