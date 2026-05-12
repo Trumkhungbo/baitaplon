@@ -35,7 +35,106 @@
 
 /* Thẻ Card (cho sản phẩm, thông tin người dùng) */
 .card {
-    -fx-background-color: -fx-card-bg;
+    -fx-background-color: #1A1A1A;
+    -fx-background-radius: 20px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.6), 20, 0, 0, 10);
+
+    /* Cố định kích thước khung để các trang bằng nhau */
+    -fx-min-width: 420px;
+    -fx-pref-width: 420px;
+    -fx-min-height: 550px;
+    -fx-pref-height: 700px;
+}
+.card-profile {
+    -fx-background-color: #1A1A1A;
     -fx-background-radius: 15px;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 5);
+    /* Giới hạn chiều ngang tối đa để không bị quá to trên màn hình lớn */
+    -fx-max-width: 500px;}
+/* Khung lớn (Bảng công tắc) lõm xuống */
+/* Các nút lấp đầy khung */
+.switch-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #A0A0A0;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-padding: 8px 20px;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+}
+
+/* NÚT ĐANG ĐƯỢC CHỌN (Tự động kích hoạt bởi ToggleGroup) */
+.switch-btn:selected {
+    -fx-background-color: #2D2D2D;
+    -fx-text-fill: #FACC15;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.6), 8, 0, 0, 3);
+}
+
+/* Ẩn cái viền xanh lam thổ tả khi focus vào ToggleButton */
+.switch-btn:focused {
+    -fx-background-color: transparent;
+}
+.switch-btn:selected:focused {
+    -fx-background-color: #2D2D2D;
+}
+/* ===== BẢNG DỮ LIỆU CHUYÊN NGHIỆP (TABLE VIEW) ===== */
+.custom-table {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: #1A1A1A; /* Màu nền trong bảng */
+    -fx-table-cell-border-color: #333333; /* Viền ô mờ */
+    -fx-padding: 0;
+}
+
+/* Xóa viền xanh khi Focus vào bảng */
+.custom-table:focused {
+    -fx-background-color: transparent;
+}
+
+/* Thanh Header (Tiêu đề cột) */
+.custom-table .column-header-background {
+    -fx-background-color: #2D2D2D;
+    -fx-background-radius: 8px 8px 0 0;
+}
+
+.custom-table .column-header {
+    -fx-background-color: transparent;
+    -fx-size: 45px; /* Chiều cao Header */
+    -fx-border-color: #333333;
+    -fx-border-width: 0 0 2px 0; /* Gạch dưới Header */
+}
+
+/* Chữ trong Header */
+.custom-table .column-header .label {
+    -fx-text-fill: #FACC15; /* Chữ vàng Gold */
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-alignment: CENTER_LEFT; /* Hoặc CENTER tùy ý */
+}
+
+/* Các hàng (Rows) */
+.custom-table .table-row-cell {
+    -fx-background-color: #1A1A1A;
+    -fx-cell-size: 40px; /* Chiều cao mỗi dòng dữ liệu */
+    -fx-text-background-color: #E0E0E0; /* Màu chữ dữ liệu */
+}
+
+/* Hiệu ứng sọc ngựa vằn (Odd/Even) cho dễ đọc */
+.custom-table .table-row-cell:odd {
+    -fx-background-color: #1F1F1F;
+}
+
+/* Khi rê chuột qua dòng */
+.custom-table .table-row-cell:hover {
+    -fx-background-color: rgba(250, 204, 21, 0.05); /* Sáng nhẹ màu vàng */
+}
+
+/* Khi click chọn dòng */
+.custom-table .table-row-cell:selected {
+    -fx-background-color: rgba(250, 204, 21, 0.2);
+    -fx-text-background-color: #FACC15; /* Chữ chuyển vàng */
+}
+
+/* Ẩn bớt cột cuộn trống bên phải */
+.custom-table .filler {
+    -fx-background-color: transparent;
 }
