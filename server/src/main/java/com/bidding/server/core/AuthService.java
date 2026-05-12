@@ -71,6 +71,28 @@ public class AuthService {
     return resp.toString(); // Biến Object thành chuỗi JSON
   }
 
+  // Hàm Quên Mật Khẩu
+  public String forgotPassword(String username, String phone, String personalID) {
+    // Tìm user trong DB
+    User user = userDAO.findByUsername(username);
+
+    JsonObject res = new JsonObject();
+    res.addProperty("command", "FORGOT_PASSWORD_RESULT");
+
+    // Kiểm tra xem User có tồn tại không VÀ Số điện thoại + CCCD có khớp chính xác không
+    if (user != null
+            && user.getPhone() != null && user.getPhone().equals(phone)
+            && user.getPersonalId() != null && user.getPersonalId().equals(personalID)) {
+
+      res.addProperty("status", "SUCCESS");
+      res.addProperty("password", user.getPasswordHash()); // Moi mật khẩu ra
+    } else {
+      res.addProperty("status", "FAILED");
+    }
+
+    return res.toString(); // Trả JSON về cho Client
+  }
+
   //Hàm thêm tiền vào tài khoản
   public String addMoney(String username, String money) {
     try {
