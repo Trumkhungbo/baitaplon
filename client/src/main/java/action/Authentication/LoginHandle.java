@@ -2,6 +2,7 @@ package action.Authentication;
 
 import action.Core.SceneSwitch;
 import action.Core.StartScence;
+import com.google.gson.JsonObject;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -47,7 +48,11 @@ public class LoginHandle {
                 });
             });
 
-            StartScence.client.sendMessage("LOGIN|" + user1 + "|" + password1);
+            JsonObject req = new JsonObject();
+            req.addProperty("command", "LOGIN");
+            req.addProperty("username", user1);
+            req.addProperty("password", password1);
+            StartScence.client.sendMessage(req.toString());
         }
     }
 
