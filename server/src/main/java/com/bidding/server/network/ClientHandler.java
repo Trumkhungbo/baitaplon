@@ -1,39 +1,33 @@
 package com.bidding.server.network;
 
+import com.bidding.server.network.command.CommandDispatcher;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import com.bidding.server.core.AuthService;
-import com.bidding.server.core.AuctionService;
+import java.nio.charset.StandardCharsets;
 
 public class ClientHandler implements Runnable {
 
     private final Socket clientSocket;
     private final AuctionServer server;
-    private final AuthService authService;
-    private final AuctionService auctionService;
+    private final CommandDispatcher commandDispatcher;
 
     private BufferedReader reader;
     private PrintWriter writer;
 
     private volatile boolean connected;
-    private String username;
+    private String currentUser;
     private String watchingAuctionId;
-    private String currentUsername;
-    private boolean loggedIn = false;
 
-    public ClientHandler(Socket clientSocket, AuctionServer server, AuctionService auctionService) {
+    public ClientHandler(Socket clientSocket, AuctionServer server, CommandDispatcher commandDispatcher) {
         this.clientSocket = clientSocket;
         this.server = server;
+        this.commandDispatcher = commandDispatcher;
         this.connected = true;
-        this.authService = new AuthService();
-        this.auctionService = auctionService;
     }
 
     @Override
@@ -57,8 +51,10 @@ public class ClientHandler implements Runnable {
     }
 
     private void initStreams() throws IOException {
-        reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        writer = new PrintWriter(clientSocket.getOutputStream(), true);
+        reader = new BufferedReader(
+                new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8));
+        writer = new PrintWriter(
+                new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8), true);
     }
 
     private void handleRequest(String request) {
@@ -69,185 +65,7 @@ public class ClientHandler implements Runnable {
 
         String[] parts = request.split("\\|");
         String command = parts[0].toUpperCase();
-
-        switch (command) {
-            case "PING":
-                sendMessage("PONG");
-                break;
-
-            case "REGISTER":
-                handleRegister(parts);
-                break;
-
-            case "LOGIN":
-                handleLogin(parts);
-                break;
-
-            case "LIST_AUCTIONS":
-                handleListAuctions();
-                break;
-
-            case "WATCH":
-                handleWatchAuction(parts);
-                break;
-
-            case "BID":
-                handlePlaceBid(parts);
-                break;
-
-            case "QUIT":
-                sendMessage("BYE|Disconnected from server");
-                connected = false;
-                break;
-
-            case "GET_AUCTION_DETAIL":
-                handleGetAuctionDetail(parts);
-                break;
-
-            case "ADD_AUCTION":
-                handleAddAuction(parts);
-                break;
-            case "CLOSE_AUCTION":
-                handleCloseAuction(parts);
-                break;
-
-            case "GET_WINNER":
-                handleGetWinner(parts);
-                break;
-            case "GET_ACCOUNTINFORMATION":
-                handleGetAccountInformation(parts);
-                break;
-            case "ADD_MONEY":
-                handleAddMoney(parts);
-                break;
-            default:
-                sendMessage("ERROR|Invalid command: " + command);
-        }
-    }
-
-    private void handleRegister(String[] parts) {
-        if (parts.length < 3) {
-            sendMessage("ERROR|Invalid syntax. Use: REGISTER|username|password");
-            return;
-        }
-        String inputUsername = parts[1];
-        String inputPassword = parts[2];
-        String inputPhone = parts[3];
-        String inputEmail = parts[4];
-        String inputID  = parts[5];
-        ArrayList<String> AccoutInformation = new ArrayList<>(Arrays.asList(inputPassword, inputPhone, inputEmail, inputID,"0"));
-
-        String response = authService.register(inputUsername, AccoutInformation);
-        sendMessage(response);
-    }
-
-    private void handleLogin(String[] parts) {
-        if (parts.length < 3) {
-            sendMessage("ERROR|Invalid syntax. Use: LOGIN|username|password");
-            return;
-        }
-
-        String inputUsername = parts[1];
-        String inputPassword = parts[2];
-
-        String response = authService.login(inputUsername, inputPassword);
-
-        if (response.startsWith("LOGIN_SUCCESS")) {
-            this.loggedIn = true;
-            this.username = inputUsername;
-        }
-
-        sendMessage(response);
-    }
-
-    private void handleListAuctions() {
-        sendMessage(auctionService.getAuctionList());
-    }
-    private void handleGetAuctionDetail(String[] parts) {
-        if (parts.length < 2) {
-            sendMessage("ERROR|Invalid syntax. Use: GET_AUCTION_DETAIL|auctionId");
-            return;
-        }
-
-        String auctionId = parts[1];
-        sendMessage(auctionService.getAuctionDetail(auctionId));
-    }
-
-    private void handleAddAuction(String[] parts) {
-        if (parts.length < 4) {
-            sendMessage("ERROR|Invalid syntax. Use: ADD_AUCTION|sellerUsername|itemName|startPrice");
-            return;
-        }
-
-        String sellerUsername = parts[1];
-        String itemName = parts[2];
-        String startPriceText = parts[3];
-
-        double startPrice;
-        try {
-            startPrice = Double.parseDouble(startPriceText);
-        } catch (NumberFormatException e) {
-            sendMessage("ERROR|Start price must be a number");
-            return;
-        }
-
-        sendMessage(auctionService.addAuction(sellerUsername, itemName, startPrice));
-    }
-
-    private void handleWatchAuction(String[] parts) {
-        if (parts.length < 2) {
-            sendMessage("ERROR|Invalid syntax. Use: WATCH|auctionId");
-            return;
-        }
-
-        this.watchingAuctionId = parts[1];
-        sendMessage("WATCHING|You are now watching auction " + watchingAuctionId);
-    }
-
-    private void handlePlaceBid(String[] parts) {
-        if (!loggedIn) {
-            sendMessage("ERROR|You must login first");
-            return;
-        }
-
-        if (parts.length < 3) {
-            sendMessage("ERROR|Invalid syntax. Use: BID|auctionId|amount");
-            return;
-        }
-
-        String auctionId = parts[1];
-        String amountText = parts[2];
-
-        double amount;
-        try {
-            amount = Double.parseDouble(amountText);
-        } catch (NumberFormatException e) {
-            sendMessage("ERROR|Bid amount must be a number");
-            return;
-        }
-
-        if (amount <= 0) {
-            sendMessage("ERROR|Bid amount must be greater than 0");
-            return;
-        }
-
-        try {
-            String response = auctionService.placeBid(auctionId, username, amount);
-            sendMessage(response);
-
-            if (response.startsWith("BID_SUCCESS")) {
-                var auction = auctionService.findAuctionById(auctionId);
-                server.broadcastToAuctionRoom(
-                        "BID_UPDATE|auctionId=" + auctionId
-                                + "|highestBid=" + (long) auction.getCurrentPrice()
-                                + "|bidder=" + auction.getHighestBidder()
-                                + "|endTime=" + auction.getEndTime(),
-                        auctionId
-                );
-            }
-        } catch (RuntimeException e) {
-            sendMessage("ERROR|" + e.getMessage());
-        }
+        commandDispatcher.dispatch(command, parts, this);
     }
 
     public void sendMessage(String message) {
@@ -281,52 +99,32 @@ public class ClientHandler implements Runnable {
 
         server.removeClient(this);
     }
-    private void handleCloseAuction(String[] parts) {
-        if (parts.length < 2) {
-            sendMessage("ERROR|Invalid syntax. Use: CLOSE_AUCTION|auctionId");
-            return;
-        }
 
-        String auctionId = parts[1];
-
-        String response = auctionService.closeAuction(auctionId);
-        sendMessage(response);
-
-        if (response.startsWith("CLOSE_AUCTION_SUCCESS")) {
-            var auction = auctionService.findAuctionById(auctionId);
-
-            server.broadcastToAuctionRoom(
-                    "AUCTION_CLOSED|auctionId=" + auctionId
-                            + "|winner=" + auction.getHighestBidder()
-                            + "|finalPrice=" + (long) auction.getCurrentPrice(),
-                    auctionId
-            );
-        }
+    public void disconnect() {
+        connected = false;
     }
 
-    private void handleGetWinner(String[] parts) {
-        if (parts.length < 2) {
-            sendMessage("ERROR|Invalid syntax. Use: GET_WINNER|auctionId");
-            return;
-        }
-
-        String auctionId = parts[1];
-        sendMessage(auctionService.getWinner(auctionId));
-    }
-    private void handleGetAccountInformation(String[] parts) {
-        String response = authService.accoutInformation(parts[1]);
-        sendMessage(response);
-    }
-    private void handleAddMoney(String[] parts) {
-        String reponse = authService.addMoney(parts[1],parts[2]);
-        sendMessage(reponse);
+    public String getCurrentUser() {
+        return currentUser;
     }
 
-    public String getUsername() {
-        return username;
+    public void setCurrentUser(String currentUser) {
+        this.currentUser = currentUser;
     }
 
     public String getWatchingAuctionId() {
         return watchingAuctionId;
+    }
+
+    public void setWatchingAuctionId(String watchingAuctionId) {
+        this.watchingAuctionId = watchingAuctionId;
+    }
+
+    public boolean isLoggedIn() {
+        return currentUser != null;
+    }
+
+    public boolean isAdmin() {
+        return "admin".equals(currentUser);
     }
 }

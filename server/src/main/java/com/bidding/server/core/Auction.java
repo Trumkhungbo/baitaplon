@@ -1,5 +1,8 @@
 package com.bidding.server.core;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Auction {
 
     private final String id;
@@ -11,8 +14,9 @@ public class Auction {
     private AuctionStatus status;
     private String highestBidder;
     private long endTime;
+    private final List<BidRecord> bidHistory;
 
-    public Auction(String id, String sellerUsername, String itemName, double startPrice, AuctionStatus status){
+    public Auction(String id, String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
         this.id = id;
         this.sellerUsername = sellerUsername;
         this.itemName = itemName;
@@ -20,7 +24,8 @@ public class Auction {
         this.currentPrice = startPrice;
         this.status = status;
         this.highestBidder = null;
-        this.endTime = System.currentTimeMillis() + 5 * 60 * 1000; // 5 phút
+        this.endTime = System.currentTimeMillis() + 5 * 60 * 1000;
+        this.bidHistory = new ArrayList<>();
     }
 
     public String getId() {
@@ -73,5 +78,13 @@ public class Auction {
 
     public void extendEndTime(long extraTime) {
         this.endTime += extraTime;
+    }
+
+    public void addBidRecord(BidRecord bidRecord) {
+        bidHistory.add(bidRecord);
+    }
+
+    public List<BidRecord> getBidHistorySnapshot() {
+        return new ArrayList<>(bidHistory);
     }
 }
