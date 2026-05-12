@@ -32,7 +32,7 @@ public class AuthService {
         userDatabase.put(username,infomation);
         return "REGISTER_SUCCESS|Register Success";
     }
-    public String accoutInformation(String username){
+    public String accountInformation(String username){
         return "ACCOUT_SUCCESS|Account_Information|"+username+"|"+
                 userDatabase.get(username).get(0)+"|"+
                 userDatabase.get(username).get(1)+"|"+
@@ -43,7 +43,6 @@ public class AuthService {
     public String addMoney(String username, String money) {
 
                 String cleanUsername = username.trim();
-                System.out.println("meomaybe - Dang check user: [" + cleanUsername + "]");
                 List<String> data = userDatabase.get(cleanUsername);
                 double moneyIn = Double.parseDouble(money.trim());
                 double moneyHave = Double.parseDouble(data.get(4).trim());

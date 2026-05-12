@@ -3,6 +3,9 @@ package com.bidding.server.network.command;
 import com.bidding.server.core.AuthService;
 import com.bidding.server.network.ClientHandler;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 public class RegisterCommand implements CommandHandler {
 
     private final AuthService authService;
@@ -17,7 +20,11 @@ public class RegisterCommand implements CommandHandler {
             client.sendMessage("ERROR|Invalid syntax. Use: REGISTER|username|password");
             return;
         }
-
-        client.sendMessage(authService.register(parts[1], parts[2]));
+        String password = parts[2];
+        String phoneNumber = parts[3];
+        String email = parts[4];
+        String personalID = parts[5];
+        ArrayList<String> AccoutInformation = new ArrayList<>(Arrays.asList(password, phoneNumber, email, personalID,"0"));
+        client.sendMessage(authService.register(parts[1], AccoutInformation));
     }
 }
