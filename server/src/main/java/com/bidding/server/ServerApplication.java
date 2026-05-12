@@ -1,11 +1,21 @@
 package com.bidding.server;
 
 import action.Core.StartScence;
+import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.network.AuctionServer;
 import javafx.application.Application;
 
 public class ServerApplication {
     public static void main(String[] args) {
+        try {
+            System.out.println("[SYSTEM] Đang kiểm tra và khởi tạo Database...");
+            DatabaseInitializer.initialize();
+        } catch (Exception e) {
+            System.err.println("[CRITICAL] Không thể khởi tạo Database. Server sẽ dừng.");
+            e.printStackTrace();
+            return; // Nếu DB lỗi thì không cho chạy Server nữa
+        }
+
         Thread serverThread = new Thread(()->{
         int port = 888;
 
