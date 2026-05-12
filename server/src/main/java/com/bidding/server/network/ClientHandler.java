@@ -94,6 +94,14 @@ public class ClientHandler implements Runnable {
                         json.has("personalID") ? json.get("personalID").getAsString() : ""
                 };
 
+            } else if (command.equals("FORGOT_PASSWORD")) {
+                parts = new String[]{
+                        "FORGOT_PASSWORD",
+                        json.has("username") ? json.get("username").getAsString() : "",
+                        json.has("phone") ? json.get("phone").getAsString() : "",
+                        json.has("personalID") ? json.get("personalID").getAsString() : ""
+                };
+
             } else {
                 parts = new String[]{command};
             }
