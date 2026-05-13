@@ -25,10 +25,12 @@ public class CommandDispatcher {
         register("GET_AUCTION_DETAIL", new GetAuctionDetailCommand(auctionService));
         register("GET_BID_HISTORY", new GetBidHistoryCommand(auctionService));
         register("ADD_AUCTION", new AddAuctionCommand(auctionService, broadcastService));
+        register("SET_AUTO_BID", new SetAutoBidCommand(auctionService, broadcastService));
         register("CLOSE_AUCTION", new CloseAuctionCommand(auctionService, broadcastService));
         register("GET_WINNER", new GetWinnerCommand(auctionService));
         register("GET_ACCOUNTINFORMATION", new GetAccountInformationCommand(authService));
-        register("ADD_MONEY",new GetNewMoneyCommand(authService));
+        register("ADD_MONEY", new GetNewMoneyCommand(authService));
+        register("FORGOT_PASSWORD", new ForgotPasswordCommand(authService));
     }
 
     public void dispatch(String command, String[] parts, ClientHandler client) {
