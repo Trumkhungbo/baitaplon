@@ -8,31 +8,32 @@ import javafx.application.Application;
 public class ServerApplication {
     public static void main(String[] args) {
         try {
-            System.out.println("[SYSTEM] Đang kiểm tra và khởi tạo Database...");
+            System.out.println("[SYSTEM] Dang kiem tra va khoi tao Database...");
             DatabaseInitializer.initialize();
         } catch (Exception e) {
-            System.err.println("[CRITICAL] Không thể khởi tạo Database. Server sẽ dừng.");
+            System.err.println("[CRITICAL] Khong the khoi tao Database. Server se dung.");
             e.printStackTrace();
-            return; // Nếu DB lỗi thì không cho chạy Server nữa
+            return;
         }
 
-        Thread serverThread = new Thread(()->{
-        int port = 888;
+        Thread serverThread = new Thread(() -> {
+            int port = 888;
 
-        if (args.length > 0) {
-            try {
-                port = Integer.parseInt(args[0]);
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid port. Using default port 888");
+            if (args.length > 0) {
+                try {
+                    port = Integer.parseInt(args[0]);
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid port. Using default port 888");
+                }
             }
-        }
 
-        AuctionServer server = new AuctionServer(port);
-        server.start();
-    });
-    serverThread.setDaemon(true);
-    serverThread.start();
-    // ở đây Deamon như kiểu mấy cái thread khác đóng sẽ tự đóng cái này
-    Application.launch(StartScence.class, args);
+            AuctionServer server = new AuctionServer(port);
+            server.start();
+        });
 
-}}
+        serverThread.setDaemon(true);
+        serverThread.start();
+
+        Application.launch(StartScence.class, args);
+    }
+}
