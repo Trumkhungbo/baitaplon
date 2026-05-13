@@ -1,5 +1,6 @@
 package com.bidding.server.network;
 
+import com.bidding.server.database.DatabaseInitializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +39,13 @@ class AuctionServerRealtimeTest {
     @Test
     void shouldBroadcastBidAndAuctionCloseToRoomAndLobby() throws Exception {
         int port = findFreePort();
+        DatabaseInitializer.initialize();
+        DatabaseInitializer.resetAuctionRuntimeData();
+        String suffix = String.valueOf(System.nanoTime());
+        String sellerUsername = "seller-live-" + suffix;
+        String bidderUsername = "bidder-live-" + suffix;
+        String watcher1Username = "watcher-1-" + suffix;
+        String watcher2Username = "watcher-2-" + suffix;
         server = new AuctionServer(port);
         serverThread = new Thread(server::start, "auction-server-realtime-test");
         serverThread.setDaemon(true);
@@ -50,30 +58,30 @@ class AuctionServerRealtimeTest {
              AsyncClient watcher2 = new AsyncClient("127.0.0.1", port);
              AsyncClient lobby = new AsyncClient("127.0.0.1", port)) {
 
-            seller.send("REGISTER|seller-live|pw");
+            seller.send("REGISTER|" + sellerUsername + "|pw");
             assertTrue(seller.awaitMessage("REGISTER_SUCCESS|", 3_000).startsWith("REGISTER_SUCCESS|"));
-            seller.send("LOGIN|seller-live|pw");
+            seller.send("LOGIN|" + sellerUsername + "|pw");
             assertTrue(seller.awaitMessage("LOGIN_SUCCESS|", 3_000).startsWith("LOGIN_SUCCESS|"));
 
-            bidder.send("REGISTER|bidder-live|pw");
+            bidder.send("REGISTER|" + bidderUsername + "|pw");
             assertTrue(bidder.awaitMessage("REGISTER_SUCCESS|", 3_000).startsWith("REGISTER_SUCCESS|"));
-            bidder.send("LOGIN|bidder-live|pw");
+            bidder.send("LOGIN|" + bidderUsername + "|pw");
             assertTrue(bidder.awaitMessage("LOGIN_SUCCESS|", 3_000).startsWith("LOGIN_SUCCESS|"));
 
-            watcher1.send("REGISTER|watcher-1|pw");
+            watcher1.send("REGISTER|" + watcher1Username + "|pw");
             assertTrue(watcher1.awaitMessage("REGISTER_SUCCESS|", 3_000).startsWith("REGISTER_SUCCESS|"));
-            watcher1.send("LOGIN|watcher-1|pw");
+            watcher1.send("LOGIN|" + watcher1Username + "|pw");
             assertTrue(watcher1.awaitMessage("LOGIN_SUCCESS|", 3_000).startsWith("LOGIN_SUCCESS|"));
 
-            watcher2.send("REGISTER|watcher-2|pw");
+            watcher2.send("REGISTER|" + watcher2Username + "|pw");
             assertTrue(watcher2.awaitMessage("REGISTER_SUCCESS|", 3_000).startsWith("REGISTER_SUCCESS|"));
-            watcher2.send("LOGIN|watcher-2|pw");
+            watcher2.send("LOGIN|" + watcher2Username + "|pw");
             assertTrue(watcher2.awaitMessage("LOGIN_SUCCESS|", 3_000).startsWith("LOGIN_SUCCESS|"));
 
             lobby.send("LIST_AUCTIONS");
             assertTrue(lobby.awaitMessage("AUCTION_LIST|", 3_000).startsWith("AUCTION_LIST|"));
 
-            seller.send("ADD_AUCTION|seller-live|Realtime Vase|5000");
+            seller.send("ADD_AUCTION|" + sellerUsername + "|Realtime Vase|5000");
             String addResponse = seller.awaitMessage("ADD_AUCTION_SUCCESS|", 3_000);
             String auctionId = extractField(addResponse, "id");
             assertTrue(lobby.awaitMessageContaining("Realtime Vase", 3_000).contains("Realtime Vase"));
@@ -92,7 +100,7 @@ class AuctionServerRealtimeTest {
 
             assertTrue(roomUpdate1.contains("auctionId=" + auctionId));
             assertTrue(roomUpdate1.contains("highestBid=6500"));
-            assertTrue(roomUpdate1.contains("bidder=bidder-live"));
+            assertTrue(roomUpdate1.contains("bidder=" + bidderUsername));
             assertTrue(roomUpdate2.contains("auctionId=" + auctionId));
             assertTrue(lobbyUpdate.contains(auctionId + ":Realtime Vase:6500:RUNNING"));
 
@@ -104,7 +112,7 @@ class AuctionServerRealtimeTest {
             String lobbyClosed = lobby.awaitMessageContaining("Realtime Vase", 3_000);
 
             assertTrue(closed1.contains("auctionId=" + auctionId));
-            assertTrue(closed1.contains("winner=bidder-live"));
+            assertTrue(closed1.contains("winner=" + bidderUsername));
             assertTrue(closed2.contains("auctionId=" + auctionId));
             assertTrue(lobbyClosed.contains(auctionId + ":Realtime Vase:6500:FINISHED"));
         }

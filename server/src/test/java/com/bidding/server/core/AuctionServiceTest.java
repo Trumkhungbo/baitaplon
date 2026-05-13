@@ -1,5 +1,6 @@
 package com.bidding.server.core;
 
+import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.exception.InvalidBidException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,8 @@ public class AuctionServiceTest {
 
     @BeforeEach
     void setUp() {
+        DatabaseInitializer.initialize();
+        DatabaseInitializer.resetAuctionRuntimeData();
         auctionService = new AuctionService();
     }
 
@@ -52,6 +55,20 @@ public class AuctionServiceTest {
     }
 
     @Test
+    void shouldReturnProductInfo() {
+        String result = auctionService.getProductInfo("1");
+
+        assertNotNull(result);
+        assertTrue(result.startsWith("PRODUCT_INFO|"));
+        assertTrue(result.contains("id=1"));
+        assertTrue(result.contains("itemName=iPhone 15"));
+        assertTrue(result.contains("seller=seller1"));
+        assertTrue(result.contains("startPrice=15000000"));
+        assertTrue(result.contains("currentPrice=15000000"));
+        assertTrue(result.contains("status=OPEN"));
+    }
+
+    @Test
     void shouldAddAuctionSuccessfully() {
         String result = auctionService.addAuction("seller99", "AirPods Pro", 7000000);
 
@@ -62,6 +79,21 @@ public class AuctionServiceTest {
 
         String list = auctionService.getAuctionList();
         assertTrue(list.contains("AirPods Pro"));
+    }
+
+    @Test
+    void shouldLoadAddedAuctionFromDatabaseAcrossServiceInstances() {
+        String result = auctionService.addAuction("seller99", "AirPods Pro", 7000000);
+        String auctionId = result.split("\\|")[1].split("=")[1];
+
+        AuctionService anotherService = new AuctionService();
+        String list = anotherService.getAuctionList();
+        String detail = anotherService.getAuctionDetail(auctionId);
+
+        assertTrue(list.contains("AirPods Pro"));
+        assertTrue(detail.contains("itemName=AirPods Pro"));
+        assertTrue(detail.contains("seller=seller99"));
+        assertTrue(detail.contains("startPrice=7000000"));
     }
 
     @Test
@@ -90,6 +122,44 @@ public class AuctionServiceTest {
         assertTrue(result.startsWith("BID_HISTORY|auctionId=1|entries="));
         assertTrue(result.contains("abc,17000000,"));
         assertTrue(result.contains("xyz,18000000,"));
+    }
+
+    @Test
+    void shouldConfigureAutoBidSuccessfully() {
+        String result = auctionService.setAutoBid("1", "auto-user", 20000000, 500000);
+
+        assertTrue(result.startsWith("AUTO_BID_SET|"));
+        assertTrue(result.contains("auctionId=1"));
+        assertTrue(result.contains("user=auto-user"));
+    }
+
+    @Test
+    void shouldAutoBidWhenAnotherUserOutbids() {
+        auctionService.setAutoBid("1", "auto-user", 20000000, 500000);
+        auctionService.placeBid("1", "manual-user", 17000000);
+
+        String detail = auctionService.getAuctionDetail("1");
+        String history = auctionService.getBidHistory("1");
+
+        assertTrue(detail.contains("currentPrice=17500000"));
+        assertTrue(detail.contains("highestBidder=auto-user"));
+        assertTrue(detail.contains("bidCount=2"));
+        assertTrue(history.contains("manual-user,17000000,"));
+        assertTrue(history.contains("auto-user,17500000,"));
+    }
+
+    @Test
+    void shouldReadAuctionStateFromDatabaseAcrossServiceInstances() {
+        auctionService.placeBid("1", "persist-user", 19000000);
+        auctionService.closeAuction("1");
+
+        AuctionService anotherService = new AuctionService();
+        String detail = anotherService.getAuctionDetail("1");
+
+        assertTrue(detail.contains("currentPrice=19000000"));
+        assertTrue(detail.contains("highestBidder=persist-user"));
+        assertTrue(detail.contains("status=FINISHED"));
+        assertTrue(detail.contains("bidCount=1"));
     }
 
     @Test
