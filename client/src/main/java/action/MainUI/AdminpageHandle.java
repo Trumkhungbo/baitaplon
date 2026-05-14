@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ResourceBundle;
 
-import action.SellingJobs.AcceptedSellingData;
+import action.Core.StartScence;
 import action.SellingJobs.ItemsHolder;
 import action.SellingJobs.ShopDataBase;
 import javafx.event.ActionEvent;
@@ -17,29 +17,32 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-
+import javafx.application.Platform;
 public class AdminpageHandle implements Initializable {
-    ItemsHolder Product = new ItemsHolder("a","b",9.0, LocalDate.of(2026,4,30), LocalTime.of(16,0), Time.valueOf(LocalTime.of(1,30)));
+    ItemsHolder Product = new ItemsHolder("a", "b", 9.0, LocalDate.of(2026, 4, 30), LocalTime.of(16, 0), Time.valueOf(LocalTime.of(1, 30)));
     @FXML
     private TableView<ItemsHolder> ItemsTable;
     @FXML
-    private TableColumn<ItemsHolder,String> ProductName;
+    private TableColumn<ItemsHolder, String> ProductName;
     @FXML
-    private TableColumn<ItemsHolder,String> ProductPrice;
+    private TableColumn<ItemsHolder, String> ProductPrice;
     @FXML
-    private TableColumn<ItemsHolder,LocalDate> ProductDate;
+    private TableColumn<ItemsHolder, LocalDate> ProductDate;
     @FXML
-    private TableColumn<ItemsHolder,LocalTime> ProductTime;
+    private TableColumn<ItemsHolder, LocalTime> ProductTime;
     @FXML
-    private TableColumn<ItemsHolder,Time> SellingTime;
+    private TableColumn<ItemsHolder, Time> SellingTime;
     @FXML
-    private TableColumn<ItemsHolder,String> ProductDescription;
+    private TableColumn<ItemsHolder, String> ProductDescription;
     @FXML
     private TableColumn<ItemsHolder, CheckBox> CheckBox;
     @FXML
-    private TableColumn<ItemsHolder,String> STTColumn;
+    private TableColumn<ItemsHolder, String> STTColumn;
+
     @Override
-    public void initialize(URL location, ResourceBundle resource){
+    public void initialize(URL location, ResourceBundle resource) {
+        fetchAuctionsFromServer();
+
         ProductName.setCellValueFactory(new PropertyValueFactory<>("itemname"));
         ProductPrice.setCellValueFactory(new PropertyValueFactory<>("itemprice"));
         ProductDate.setCellValueFactory(new PropertyValueFactory<>("itemdate"));
@@ -76,21 +79,56 @@ public class AdminpageHandle implements Initializable {
         STTColumn.setStyle("-fx-alignment: CENTER;");
 
     }
-    public void QueueNewStuff(String name,String in4,double price,LocalDate date,LocalTime Starttime,Time time){
-        ItemsHolder item = new ItemsHolder(name,in4,price,date,Starttime,time);
-        ItemsTable.getItems().add(item);
-
-    }
-    public void Confirm(ActionEvent event){
-        AcceptedSellingData.transferredItems.clear();
+    public void Confirm(ActionEvent event) {
         for (ItemsHolder item : ItemsTable.getItems()) {
-            if (item.getCheckBox().isSelected()) {
-                AcceptedSellingData.transferredItems.add(item);
+            if (item.getCheckBox().isSelected()){
+                StartScence.client.sendMessage("UPDATE_STATUS|" + item.getItemname()+"|OPEN" );
             }
         }
         ItemsTable.getItems().clear();
     }
-    
 
+    public void fetchAuctionsFromServer() {
+        // 1. Lắng nghe phản hồi từ Server
+        StartScence.client.setServerListener(message -> {
+            System.out.println("Nhận được từ Server: " + message);
+
+            if (message.startsWith("AUCTION_LIST|")) {
+                // Cắt bỏ phần header
+                String dataPart = message.substring("AUCTION_LIST|".length());
+
+                if (dataPart.isEmpty()) {
+                    System.out.println("Không có sản phẩm nào.");
+                    return;
+                }
+
+                // Dữ liệu trả về sẽ chạy trên Thread của Socket, cần đưa vào JavaFX Thread để cập nhật UI
+                Platform.runLater(() -> {
+                    // Xóa dữ liệu cũ trên giao diện nếu có (ví dụ VBox hoặc FlowPane)
+                    // vBoxLobby.getChildren().clear();
+
+                    // Phân tách từng Item bằng dấu chấm phẩy ";"
+                    String[] items = dataPart.split(";");
+                    for (String itemData : items) {
+                        // Phân tách các thuộc tính của 1 Item bằng dấu hai chấm ":"
+                        String[] attributes = itemData.split(":");
+                        if (attributes.length >= 4) {
+                            String id = attributes[0];
+                            String itemName = attributes[1];
+                            Double currentPrice = Double.parseDouble(attributes[2]);
+                            String status = attributes[3];
+                            if(status.equals("PENDING")){
+                            ItemsHolder itemsHolder = new ItemsHolder(itemName,id, (double) currentPrice, LocalDate.of(2026, 6, 30),LocalTime.of(15,20,30),Time.valueOf(LocalTime.of(10,30)));
+                            ItemsTable.getItems().add(itemsHolder);}
+                        }
+                    }
+                });
+            }
+        });
+
+        // 2. Gửi yêu cầu lấy danh sách đến Server
+        StartScence.client.sendMessage("LIST_AUCTIONS");
+
+    }
 }
 

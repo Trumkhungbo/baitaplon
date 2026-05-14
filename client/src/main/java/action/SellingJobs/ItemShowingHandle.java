@@ -1,15 +1,24 @@
 package action.SellingJobs;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ResourceBundle;
 
+import action.Authentication.StoreItemDataInit;
+import action.Core.SceneSwitch;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-public class ItemShowingHandle {
+public class ItemShowingHandle implements Initializable {
 
     // Nếu bạn có gán ID cho 2 nút này trong Scene Builder thì thêm @FXML vào
     @FXML
@@ -30,23 +39,41 @@ public class ItemShowingHandle {
      * Trong JavaFX, hàm initialize() luôn tự động được gọi SAU KHI
      * file FXML đã nạp xong các giao diện. Đây là nơi chuẩn nhất để nạp dữ liệu.
      */
-
-
     @FXML
-    public void LeftClicked(ActionEvent actionEvent) {
-        // Nếu không phải là ảnh đầu tiên thì mới cho lùi
-        if (currentIndex > 0) {
-            currentIndex--; // Lùi index
-            imageView.setImage(imageList.get(currentIndex)); // Đổi ảnh trên màn hình
+    private Label name;
+    @FXML
+    private Label price;
+    @FXML
+    private Label status;
+    @FXML
+    private Label description;
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle){
+        getItem();
+    }
+    public void getItem(){
+        name.setText(StoreItemDataInit.name);
+        price.setText(StoreItemDataInit.price);
+        status.setText(StoreItemDataInit.status);
+        description.setText(StoreItemDataInit.description);
+        String image = StoreItemDataInit.image;
+        if(image!=null){
+            Image image1 = new Image("/assets/rubberDuck.jfif");
         }
+
+    }
+    @FXML
+    private TextField money;
+    @FXML
+    public void RaiseBind(ActionEvent actionEvent) {}
+    @FXML
+    public void ReturnToInvesment(ActionEvent actionEvent) throws IOException {
+        SceneSwitch sceneSwitch = new SceneSwitch();
+        sceneSwitch.SwitchToAnyWhere(actionEvent,"/views/Lobby.fxml");
+        }
+    @FXML
+    public ImageView image;
     }
 
-    @FXML
-    public void RightClicked(ActionEvent actionEvent) {
-        // Nếu không phải là ảnh cuối cùng thì mới cho tiến
-        if (currentIndex < imageList.size() - 1) {
-            currentIndex++; // Tăng index
-            imageView.setImage(imageList.get(currentIndex)); // Đổi ảnh trên màn hình
-        }
-    }
-}
+
+

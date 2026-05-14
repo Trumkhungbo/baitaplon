@@ -54,11 +54,6 @@ public class RegisterHandle {
                 sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
             }
         else {
-            StoreSignUpInput.name = name;
-            StoreSignUpInput.phoneNumber = phoneNumber;
-            StoreSignUpInput.email = email;
-            StoreSignUpInput.personalID = personalID;
-            StoreSignUpInput.password = password;
 
             StartScence.client.setServerListener(message -> {
                 javafx.application.Platform.runLater(() -> {

@@ -2,11 +2,12 @@
 
 <?import javafx.scene.layout.*?>
 
-
+<?import javafx.scene.control.ScrollPane?>
 <StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.SellingJobs.InvesmentSiteHandle">
-   <children>
-      <AnchorPane prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #D3D3D3;">
-
-</AnchorPane>
-   </children>
+   <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+      <content>
+         <FlowPane fx:id="flowPane" hgap="25.0" vgap="25.0" style="-fx-padding: 30px;">
+         </FlowPane>
+      </content>
+   </ScrollPane>
 </StackPane>
