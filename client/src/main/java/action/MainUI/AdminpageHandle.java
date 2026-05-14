@@ -8,6 +8,7 @@ import java.util.ResourceBundle;
 
 import action.Core.StartScence;
 import action.SellingJobs.ItemsHolder;
+import action.SellingJobs.ShopDataBase;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -57,6 +58,7 @@ public class AdminpageHandle implements Initializable {
             );
             ItemsTable.getItems().add(newProduct);
         }
+        ItemsTable.setItems(ShopDataBase.danhSachSanPham);
 
         STTColumn.setCellFactory(column -> new TableCell<ItemsHolder, String>() {
             @Override

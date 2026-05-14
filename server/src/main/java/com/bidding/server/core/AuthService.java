@@ -95,6 +95,28 @@ public class AuthService {
         return response.toString();
     }
 
+    public String resetPassword(String username, String newPassword) {
+        JsonObject response = new JsonObject();
+        response.addProperty("command", "RESET_PASSWORD_RESULT");
+        try {
+            User user = userDAO.findByUsername(username);
+            if (user != null) {
+                userDAO.updatePasswordHash(username, newPassword);
+
+                response.addProperty("status", "SUCCESS");
+                response.addProperty("message", "Đổi mật khẩu thành công!");
+            } else {
+                response.addProperty("status", "FAILED");
+                response.addProperty("message", "Không tìm thấy tài khoản '" + username + "' trong hệ thống!");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.addProperty("status", "FAILED");
+            response.addProperty("message", "Lỗi CSDL: Không thể lưu mật khẩu mới.");
+        }
+        return response.toString();
+    }
+
     public String addMoney(String username, String money) {
         try {
             String cleanUsername = username.trim();

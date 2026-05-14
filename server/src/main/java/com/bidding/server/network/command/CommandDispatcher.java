@@ -31,6 +31,7 @@ public class CommandDispatcher {
         register("GET_ACCOUNTINFORMATION", new GetAccountInformationCommand(authService));
         register("ADD_MONEY", new GetNewMoneyCommand(authService));
         register("FORGOT_PASSWORD", new ForgotPasswordCommand(authService));
+        register("RESET_PASSWORD", new ResetPasswordCommand(authService));
         register("UPDATE_STATUS", new UpdateStatusCommand(auctionService));
     }
 
