@@ -11,7 +11,7 @@ import java.util.List;
 import com.bidding.common.model.AutoBid;
 
 public class AutoBidDAO extends BaseDAO {
-
+    
     /** Tạo mới hoặc cập nhật auto-bid (upsert) */
     public void upsert(AutoBid ab) {
         String sql = """
@@ -24,7 +24,7 @@ public class AutoBidDAO extends BaseDAO {
         """;
         try (Connection conn = getConn();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
+            
             ps.setLong(1, ab.getAuctionId());
             ps.setString(2, ab.getBidderUsername());
             ps.setDouble(3, ab.getMaxBid());
@@ -34,7 +34,7 @@ public class AutoBidDAO extends BaseDAO {
             throw new RuntimeException("Lỗi upsert auto bid: " + e.getMessage(), e);
         }
     }
-
+    
     public boolean disable(long auctionId, String bidderUsername) {
         String sql = "UPDATE auto_bid_settings SET is_active = 0 WHERE auction_id = ? AND bidder_username = ?";
         try (Connection conn = getConn();
@@ -47,7 +47,7 @@ public class AutoBidDAO extends BaseDAO {
             throw new RuntimeException("Lỗi disable auto bid: " + e.getMessage(), e);
         }
     }
-
+    
     public List<AutoBid> findActiveByAuction(long auctionId) {
         String sql = """
             SELECT * FROM auto_bid_settings
@@ -67,7 +67,7 @@ public class AutoBidDAO extends BaseDAO {
         }
         return list;
     }
-
+    
     public AutoBid findOne(long auctionId, String bidderUsername) {
         String sql = "SELECT * FROM auto_bid_settings WHERE auction_id = ? AND bidder_username = ?";
         try (Connection conn = getConn();
@@ -83,7 +83,7 @@ public class AutoBidDAO extends BaseDAO {
         }
         return null;
     }
-
+    
     private AutoBid map(ResultSet rs) throws SQLException {
         AutoBid ab = new AutoBid();
         ab.setId(rs.getLong("id"));

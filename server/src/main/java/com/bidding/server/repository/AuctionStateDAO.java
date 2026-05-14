@@ -1,7 +1,7 @@
 package com.bidding.server.repository;
 
 import com.bidding.server.core.Auction;
-import com.bidding.server.core.AuctionStatus;
+import com.bidding.common.enums.AuctionStatus;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -133,6 +133,7 @@ public class AuctionStateDAO extends BaseDAO {
             long startTimeMillis,
             int durationMinutes,
             int bidCount
+
     ) {
     }
 }

@@ -18,7 +18,7 @@ import com.bidding.common.model.item.Vehicle;
 
 
 public class ItemDAO extends BaseDAO {
-
+    
     public Item save(Item item, String sellerUsername) {
         String sql = """
             INSERT INTO items (name, description, starting_price, item_type, seller_username,
@@ -28,14 +28,14 @@ public class ItemDAO extends BaseDAO {
         """;
         try (Connection conn = getConn();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
+            
             ps.setString(1, item.getName());
             ps.setString(2, item.getDescription());
             ps.setDouble(3, item.getStartingPrice());
             ps.setString(4, item.getItemType().name());
             ps.setString(5, sellerUsername);
             ps.setString(6, item.getImageUrl()); // image_url — null nếu không có
-
+            
             if (item instanceof Art a) {
                 ps.setString(7, a.getArtist());
                 ps.setInt(8, a.getCreationYear());
@@ -54,7 +54,7 @@ public class ItemDAO extends BaseDAO {
             } else {
                 for (int i = 7; i <= 12; i++) ps.setNull(i, Types.NULL);
             }
-
+            
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) item.setId(keys.getLong(1));
@@ -64,7 +64,7 @@ public class ItemDAO extends BaseDAO {
             throw new RuntimeException("Lỗi lưu item: " + e.getMessage(), e);
         }
     }
-
+    
     public Item findById(long id) {
         String sql = "SELECT * FROM items WHERE id = ?";
         try (Connection conn = getConn();
@@ -93,7 +93,7 @@ public class ItemDAO extends BaseDAO {
         }
         return list;
     }
-
+    // Tìm tất cả vật phẩm của một người bán cụ thể
     public List<Item> findBySeller(String sellerUsername) {
         String sql = "SELECT * FROM items WHERE seller_username = ?";
         List<Item> list = new ArrayList<>();
@@ -109,7 +109,7 @@ public class ItemDAO extends BaseDAO {
         }
         return list;
     }
-
+    
     private Item map(ResultSet rs) throws SQLException {
         ItemType type = ItemType.valueOf(rs.getString("item_type"));
         Item item = switch (type) {
