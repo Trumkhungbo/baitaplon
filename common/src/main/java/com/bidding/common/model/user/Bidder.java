@@ -10,8 +10,8 @@ public class Bidder extends User {
         setRole(UserRole.BIDDER);
     }
 
-    public Bidder(String username, String passwordHash, String email, double balance) {
-        super(username, passwordHash, email);
+    public Bidder(String username, String passwordHash, String email, double balance, String phone, String personalId) {
+        super(username, passwordHash, email, phone, personalId);
         setRole(UserRole.BIDDER);
         this.balance = balance;
     }

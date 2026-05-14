@@ -1,5 +1,6 @@
 package com.bidding.server.core;
 
+import com.bidding.common.enums.AuctionStatus;
 import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.exception.InvalidBidException;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,5 +1,13 @@
+
 package com.bidding.server.core;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.bidding.common.enums.AuctionStatus;
 import com.bidding.common.model.AutoBid;
 import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.exception.AuctionClosedException;
@@ -9,12 +17,6 @@ import com.bidding.server.repository.AuctionRecordDAO;
 import com.bidding.server.repository.AuctionStateDAO;
 import com.bidding.server.repository.AutoBidDAO;
 import com.bidding.server.repository.BidHistoryDAO;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class AuctionService {
 
@@ -63,9 +65,7 @@ public class AuctionService {
                     snapshot.auctionId(),
                     snapshot.sellerUsername(),
                     snapshot.itemName(),
-                    snapshot.startPrice(),
-                    snapshot.status()
-            );
+                    snapshot.startPrice(), (AuctionStatus) snapshot.status());
             auctions.put(snapshot.auctionId(), auction);
             syncAuctionFromDatabase(auction);
         }
@@ -285,6 +285,10 @@ public class AuctionService {
         }
 
         synchronized (auction) {
+            // Sync từ DB trước khi validate — đảm bảo không dùng dữ liệu RAM stale
+            // (quan trọng khi nhiều client bid đồng thời hoặc nhiều server instance)
+            syncAuctionFromDatabase(auction);
+
             long now = System.currentTimeMillis();
 
             if (isActiveAuction(auction) && now >= auction.getEndTime()) {
@@ -309,7 +313,8 @@ public class AuctionService {
                 );
             }
 
-            AuctionStatus previousStatus = auction.getStatus();
+            // Lưu snapshot SAU KHI sync — không lưu trước vì sync có thể đổi status/price
+            AuctionStatus previousStatus = (AuctionStatus) auction.getStatus();
             double previousPrice = auction.getCurrentPrice();
             String previousHighestBidder = auction.getHighestBidder();
             long previousEndTime = auction.getEndTime();
@@ -370,7 +375,7 @@ public class AuctionService {
         }
 
         auction.setCurrentPrice(state.currentPrice());
-        auction.setStatus(state.status());
+        auction.setStatus((AuctionStatus) state.status());
         auction.setHighestBidder(state.highestBidder());
         auction.setStartTimeMillis(state.startTimeMillis());
         auction.setDurationMinutes(state.durationMinutes());
