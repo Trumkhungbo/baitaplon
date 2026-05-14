@@ -50,13 +50,10 @@ public class ResetPasswordHandle {
           String status = res.get("status").getAsString();
 
           if (status.equals("SUCCESS")) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Thành công");
-            alert.setHeaderText(null);
-            alert.setContentText("Đổi mật khẩu thành công! Mời đăng nhập lại.");
-            alert.showAndWait();
             try {
-              sceneSwitch.SwitchToLogin(event);
+              SceneSwitch sceneswitch = new SceneSwitch();
+              sceneswitch.SwitchToLogin(event);
+              sceneswitch.SwitchToLockPage(event, "/views/ResetPasswordPopUp.fxml");
             } catch (IOException e) {
               e.printStackTrace();
             }
