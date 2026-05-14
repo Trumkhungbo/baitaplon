@@ -1,17 +1,58 @@
 package com.bidding.common.payload;
 
+import java.time.LocalDateTime;
+
+import com.bidding.common.model.item.Item;
+
 public class CreateAuctionRequest {
-    private long itemId;
-    private String startTime; // ISO datetime string
-    private String endTime;
 
-    public long getItemId() { return itemId; }
-    public void setItemId(long itemId) { this.itemId = itemId; }
+    private String type;
 
-    public String getStartTime() { return startTime; }
-    public void setStartTime(String startTime) { this.startTime = startTime; }
+    private String sellerUsername;
 
-    public String getEndTime() { return endTime; }
-    public void setEndTime(String endTime) { this.endTime = endTime; }
+    private Item item;
+
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getSellerUsername() {
+        return sellerUsername;
+    }
+
+    public void setSellerUsername(String sellerUsername) {
+        this.sellerUsername = sellerUsername;
+    }
+
+    public Item getItem() {
+        return item;
+    }
+
+    public void setItem(Item item) {
+        this.item = item;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
+    }
 }
-//yêu cầu của client tạo đấu giá mới lên server

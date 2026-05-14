@@ -55,14 +55,17 @@ public class ForgotPasswordHandle {
 
                         if (res.has("command") && res.get("command").getAsString().equals("FORGOT_PASSWORD_RESULT")) {
                             if (res.get("status").getAsString().equals("SUCCESS")) {
-
-                                // HIỂN THỊ MẬT KHẨU BẰNG POPUP THÔNG BÁO
-                                String recoveredPass = res.get("password").getAsString();
-                                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                                alert.setTitle("Thành công");
-                                alert.setHeaderText("Đã tìm thấy tài khoản!");
-                                alert.setContentText("Mật khẩu của bạn là: " + recoveredPass);
-                                alert.showAndWait();
+                                Platform.runLater(() -> {
+                                    try {
+                                        // 1. Lưu tạm username vào biến static
+                                        StoreDataInput.username = Username;
+                                        // 2. Chuyển sang màn hình FXML mới
+                                        SceneSwitch sceneSwitch = new SceneSwitch();
+                                        sceneSwitch.SwitchToAnyWhere(event, "/views/ResetPassword.fxml");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                });
 
                             } else {
                                 // Sai thông tin -> Hiện màn hình lỗi
@@ -76,6 +79,10 @@ public class ForgotPasswordHandle {
             });
         }
 
+    }
+    public void BackToLogin(ActionEvent event) throws IOException {
+        SceneSwitch sceneswitch = new SceneSwitch();
+        sceneswitch.SwitchToLogin(event);
     }
     public void BackToLogin(ActionEvent event) throws IOException {
         SceneSwitch sceneswitch = new SceneSwitch();

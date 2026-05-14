@@ -138,3 +138,59 @@
 .custom-table .filler {
     -fx-background-color: transparent;
 }
+.auction-card {
+    -fx-background-color: #1A1A1A;
+    -fx-background-radius: 15px;
+    -fx-border-color: #333333;
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 10, 0, 0, 5);
+    -fx-cursor: hand;
+    -fx-transition: 0.3s;
+}
+
+/* Hiệu ứng khi di chuột vào Card - Nó sẽ hơi nổi lên */
+.auction-card:hover {
+    -fx-border-color: #FACC15;
+    -fx-translate-y: -5px;
+}
+
+.card-title {
+    -fx-text-fill: white;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.card-price {
+    -fx-text-fill: #FACC15;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+/* Badge trạng thái */
+.status-active {
+    -fx-text-fill: #4CAF50;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-border-color: #4CAF50;
+    -fx-border-radius: 4px;
+    -fx-padding: 2px 5px;
+}
+
+.status-finished {
+    -fx-text-fill: #FF4444;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-border-color: #FF4444;
+    -fx-border-radius: 4px;
+    -fx-padding: 2px 5px;
+}
+
+/* Nút bấm nhỏ trong Card */
+.btn-gold-sm {
+    -fx-background-color: #FACC15;
+    -fx-text-fill: #1A1A1A;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-padding: 10px;
+    -fx-cursor: hand;
+}

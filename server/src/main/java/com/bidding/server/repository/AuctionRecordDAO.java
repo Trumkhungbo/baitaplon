@@ -40,7 +40,7 @@ public class AuctionRecordDAO extends BaseDAO {
         }
     }
 
-    public void save(String auctionId, String sellerUsername, String itemName, double startPrice, long endTime, AuctionStatus status) {
+    public void save(String auctionId, String sellerUsername, String itemName, double startPrice, long startTimeMillis, int durationMinutes, AuctionStatus status) {
         Art item = new Art();
         item.setName(itemName);
         item.setDescription("");
@@ -52,22 +52,22 @@ public class AuctionRecordDAO extends BaseDAO {
         String sql = """
                 INSERT INTO auctions (
                     id, item_id, seller_username, start_time, end_time,
-                    status, current_highest_bid, highest_bidder_username
+                    duration_minutes, status, current_highest_bid, highest_bidder_username
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (Connection conn = getConn();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            long now = System.currentTimeMillis();
             ps.setLong(1, Long.parseLong(auctionId));
             ps.setLong(2, item.getId());
             ps.setString(3, sellerUsername);
-            ps.setString(4, String.valueOf(now));
-            ps.setString(5, String.valueOf(endTime));
-            ps.setString(6, status.name());
-            ps.setDouble(7, startPrice);
-            ps.setString(8, null);
+            ps.setString(4, String.valueOf(startTimeMillis));
+            ps.setString(5, String.valueOf(startTimeMillis + (durationMinutes * 60_000L)));
+            ps.setInt(6, durationMinutes);
+            ps.setString(7, status.name());
+            ps.setDouble(8, startPrice);
+            ps.setString(9, null);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save auction record", e);
@@ -77,7 +77,9 @@ public class AuctionRecordDAO extends BaseDAO {
     public void updateState(Auction auction) {
         String sql = """
                 UPDATE auctions
-                SET end_time = ?,
+                SET start_time = ?,
+                    end_time = ?,
+                    duration_minutes = ?,
                     status = ?,
                     current_highest_bid = ?,
                     highest_bidder_username = ?
@@ -85,12 +87,14 @@ public class AuctionRecordDAO extends BaseDAO {
                 """;
 
         try (Connection conn = getConn();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, String.valueOf(auction.getEndTime()));
-            ps.setString(2, auction.getStatus().name());
-            ps.setDouble(3, auction.getCurrentPrice());
-            ps.setString(4, auction.getHighestBidder());
-            ps.setLong(5, Long.parseLong(auction.getId()));
+            PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, String.valueOf(auction.getStartTimeMillis()));
+            ps.setString(2, String.valueOf(auction.getEndTime()));
+            ps.setInt(3, auction.getDurationMinutes());
+            ps.setString(4, auction.getStatus().name());
+            ps.setDouble(5, auction.getCurrentPrice());
+            ps.setString(6, auction.getHighestBidder());
+            ps.setLong(7, Long.parseLong(auction.getId()));
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to update auction record", e);
