@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -19,9 +20,21 @@ public class LoginHandle {
     @FXML
     private PasswordField pass;
     @FXML
+    private TextField passVisible;
+    @FXML
+    private Button togglePasswordButton;
+    @FXML
     private Label label;
+
+    @FXML
+    public void initialize() {
+        passVisible.setManaged(false);
+        passVisible.setVisible(false);
+        passVisible.textProperty().bindBidirectional(pass.textProperty());
+    }
+
     public void Login(ActionEvent clicked) throws IOException {
-        String password1 = pass.getText();
+        String password1 = isPasswordVisible() ? passVisible.getText() : pass.getText();
         String user1 = login.getText();
         StoreDataInput.username=user1;
         StoreDataInput.password=password1;
@@ -64,5 +77,19 @@ public class LoginHandle {
     }
     public void Adminloggin(ActionEvent clicked) throws IOException {
         sceneSwitch.SwitchToAnyWhere(clicked, "/views/AdminLoggin.fxml");
+    }
+
+    @FXML
+    public void togglePasswordVisibility() {
+        boolean showPassword = !passVisible.isVisible();
+        passVisible.setVisible(showPassword);
+        passVisible.setManaged(showPassword);
+        pass.setVisible(!showPassword);
+        pass.setManaged(!showPassword);
+        togglePasswordButton.setText(showPassword ? "🙈" : "👁");
+    }
+
+    private boolean isPasswordVisible() {
+        return passVisible != null && passVisible.isVisible();
     }
 }
