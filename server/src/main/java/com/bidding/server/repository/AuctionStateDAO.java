@@ -133,6 +133,7 @@ public class AuctionStateDAO extends BaseDAO {
             long startTimeMillis,
             int durationMinutes,
             int bidCount
+
     ) {
     }
 }
