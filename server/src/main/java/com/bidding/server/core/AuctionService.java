@@ -33,10 +33,9 @@ public class AuctionService {
         this.auctionStateDAO = new AuctionStateDAO();
         this.auctionRecordDAO = new AuctionRecordDAO();
         this.autoBidDAO = new AutoBidDAO();
-      
-        this.nextAuctionId = new AtomicInteger((int) auctionRecordDAO.findMaxAuctionId() + 1);
         seedData();
         loadPersistedRuntimeAuctions();
+        this.nextAuctionId = new AtomicInteger((int) auctionRecordDAO.findMaxAuctionId() + 1);
     }
 
     private void seedData() {
@@ -46,11 +45,11 @@ public class AuctionService {
     }
 
     private void addInitialAuction(String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
-        String id = String.valueOf(nextAuctionId.getAndIncrement());
+        String id = String.valueOf(auctions.size() + 1);
         Auction auction = new Auction(id, sellerUsername, itemName, startPrice, status);
         auctions.put(id, auction);
         if (!auctionRecordDAO.existsById(id)) {
-                auctionRecordDAO.save(auction);
+            auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getEndTime(), status);
         }
         syncAuctionFromDatabase(auction);
         persistAuctionState(auction);
@@ -216,7 +215,7 @@ public class AuctionService {
 
         String id = String.valueOf(nextAuctionId.getAndIncrement());
         Auction auction = new Auction(id, sellerUsername, itemName, startPrice, AuctionStatus.OPEN);
-        auctionRecordDAO.save(auction);
+        auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getEndTime(), AuctionStatus.OPEN);
         auctions.put(id, auction);
         persistAuctionState(auction, 0);
 
@@ -282,6 +281,8 @@ public class AuctionService {
         }
 
         synchronized (auction) {
+            // Sync từ DB trước khi validate — đảm bảo không dùng dữ liệu RAM stale
+            // (quan trọng khi nhiều client bid đồng thời hoặc nhiều server instance)
             syncAuctionFromDatabase(auction);
 
             long now = System.currentTimeMillis();
@@ -308,6 +309,7 @@ public class AuctionService {
                 );
             }
 
+            // Lưu snapshot SAU KHI sync — không lưu trước vì sync có thể đổi status/price
             AuctionStatus previousStatus = (AuctionStatus) auction.getStatus();
             double previousPrice = auction.getCurrentPrice();
             String previousHighestBidder = auction.getHighestBidder();
@@ -371,7 +373,7 @@ public class AuctionService {
         auction.setCurrentPrice(state.currentPrice());
         auction.setStatus((AuctionStatus) state.status());
         auction.setHighestBidder(state.highestBidder());
-        auction.setEndTime(state.endTimeMillis());
+        auction.setEndTime(state.endTime());
         return state;
     }
 
