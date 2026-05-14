@@ -1,5 +1,13 @@
+
 package com.bidding.server.core;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.bidding.common.enums.AuctionStatus;
 import com.bidding.common.model.AutoBid;
 import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.exception.AuctionClosedException;
@@ -9,12 +17,6 @@ import com.bidding.server.repository.AuctionRecordDAO;
 import com.bidding.server.repository.AuctionStateDAO;
 import com.bidding.server.repository.AutoBidDAO;
 import com.bidding.server.repository.BidHistoryDAO;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class AuctionService {
 
@@ -31,9 +33,10 @@ public class AuctionService {
         this.auctionStateDAO = new AuctionStateDAO();
         this.auctionRecordDAO = new AuctionRecordDAO();
         this.autoBidDAO = new AutoBidDAO();
+      
+        this.nextAuctionId = new AtomicInteger((int) auctionRecordDAO.findMaxAuctionId() + 1);
         seedData();
         loadPersistedRuntimeAuctions();
-        this.nextAuctionId = new AtomicInteger((int) auctionRecordDAO.findMaxAuctionId() + 1);
     }
 
     private void seedData() {
@@ -43,11 +46,11 @@ public class AuctionService {
     }
 
     private void addInitialAuction(String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
-        String id = String.valueOf(auctions.size() + 1);
+        String id = String.valueOf(nextAuctionId.getAndIncrement());
         Auction auction = new Auction(id, sellerUsername, itemName, startPrice, status);
         auctions.put(id, auction);
         if (!auctionRecordDAO.existsById(id)) {
-            auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getStartTimeMillis(), auction.getDurationMinutes(), status);
+                auctionRecordDAO.save(auction);
         }
         syncAuctionFromDatabase(auction);
         persistAuctionState(auction);
@@ -63,9 +66,7 @@ public class AuctionService {
                     snapshot.auctionId(),
                     snapshot.sellerUsername(),
                     snapshot.itemName(),
-                    snapshot.startPrice(),
-                    snapshot.status()
-            );
+                    snapshot.startPrice(), (AuctionStatus) snapshot.status());
             auctions.put(snapshot.auctionId(), auction);
             syncAuctionFromDatabase(auction);
         }
@@ -151,9 +152,7 @@ public class AuctionService {
                 + "|currentPrice=" + (long) auction.getCurrentPrice()
                 + "|highestBidder=" + bidder
                 + "|status=" + auction.getStatus()
-                + "|startDate=" + auction.getStartDate()
-                + "|startTime=" + auction.getStartClockTime()
-                + "|duration=" + auction.getDurationMinutes()
+                + "|endTime=" + auction.getEndTime()
                 + "|bidCount=" + resolveBidCount(auctionId, state);
     }
 
@@ -171,9 +170,7 @@ public class AuctionService {
                 + "|startPrice=" + (long) auction.getStartPrice()
                 + "|currentPrice=" + (long) auction.getCurrentPrice()
                 + "|status=" + auction.getStatus()
-                + "|startDate=" + auction.getStartDate()
-                + "|startTime=" + auction.getStartClockTime()
-                + "|duration=" + auction.getDurationMinutes();
+                + "|endTime=" + auction.getEndTime();
     }
 
     public String getBidHistory(String auctionId) {
@@ -219,7 +216,7 @@ public class AuctionService {
 
         String id = String.valueOf(nextAuctionId.getAndIncrement());
         Auction auction = new Auction(id, sellerUsername, itemName, startPrice, AuctionStatus.OPEN);
-        auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getStartTimeMillis(), auction.getDurationMinutes(), AuctionStatus.OPEN);
+        auctionRecordDAO.save(auction);
         auctions.put(id, auction);
         persistAuctionState(auction, 0);
 
@@ -285,6 +282,8 @@ public class AuctionService {
         }
 
         synchronized (auction) {
+            syncAuctionFromDatabase(auction);
+
             long now = System.currentTimeMillis();
 
             if (isActiveAuction(auction) && now >= auction.getEndTime()) {
@@ -309,7 +308,7 @@ public class AuctionService {
                 );
             }
 
-            AuctionStatus previousStatus = auction.getStatus();
+            AuctionStatus previousStatus = (AuctionStatus) auction.getStatus();
             double previousPrice = auction.getCurrentPrice();
             String previousHighestBidder = auction.getHighestBidder();
             long previousEndTime = auction.getEndTime();
@@ -370,10 +369,8 @@ public class AuctionService {
         }
 
         auction.setCurrentPrice(state.currentPrice());
-        auction.setStatus(state.status());
+        auction.setStatus((AuctionStatus) state.status());
         auction.setHighestBidder(state.highestBidder());
-        auction.setStartTimeMillis(state.startTimeMillis());
-        auction.setDurationMinutes(state.durationMinutes());
         auction.setEndTime(state.endTimeMillis());
         return state;
     }
