@@ -47,7 +47,7 @@ public class AuctionService {
         Auction auction = new Auction(id, sellerUsername, itemName, startPrice, status);
         auctions.put(id, auction);
         if (!auctionRecordDAO.existsById(id)) {
-            auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getEndTime(), status);
+            auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getStartTimeMillis(), auction.getDurationMinutes(), status);
         }
         syncAuctionFromDatabase(auction);
         persistAuctionState(auction);
@@ -151,7 +151,9 @@ public class AuctionService {
                 + "|currentPrice=" + (long) auction.getCurrentPrice()
                 + "|highestBidder=" + bidder
                 + "|status=" + auction.getStatus()
-                + "|endTime=" + auction.getEndTime()
+                + "|startDate=" + auction.getStartDate()
+                + "|startTime=" + auction.getStartClockTime()
+                + "|duration=" + auction.getDurationMinutes()
                 + "|bidCount=" + resolveBidCount(auctionId, state);
     }
 
@@ -169,7 +171,9 @@ public class AuctionService {
                 + "|startPrice=" + (long) auction.getStartPrice()
                 + "|currentPrice=" + (long) auction.getCurrentPrice()
                 + "|status=" + auction.getStatus()
-                + "|endTime=" + auction.getEndTime();
+                + "|startDate=" + auction.getStartDate()
+                + "|startTime=" + auction.getStartClockTime()
+                + "|duration=" + auction.getDurationMinutes();
     }
 
     public String getBidHistory(String auctionId) {
@@ -215,7 +219,7 @@ public class AuctionService {
 
         String id = String.valueOf(nextAuctionId.getAndIncrement());
         Auction auction = new Auction(id, sellerUsername, itemName, startPrice, AuctionStatus.OPEN);
-        auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getEndTime(), AuctionStatus.OPEN);
+        auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getStartTimeMillis(), auction.getDurationMinutes(), AuctionStatus.OPEN);
         auctions.put(id, auction);
         persistAuctionState(auction, 0);
 
@@ -368,7 +372,9 @@ public class AuctionService {
         auction.setCurrentPrice(state.currentPrice());
         auction.setStatus(state.status());
         auction.setHighestBidder(state.highestBidder());
-        auction.setEndTime(state.endTime());
+        auction.setStartTimeMillis(state.startTimeMillis());
+        auction.setDurationMinutes(state.durationMinutes());
+        auction.setEndTime(state.endTimeMillis());
         return state;
     }
 

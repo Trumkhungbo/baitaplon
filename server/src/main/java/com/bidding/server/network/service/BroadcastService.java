@@ -23,7 +23,9 @@ public class BroadcastService {
                 "BID_UPDATE|auctionId=" + auctionId
                         + "|highestBid=" + (long) auction.getCurrentPrice()
                         + "|bidder=" + auction.getHighestBidder()
-                        + "|endTime=" + auction.getEndTime(),
+                        + "|startDate=" + auction.getStartDate()
+                        + "|startTime=" + auction.getStartClockTime()
+                        + "|duration=" + auction.getDurationMinutes(),
                 auctionId
         );
     }
