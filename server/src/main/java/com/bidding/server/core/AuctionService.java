@@ -37,7 +37,7 @@ public class AuctionService {
     }
 
     private void seedData() {
-        addInitialAuction("seller1", "iPhone 15", 15000000, AuctionStatus.OPEN);
+        addInitialAuction("seller1", "iPhone 15", 15000000, AuctionStatus.PENDING);
         addInitialAuction("seller2", "MacBook Pro", 25000000, AuctionStatus.OPEN);
         addInitialAuction("seller3", "Oil Painting", 5000000, AuctionStatus.OPEN);
     }
@@ -215,7 +215,7 @@ public class AuctionService {
 
         String id = String.valueOf(nextAuctionId.getAndIncrement());
         Auction auction = new Auction(id, sellerUsername, itemName, startPrice, AuctionStatus.OPEN);
-        auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getEndTime(), AuctionStatus.OPEN);
+        auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getEndTime(), AuctionStatus.PENDING);
         auctions.put(id, auction);
         persistAuctionState(auction, 0);
 
