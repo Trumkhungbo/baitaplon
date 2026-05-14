@@ -1,8 +1,9 @@
 package com.bidding.server;
 
-import action.Core.StartScence;
 import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.network.AuctionServer;
+
+import action.Core.StartScence;
 import javafx.application.Application;
 
 public class ServerApplication {

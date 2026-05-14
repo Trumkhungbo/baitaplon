@@ -3,7 +3,7 @@ package com.bidding.server.repository;
 import com.bidding.common.enums.ItemType;
 import com.bidding.common.model.item.Art;
 import com.bidding.server.core.Auction;
-import com.bidding.server.core.AuctionStatus;
+import com.bidding.common.enums.AuctionStatus;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

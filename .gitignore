@@ -8,3 +8,5 @@ target/
 Thumbs.db
 *.db
 *.sqlite
+*.db-shm
+*.db-wal
