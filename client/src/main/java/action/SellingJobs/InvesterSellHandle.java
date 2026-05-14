@@ -4,6 +4,8 @@ import action.Core.SceneSwitch;
 import action.Core.StartScence;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
@@ -13,14 +15,24 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.sql.Time;
 import java.time.LocalTime;
+import java.util.ResourceBundle;
 
-public class InvesterSellHandle {
+public class InvesterSellHandle implements Initializable {
+    @Override
+    public void initialize(URL location, ResourceBundle resource){
+        setDescription(description);
+    }
     @FXML
     private TextField itemname;
     @FXML
-    private TextField description;
+    private ChoiceBox<String> description;
+    @FXML
+    private TextField description1;
+    @FXML
+    private TextField description2;
     @FXML
     private TextField price;
     @FXML
@@ -30,6 +42,7 @@ public class InvesterSellHandle {
 
     @FXML
     private TextField duration;
+
     @FXML
     private ImageView imageset;
     SceneSwitch sceneSwitch = new SceneSwitch();
@@ -45,7 +58,7 @@ public class InvesterSellHandle {
             Time DUration = Time.valueOf(timeString);
             String priced = price.getText();
             Double priceFunc = Double.parseDouble(priced);
-            ItemsHolder item = new ItemsHolder(itemname.getText(), description.getText(), priceFunc, date.getValue(), StarTime, DUration);
+            ItemsHolder item = new ItemsHolder(itemname.getText(), description.getValue(), description1.getText(),description2.getText(), priceFunc, date.getValue(), StarTime, DUration);
             ShopDataBase.danhSachSanPham.add(item);
 
             System.out.println("Đăng bán thành công!");
@@ -82,5 +95,11 @@ public class InvesterSellHandle {
             imageset.setImage(image);
         }
     }
+
+    public void setDescription(ChoiceBox<String> description) {
+        this.description = description;
+        description.getItems().addAll("","ELECTRONICS","ART","VEHICLE");
+        description.setValue(description.getItems().get(0));
     }
+}
 

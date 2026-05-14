@@ -19,11 +19,15 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.application.Platform;
 public class AdminpageHandle implements Initializable {
-    ItemsHolder Product = new ItemsHolder("a", "b", 9.0, LocalDate.of(2026, 4, 30), LocalTime.of(16, 0), Time.valueOf(LocalTime.of(1, 30)));
+    ItemsHolder Product = new ItemsHolder("a", "b", "","",9.0, LocalDate.of(2026, 4, 30), LocalTime.of(16, 0), Time.valueOf(LocalTime.of(1, 30)));
     @FXML
     private TableView<ItemsHolder> ItemsTable;
     @FXML
     private TableColumn<ItemsHolder, String> ProductName;
+    @FXML
+    private TableColumn<ItemsHolder, String> Productinfomation1;
+    @FXML
+    private TableColumn<ItemsHolder, String> Productinfomation2;
     @FXML
     private TableColumn<ItemsHolder, String> ProductPrice;
     @FXML
@@ -44,6 +48,8 @@ public class AdminpageHandle implements Initializable {
         fetchAuctionsFromServer();
 
         ProductName.setCellValueFactory(new PropertyValueFactory<>("itemname"));
+        Productinfomation1.setCellValueFactory(new PropertyValueFactory<>("iteminfomation1"));
+        Productinfomation2.setCellValueFactory(new PropertyValueFactory<>("iteminformation2"));
         ProductPrice.setCellValueFactory(new PropertyValueFactory<>("itemprice"));
         ProductDate.setCellValueFactory(new PropertyValueFactory<>("itemdate"));
         ProductTime.setCellValueFactory(new PropertyValueFactory<>("itemtime"));
@@ -51,7 +57,7 @@ public class AdminpageHandle implements Initializable {
         ProductDescription.setCellValueFactory(new PropertyValueFactory<>("iteminfomation"));
         CheckBox.setCellValueFactory(new PropertyValueFactory<>("checkBox"));
         for (int i = 0; i < 11; i++) {
-            ItemsHolder newProduct = new ItemsHolder("a", "b", 9.0,
+            ItemsHolder newProduct = new ItemsHolder("a", "ELECTRONICS","","", 9.0,
                     LocalDate.of(2026, 4, 30),
                     LocalTime.of(16, 0),
                     Time.valueOf(LocalTime.of(1, 30))
@@ -117,9 +123,9 @@ public class AdminpageHandle implements Initializable {
                             String itemName = attributes[1];
                             Double currentPrice = Double.parseDouble(attributes[2]);
                             String status = attributes[3];
-                            if(status.equals("PENDING")){
-                            ItemsHolder itemsHolder = new ItemsHolder(itemName,id, (double) currentPrice, LocalDate.of(2026, 6, 30),LocalTime.of(15,20,30),Time.valueOf(LocalTime.of(10,30)));
-                            ItemsTable.getItems().add(itemsHolder);}
+                            //if(status.equals("PENDING")){
+                            ItemsHolder itemsHolder = new ItemsHolder(itemName,id,"","" , (double) currentPrice, LocalDate.of(2026, 6, 30),LocalTime.of(15,20,30),Time.valueOf(LocalTime.of(10,30)));
+                            ItemsTable.getItems().add(itemsHolder);
                         }
                     }
                 });

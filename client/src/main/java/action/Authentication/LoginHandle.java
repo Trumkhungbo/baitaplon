@@ -54,9 +54,14 @@ public class LoginHandle {
                             e.printStackTrace();
                         }
                     } else if (message.startsWith("LOGIN_FAILED")) {
-                            label.setText("Wrong !");
-
+                            SceneSwitch sceneSwitch = new SceneSwitch();
+                        try {
+                            sceneSwitch.SwitchToLockPage(clicked,"/víews/SomeThingUnFill.fxml");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
                         }
+
+                    }
 
                 });
             });
