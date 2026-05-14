@@ -37,15 +37,22 @@ public class InvesterSellHandle {
     public void Clicked(ActionEvent actionEvent) throws IOException {
         try {
             LocalTime StarTime = LocalTime.parse(TimeStart.getText());
-            Time DUration = Time.valueOf(duration.getText());
+            int minutesInput = Integer.parseInt(duration.getText());
+            int hours = minutesInput / 60;
+            int minutes = minutesInput % 60;
+            String timeString = String.format("%02d:%02d:00", hours, minutes);
+
+            Time DUration = Time.valueOf(timeString);
             String priced = price.getText();
-            Double priceFunc =  Double.parseDouble(priced);
-            ItemsHolder item = new ItemsHolder(itemname.getText(),description.getText(),priceFunc,date.getValue(),StarTime,DUration);
+            Double priceFunc = Double.parseDouble(priced);
+            ItemsHolder item = new ItemsHolder(itemname.getText(), description.getText(), priceFunc, date.getValue(), StarTime, DUration);
             ShopDataBase.danhSachSanPham.add(item);
 
+            System.out.println("Đăng bán thành công!");
         }
         catch (Exception e) {
             sceneSwitch.SwitchToLockPage(actionEvent, "/views/WrongInputShow.fxml");
+            e.printStackTrace();
         }
     }
     @FXML
