@@ -14,6 +14,14 @@ public abstract class User extends com.bidding.common.model.Entity {
         super();
     }
 
+    public User(String username, String passwordHash, String email,  String phone, String personalId) {
+        super();
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.email = email;
+        this.phone = phone;
+        this.personalId = personalId;
+    }
     public User(String username, String passwordHash, String email) {
         super();
         this.username = username;

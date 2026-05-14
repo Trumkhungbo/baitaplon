@@ -2,7 +2,7 @@ package com.bidding.server.core;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import com.bidding.common.enums.AuctionStatus;
 public class Auction {
 
     private final String id;
