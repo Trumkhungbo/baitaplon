@@ -30,7 +30,7 @@ public class AuthService {
         return "LOGIN_FAILED|Invalid username or password";
     }
 
-    public String register(String username, String password) {
+    public String register(String username, String password,String phoneNumber,String email,String personalID) {
         if (username == null || username.trim().isEmpty()) {
             return "REGISTER_FAILED|Empty username";
         }
@@ -41,9 +41,9 @@ public class AuthService {
         Bidder newUser = new Bidder();
         newUser.setUsername(username);
         newUser.setPasswordHash(PasswordHasher.hash(password));
-        newUser.setEmail(username + "@local");
-        newUser.setPhone("");
-        newUser.setPersonalId("");
+        newUser.setEmail(email);
+        newUser.setPhone(phoneNumber);
+        newUser.setPersonalId(personalID);
         newUser.setRole(UserRole.BIDDER);
         newUser.setBalance(0.0);
         newUser.setCreatedAt(System.currentTimeMillis());
@@ -92,6 +92,28 @@ public class AuthService {
             response.addProperty("status", "FAILED");
         }
 
+        return response.toString();
+    }
+
+    public String resetPassword(String username, String newPassword) {
+        JsonObject response = new JsonObject();
+        response.addProperty("command", "RESET_PASSWORD_RESULT");
+        try {
+            User user = userDAO.findByUsername(username);
+            if (user != null) {
+                userDAO.updatePasswordHash(username, newPassword);
+
+                response.addProperty("status", "SUCCESS");
+                response.addProperty("message", "Đổi mật khẩu thành công!");
+            } else {
+                response.addProperty("status", "FAILED");
+                response.addProperty("message", "Không tìm thấy tài khoản '" + username + "' trong hệ thống!");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.addProperty("status", "FAILED");
+            response.addProperty("message", "Lỗi CSDL: Không thể lưu mật khẩu mới.");
+        }
         return response.toString();
     }
 
