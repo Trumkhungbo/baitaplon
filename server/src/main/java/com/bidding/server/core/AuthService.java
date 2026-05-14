@@ -37,11 +37,14 @@ public class AuthService {
         if (userDAO.existsByUsername(username)) {
             return "REGISTER_FAILED|Unable to add Username";
         }
+        String normalizedEmail = (email == null || email.trim().isEmpty())
+                ? username.trim() + "@local.auction"
+                : email.trim();
 
         Bidder newUser = new Bidder();
         newUser.setUsername(username);
         newUser.setPasswordHash(PasswordHasher.hash(password));
-        newUser.setEmail(email);
+        newUser.setEmail(normalizedEmail);
         newUser.setPhone(phoneNumber);
         newUser.setPersonalId(personalID);
         newUser.setRole(UserRole.BIDDER);

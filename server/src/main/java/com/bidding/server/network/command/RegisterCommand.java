@@ -18,6 +18,9 @@ public class RegisterCommand implements CommandHandler {
             return;
         }
 
-        client.sendMessage(authService.register(parts[1], parts[2],parts[3],parts[4],parts[5]));
+        String phone = parts.length > 3 ? parts[3] : "";
+        String email = parts.length > 4 ? parts[4] : "";
+        String personalId = parts.length > 5 ? parts[5] : "";
+        client.sendMessage(authService.register(parts[1], parts[2], phone, email, personalId));
     }
 }
