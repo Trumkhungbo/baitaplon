@@ -16,7 +16,7 @@ public class AuctionStateDAO extends BaseDAO {
     public AuctionStateSnapshot findByAuctionId(String auctionId) {
         String sql = """
                 SELECT auction_id, seller_username, item_name, start_price,
-                       current_price, status, highest_bidder, end_time, bid_count
+                       current_price, status, highest_bidder, end_time, start_time, duration_minutes, bid_count
                 FROM auction_runtime_state
                 WHERE auction_id = ?
                 """;
@@ -38,6 +38,8 @@ public class AuctionStateDAO extends BaseDAO {
                         AuctionStatus.valueOf(rs.getString("status")),
                         rs.getString("highest_bidder"),
                         rs.getLong("end_time"),
+                        rs.getLong("start_time"),
+                        rs.getInt("duration_minutes"),
                         rs.getInt("bid_count")
                 );
             }
@@ -49,7 +51,7 @@ public class AuctionStateDAO extends BaseDAO {
     public List<AuctionStateSnapshot> findAll() {
         String sql = """
                 SELECT auction_id, seller_username, item_name, start_price,
-                       current_price, status, highest_bidder, end_time, bid_count
+                       current_price, status, highest_bidder, end_time, start_time, duration_minutes, bid_count
                 FROM auction_runtime_state
                 ORDER BY CAST(auction_id AS INTEGER)
                 """;
@@ -68,6 +70,8 @@ public class AuctionStateDAO extends BaseDAO {
                         AuctionStatus.valueOf(rs.getString("status")),
                         rs.getString("highest_bidder"),
                         rs.getLong("end_time"),
+                        rs.getLong("start_time"),
+                        rs.getInt("duration_minutes"),
                         rs.getInt("bid_count")
                 ));
             }
@@ -82,9 +86,9 @@ public class AuctionStateDAO extends BaseDAO {
         String sql = """
                 INSERT INTO auction_runtime_state (
                     auction_id, seller_username, item_name, start_price,
-                    current_price, status, highest_bidder, end_time, bid_count
+                    current_price, status, highest_bidder, end_time, start_time, duration_minutes, bid_count
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(auction_id) DO UPDATE SET
                     seller_username = excluded.seller_username,
                     item_name = excluded.item_name,
@@ -93,6 +97,8 @@ public class AuctionStateDAO extends BaseDAO {
                     status = excluded.status,
                     highest_bidder = excluded.highest_bidder,
                     end_time = excluded.end_time,
+                    start_time = excluded.start_time,
+                    duration_minutes = excluded.duration_minutes,
                     bid_count = excluded.bid_count
                 """;
 
@@ -106,7 +112,9 @@ public class AuctionStateDAO extends BaseDAO {
             ps.setString(6, auction.getStatus().name());
             ps.setString(7, auction.getHighestBidder());
             ps.setLong(8, auction.getEndTime());
-            ps.setInt(9, bidCount);
+            ps.setLong(9, auction.getStartTimeMillis());
+            ps.setInt(10, auction.getDurationMinutes());
+            ps.setInt(11, bidCount);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save auction state", e);
@@ -121,7 +129,9 @@ public class AuctionStateDAO extends BaseDAO {
             double currentPrice,
             AuctionStatus status,
             String highestBidder,
-            long endTime,
+            long endTimeMillis,
+            long startTimeMillis,
+            int durationMinutes,
             int bidCount
     ) {
     }
