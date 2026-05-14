@@ -39,40 +39,42 @@ public class AuctionRecordDAO extends BaseDAO {
             throw new RuntimeException("Failed to get max auction id", e);
         }
     }
-
-    public void save(String auctionId, String sellerUsername, String itemName, double startPrice, long startTimeMillis, int durationMinutes, AuctionStatus status) {
+    public void save(Auction auction) {
         Art item = new Art();
-        item.setName(itemName);
+        item.setName(auction.getItemName());
         item.setDescription("");
-        item.setStartingPrice(startPrice);
+        item.setStartingPrice(auction.getStartPrice());
         item.setItemType(ItemType.OTHER);
         item.setImageUrl(null);
-        itemDAO.save(item, sellerUsername);
+        itemDAO.save(item, auction.getSellerUsername());
 
         String sql = """
-                INSERT INTO auctions (
-                    id, item_id, seller_username, start_time, end_time,
-                    duration_minutes, status, current_highest_bid, highest_bidder_username
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """;
+            INSERT INTO auctions (
+                id, item_id, seller_username, start_time, end_time,
+                duration_minutes, status, current_highest_bid, highest_bidder_username
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """;
 
         try (Connection conn = getConn();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setLong(1, Long.parseLong(auctionId));
+            ps.setLong(1, Long.parseLong(auction.getId()));
             ps.setLong(2, item.getId());
-            ps.setString(3, sellerUsername);
-            ps.setString(4, String.valueOf(startTimeMillis));
-            ps.setString(5, String.valueOf(startTimeMillis + (durationMinutes * 60_000L)));
-            ps.setInt(6, durationMinutes);
-            ps.setString(7, status.name());
-            ps.setDouble(8, startPrice);
+            ps.setString(3, auction.getSellerUsername());
+            ps.setString(4, String.valueOf(auction.getStartTimeMillis()));
+            ps.setString(5, String.valueOf(auction.getEndTime()));
+            ps.setInt(6, auction.getDurationMinutes());
+            ps.setString(7, auction.getStatus().name());
+            ps.setDouble(8, auction.getStartPrice());
             ps.setString(9, null);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save auction record", e);
         }
     }
+
+
+
 
     public void updateState(Auction auction) {
         String sql = """

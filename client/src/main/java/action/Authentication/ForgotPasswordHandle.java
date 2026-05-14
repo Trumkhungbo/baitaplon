@@ -84,10 +84,6 @@ public class ForgotPasswordHandle {
         SceneSwitch sceneswitch = new SceneSwitch();
         sceneswitch.SwitchToLogin(event);
     }
-    public void BackToLogin(ActionEvent event) throws IOException {
-        SceneSwitch sceneswitch = new SceneSwitch();
-        sceneswitch.SwitchToLogin(event);
-    }
 
 
 

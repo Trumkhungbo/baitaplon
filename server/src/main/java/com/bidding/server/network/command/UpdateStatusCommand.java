@@ -1,7 +1,7 @@
 package com.bidding.server.network.command;
 
 import com.bidding.server.core.AuctionService;
-import com.bidding.server.core.AuctionStatus;
+import com.bidding.common.enums.AuctionStatus;
 import com.bidding.server.core.Auction;
 import com.bidding.server.network.ClientHandler;
 import com.bidding.server.repository.AuctionDAO;

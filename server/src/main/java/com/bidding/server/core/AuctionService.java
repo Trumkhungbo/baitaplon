@@ -33,9 +33,10 @@ public class AuctionService {
         this.auctionStateDAO = new AuctionStateDAO();
         this.auctionRecordDAO = new AuctionRecordDAO();
         this.autoBidDAO = new AutoBidDAO();
+      
+        this.nextAuctionId = new AtomicInteger((int) auctionRecordDAO.findMaxAuctionId() + 1);
         seedData();
         loadPersistedRuntimeAuctions();
-        this.nextAuctionId = new AtomicInteger((int) auctionRecordDAO.findMaxAuctionId() + 1);
     }
 
     private void seedData() {
@@ -45,11 +46,11 @@ public class AuctionService {
     }
 
     private void addInitialAuction(String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
-        String id = String.valueOf(auctions.size() + 1);
+        String id = String.valueOf(nextAuctionId.getAndIncrement());
         Auction auction = new Auction(id, sellerUsername, itemName, startPrice, status);
         auctions.put(id, auction);
         if (!auctionRecordDAO.existsById(id)) {
-            auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getStartTimeMillis(), auction.getDurationMinutes(), status);
+                auctionRecordDAO.save(auction);
         }
         syncAuctionFromDatabase(auction);
         persistAuctionState(auction);
@@ -151,9 +152,7 @@ public class AuctionService {
                 + "|currentPrice=" + (long) auction.getCurrentPrice()
                 + "|highestBidder=" + bidder
                 + "|status=" + auction.getStatus()
-                + "|startDate=" + auction.getStartDate()
-                + "|startTime=" + auction.getStartClockTime()
-                + "|duration=" + auction.getDurationMinutes()
+                + "|endTime=" + auction.getEndTime()
                 + "|bidCount=" + resolveBidCount(auctionId, state);
     }
 
@@ -171,9 +170,7 @@ public class AuctionService {
                 + "|startPrice=" + (long) auction.getStartPrice()
                 + "|currentPrice=" + (long) auction.getCurrentPrice()
                 + "|status=" + auction.getStatus()
-                + "|startDate=" + auction.getStartDate()
-                + "|startTime=" + auction.getStartClockTime()
-                + "|duration=" + auction.getDurationMinutes();
+                + "|endTime=" + auction.getEndTime();
     }
 
     public String getBidHistory(String auctionId) {
@@ -219,7 +216,7 @@ public class AuctionService {
 
         String id = String.valueOf(nextAuctionId.getAndIncrement());
         Auction auction = new Auction(id, sellerUsername, itemName, startPrice, AuctionStatus.OPEN);
-        auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getStartTimeMillis(), auction.getDurationMinutes(), AuctionStatus.OPEN);
+        auctionRecordDAO.save(auction);
         auctions.put(id, auction);
         persistAuctionState(auction, 0);
 
@@ -285,8 +282,6 @@ public class AuctionService {
         }
 
         synchronized (auction) {
-            // Sync từ DB trước khi validate — đảm bảo không dùng dữ liệu RAM stale
-            // (quan trọng khi nhiều client bid đồng thời hoặc nhiều server instance)
             syncAuctionFromDatabase(auction);
 
             long now = System.currentTimeMillis();
@@ -313,7 +308,6 @@ public class AuctionService {
                 );
             }
 
-            // Lưu snapshot SAU KHI sync — không lưu trước vì sync có thể đổi status/price
             AuctionStatus previousStatus = (AuctionStatus) auction.getStatus();
             double previousPrice = auction.getCurrentPrice();
             String previousHighestBidder = auction.getHighestBidder();
@@ -377,8 +371,6 @@ public class AuctionService {
         auction.setCurrentPrice(state.currentPrice());
         auction.setStatus((AuctionStatus) state.status());
         auction.setHighestBidder(state.highestBidder());
-        auction.setStartTimeMillis(state.startTimeMillis());
-        auction.setDurationMinutes(state.durationMinutes());
         auction.setEndTime(state.endTimeMillis());
         return state;
     }
