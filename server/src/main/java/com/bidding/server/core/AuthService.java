@@ -1,13 +1,11 @@
 package com.bidding.server.core;
 
 import com.bidding.common.enums.UserRole;
-import com.bidding.common.model.user.User;
 import com.bidding.common.model.user.Bidder;
 import com.bidding.common.model.user.User;
 import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.repository.UserDAO;
 import com.google.gson.JsonObject;
-import java.util.List;
 
 public class AuthService {
 
@@ -97,75 +95,6 @@ public class AuthService {
         return response.toString();
     }
 
-    public String addMoney(String username, String money) {
-        try {
-            String cleanUsername = username.trim();
-            double amountToAdd = Double.parseDouble(money.trim());
-
-            User user = userDAO.findByUsername(cleanUsername);
-            if (user == null) {
-                return "{\"command\":\"ERROR\", \"message\":\"User not found\"}";
-            }
-
-            if (user instanceof Bidder bidder) {
-                double newTotal = bidder.getBalance() + amountToAdd;
-                userDAO.updateBalance(cleanUsername, newTotal);
-
-        // 5. Đóng gói kết quả trả về dạng JSON
-        JsonObject responseJson = new JsonObject();
-        responseJson.addProperty("command", "MONEY_UPDATE");
-        responseJson.addProperty("balance", String.format("%.2f", newTotal));
-
-        return responseJson.toString();
-      }
-      else {
-        return "{\"command\":\"ERROR\", \"message\":\"Only bidders can add money\"}";
-      }
-    }
-<<<<<<< Updated upstream
-    catch(NumberFormatException e){
-      return "{\"command\":\"ERROR\", \"message\":\"Invalid money format\"}";
-=======
-
-    public String accountInformation(String username) {
-        User user = userDAO.findByUsername(username);
-        if (user == null) {
-            return "ERROR|User not found";
-        }
-
-        JsonObject response = new JsonObject();
-        response.addProperty("command", "ACCOUNT_INFO");
-        response.addProperty("username", user.getUsername());
-        response.addProperty("password", "********");
-        response.addProperty("email", user.getEmail() != null ? user.getEmail() : "");
-        response.addProperty("fullName", "");
-        response.addProperty("phone", user.getPhone() != null ? user.getPhone() : "");
-        response.addProperty("personalID", user.getPersonalId() != null ? user.getPersonalId() : "");
-        double balanceValue = (user instanceof Bidder bidder) ? bidder.getBalance() : 0.0;
-        response.addProperty("balance", String.format("%.2f", balanceValue));
-        return response.toString();
-    }
-
-    public String forgotPassword(String username, String phone, String personalID) {
-        User user = userDAO.findByUsername(username);
-
-        JsonObject response = new JsonObject();
-        response.addProperty("command", "FORGOT_PASSWORD_RESULT");
-
-        if (user != null
-                && user.getPhone() != null
-                && user.getPhone().equals(phone)
-                && user.getPersonalId() != null
-                && user.getPersonalId().equals(personalID)) {
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("message", "Thong tin hop le. Can reset mat khau thay vi hien mat khau.");
-        } else {
-            response.addProperty("status", "FAILED");
-        }
-
-        return response.toString();
-    }
-
     public String resetPassword(String username, String newPassword) {
         JsonObject response = new JsonObject();
         response.addProperty("command", "RESET_PASSWORD_RESULT");
@@ -212,7 +141,5 @@ public class AuthService {
         } catch (NumberFormatException e) {
             return "{\"command\":\"ERROR\", \"message\":\"Invalid money format\"}";
         }
->>>>>>> Stashed changes
     }
-  }
 }
