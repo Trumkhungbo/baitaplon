@@ -43,7 +43,6 @@
                         <Label style="-fx-text-fill: #666666;" text="Tên sản phẩm:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
                         <TextField fx:id="itemname" promptText="VD: iPhone 13 Pro Max" styleClass="input-field" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                         <Label style="-fx-text-fill: #666666;" text="Phân loại:" GridPane.rowIndex="1" />
-                        <TextField fx:id="description" promptText="VD: Điện tử, Thời trang..." styleClass="input-field" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                         <Label style="-fx-text-fill: #666666;" text="Giá khởi điểm (VNĐ):" GridPane.rowIndex="2" />
                         <TextField fx:id="price" promptText="VD: 5.000.000" styleClass="input-field" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                         <Label style="-fx-text-fill: #666666;" text="Ngày bắt đầu đấu:" GridPane.rowIndex="3" />
@@ -52,6 +51,15 @@
                         <TextField fx:id="TimeStart" promptText="VD: 10:00:00" styleClass="input-field" GridPane.columnIndex="1" GridPane.rowIndex="4" />
                         <Label style="-fx-text-fill: #666666;" text="Thời lượng (Phút):" GridPane.rowIndex="5" />
                         <TextField fx:id="duration" promptText="VD: 60" styleClass="input-field" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                        <Label style="-fx-text-fill: #666666;" text="Phân loại:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+
+                        <HBox spacing="10.0" alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                           <children>
+                              <ChoiceBox fx:id="description" prefWidth="150.0" styleClass="custom-choice-box" />
+                              <TextField fx:id="description1" promptText="Chi tiết 1" styleClass="input-field" HBox.hgrow="ALWAYS" />
+                              <TextField fx:id="description2" promptText="Chi tiết 2" styleClass="input-field" HBox.hgrow="ALWAYS" />
+                           </children>
+                        </HBox>
 
                      </children>
                   </GridPane>

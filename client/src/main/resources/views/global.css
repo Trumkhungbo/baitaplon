@@ -194,3 +194,36 @@
     -fx-padding: 10px;
     -fx-cursor: hand;
 }
+/* Style cho ChoiceBox/ComboBox giống hệt ô Input */
+.custom-choice-box {
+    -fx-background-color: #262626;
+    -fx-mark-color: #FACC15; /* Đổi màu cái mũi tên tam giác thành vàng Gold */
+    -fx-text-fill: white;
+    -fx-background-radius: 8px;
+    -fx-border-color: #333333;
+    -fx-border-radius: 8px;
+    -fx-padding: 5px;
+}
+
+/* Khi bấm vào xổ danh sách xuống */
+.custom-choice-box .context-menu {
+    -fx-background-color: #1A1A1A;
+    -fx-border-color: #333333;
+}
+
+.custom-choice-box .menu-item:hover {
+    -fx-background-color: rgba(250, 204, 21, 0.1);
+}
+
+.custom-choice-box .menu-item .label {
+    -fx-text-fill: white;
+}
+.btn-gold-hover {
+    -fx-background-color: -fx-primary-gold;
+    -fx-text-fill: #1A1A1A;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-border-color: #FACC15;
+    -fx-translate-y: -5px;
+}

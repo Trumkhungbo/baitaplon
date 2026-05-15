@@ -107,7 +107,7 @@ public class AuctionService {
         for (AuctionStateDAO.AuctionStateSnapshot snapshot
                 : auctionStateDAO.findAll()) {
 
-            Auction auction = new Auction(
+             Auction auction = new Auction(
                     snapshot.auctionId(),
                     snapshot.sellerUsername(),
                     snapshot.itemName(),
@@ -315,6 +315,12 @@ public class AuctionService {
             sb.append(auction.getId())
                     .append(":")
                     .append(auction.getItemName())
+                    .append(":")
+                    .append(auction.getItemType())
+                    .append(":")
+                    .append(auction.getInfomation1())
+                    .append(":")
+                    .append(auction.getInfomation2())
                     .append(":")
                     .append((long) auction.getCurrentPrice())
                     .append(":")

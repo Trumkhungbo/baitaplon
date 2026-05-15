@@ -5,9 +5,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.scene.control.TextField;
+
+import javax.swing.*;
 import java.io.IOException;
 
 public class SceneSwitch {
@@ -51,6 +54,8 @@ public class SceneSwitch {
         Stage stage = new Stage();
         stage.setScene(scene);
         stage.initModality(Modality.APPLICATION_MODAL);
+        Image icon = new Image(StartScence.class.getResourceAsStream("/assets/Icon.png"));
+        stage.getIcons().add(icon);
         stage.showAndWait();
     }
 }

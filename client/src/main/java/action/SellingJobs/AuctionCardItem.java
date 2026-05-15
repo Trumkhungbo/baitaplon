@@ -14,7 +14,7 @@ import java.text.DecimalFormat;
 
 public class AuctionCardItem extends VBox {
 
-    public AuctionCardItem(String name, String id, Double currentPrice, String status) {
+    public AuctionCardItem(String name, String id,String itemType,String itemInformation1,String itemInformation2, Double currentPrice, String status) {
         // Cấu trúc khung thẻ
         this.setSpacing(15);
         this.getStyleClass().add("auction-card"); // Dùng class trong CSS
@@ -44,12 +44,15 @@ public class AuctionCardItem extends VBox {
 
         // Nút bấm tham gia
         Button actionBtn = new Button("Tham gia đấu giá");
-        actionBtn.setMaxWidth(Double.MAX_VALUE); // Cho nút dài hết cỡ card
+        actionBtn.setMaxWidth(Double.MAX_VALUE);
         actionBtn.getStyleClass().add("btn-gold-sm");
 
         actionBtn.setOnAction(e -> {
             StoreItemDataInit.name = name;
-            StoreItemDataInit.description = id; // Bạn nên cân nhắc đổi description thành ID thực tế
+            StoreItemDataInit.description = id;
+            StoreItemDataInit.itemInformation1 = itemInformation1;
+            StoreItemDataInit.itemInformation2 = itemInformation2;
+            StoreItemDataInit.itemType = itemType;
             StoreItemDataInit.price = formatter.format(currentPrice);
             StoreItemDataInit.status = status;
 

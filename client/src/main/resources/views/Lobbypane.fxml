@@ -1,12 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-
-<StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.LobbypaneHandle">
+<StackPane prefHeight="800.0" prefWidth="1200.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.LobbypaneHandle">
    <children>
-      <AnchorPane prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #DDD345;">
+      <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
+         <content>
+            <VBox spacing="30.0">
+               <padding>
+                  <Insets bottom="40.0" left="40.0" right="40.0" top="20.0" />
+               </padding>
+               <children>
 
-</AnchorPane>
+                  <StackPane maxHeight="250.0" style="-fx-background-color: linear-gradient(to right, #1A1A1A, #2D2D2D); -fx-border-color: #FACC15; -fx-border-width: 0 0 0 4;" styleClass="card">
+                     <children>
+                        <VBox alignment="CENTER_LEFT" spacing="15.0">
+                           <padding>
+                              <Insets left="40.0" />
+                           </padding>
+                           <children>
+                              <Label style="-fx-text-fill: #FACC15; -fx-font-size: 14px; -fx-font-weight: bold;" text="PHIÊN ĐẤU GIÁ NỔI BẬT" />
+                              <Label style="-fx-text-fill: white; -fx-font-size: 36px; -fx-font-weight: bold;" text="Siêu Phẩm Mùa Hè 2026" />
+                              <Label style="-fx-text-fill: #A0A0A0; -fx-font-size: 16px;" text="Khám phá những món đồ độc bản với mức giá khởi điểm hấp dẫn." />
+                              <Button mnemonicParsing="false" onAction="#Clicked" prefHeight="247.0" prefWidth="522.0" styleClass="btn-gold-hover" text="Khám Phá Ngay" textFill="#5b3556">
+                                 <font>
+                                    <Font size="58.0" />
+                                 </font></Button>
+                           </children>
+                        </VBox>
+                     </children>
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </StackPane>
+
+               </children>
+            </VBox>
+         </content>
+      </ScrollPane>
    </children>
 </StackPane>

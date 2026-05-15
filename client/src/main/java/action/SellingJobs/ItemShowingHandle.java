@@ -36,13 +36,14 @@ public class ItemShowingHandle implements Initializable {
 
     // Biến lưu giữ vị trí ảnh đang hiển thị
     private int currentIndex = 0;
-
-    /**
-     * Trong JavaFX, hàm initialize() luôn tự động được gọi SAU KHI
-     * file FXML đã nạp xong các giao diện. Đây là nơi chuẩn nhất để nạp dữ liệu.
-     */
     @FXML
     private Label name;
+    @FXML
+    private Label Type;
+    @FXML
+    private Label information1;
+    @FXML
+    private Label information2;
     @FXML
     private Label price;
     @FXML
@@ -55,6 +56,9 @@ public class ItemShowingHandle implements Initializable {
     }
     public void getItem(){
         name.setText(StoreItemDataInit.name);
+        Type.setText(StoreItemDataInit.itemType);
+        information1.setText(StoreItemDataInit.itemInformation1);
+        information2.setText(StoreItemDataInit.itemInformation2);
         price.setText(StoreItemDataInit.price);
         status.setText(StoreItemDataInit.status);
         description.setText(StoreItemDataInit.description);
