@@ -1,5 +1,6 @@
 package action.SellingJobs;
 
+import action.Authentication.StoreDataInput;
 import action.Core.SceneSwitch;
 import action.Core.StartScence;
 import javafx.event.ActionEvent;
@@ -56,8 +57,12 @@ public class InvesterSellHandle implements Initializable {
             Time DUration = Time.valueOf(timeString);
             String priced = price.getText();
             Double priceFunc = Double.parseDouble(priced);
-            ItemsHolder item = new ItemsHolder("",itemname.getText(), priceFunc, StarTime, DUration);
-            ShopDataBase.danhSachSanPham.add(item);
+            //ItemsHolder item = new ItemsHolder("",itemname.getText(), priceFunc, StarTime, DUration);
+            //ShopDataBase.danhSachSanPham.add(item);
+            // Định dạng chuẩn: ADD_AUCTION|sellerUsername|itemType|itemName|startPrice|param1|param2
+
+            StartScence.client.sendMessage("ADD_AUCTION|"+StoreDataInput.getUsername()+"|"+description.getValue()+"|"+itemname.getText()+"|"+description1.getText()+"|"+description2.getText()+"|" + priceFunc +"|"+StarTime+"|"+DUration);
+
 
             System.out.println("Đăng bán thành công!");
         }
