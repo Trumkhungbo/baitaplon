@@ -100,7 +100,11 @@ public class ClientHandler implements Runnable {
                 parts = new String[]{command};
             }
         } catch (Exception e) {
-            parts = request.split("\\|");
+            if (request.startsWith("CREATE_ITEM_CMD|")) {
+                parts = request.split("\\|", 2);
+            } else {
+                parts = request.split("\\|");
+            }
             command = parts[0].toUpperCase();
         }
 

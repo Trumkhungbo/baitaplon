@@ -3,11 +3,13 @@ package com.bidding.server.network.command;
 import com.bidding.server.core.AuctionService;
 import com.bidding.server.network.ClientHandler;
 import com.bidding.server.network.service.BroadcastService;
+import com.bidding.server.repository.ItemDAO;
 
 public class AddAuctionCommand implements CommandHandler {
 
     private final AuctionService auctionService;
     private final BroadcastService broadcastService;
+    private final ItemDAO itemDAO = new ItemDAO();
 
     public AddAuctionCommand(AuctionService auctionService, BroadcastService broadcastService) {
         this.auctionService = auctionService;

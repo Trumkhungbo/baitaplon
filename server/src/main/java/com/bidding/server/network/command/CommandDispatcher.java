@@ -33,6 +33,8 @@ public class CommandDispatcher {
         register("FORGOT_PASSWORD", new ForgotPasswordCommand(authService));
         register("RESET_PASSWORD", new ResetPasswordCommand(authService));
         register("UPDATE_STATUS", new UpdateStatusCommand(auctionService));
+        register("CREATE_ITEM_CMD", new CreateItemCommand());
+        register("LIST_ITEMS", new ListItemsCommand());
     }
 
     public void dispatch(String command, String[] parts, ClientHandler client) {
