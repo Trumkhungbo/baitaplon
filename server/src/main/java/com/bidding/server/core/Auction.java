@@ -8,6 +8,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.bidding.common.enums.AuctionStatus;
+
 public class Auction {
 
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();
@@ -18,7 +20,7 @@ public class Auction {
     private final String sellerUsername;
     private final String itemName;
     private final double startPrice;
-
+    private long itemId;
     private double currentPrice;
     private AuctionStatus status;
     private String highestBidder;
@@ -88,6 +90,11 @@ public class Auction {
     public void setStartTimeMillis(long startTimeMillis) {
         this.startTimeMillis = startTimeMillis;
         this.exactEndTimeMillis = null;
+    }
+    public long getItemId() {return itemId;}
+
+    public void setItemId(long itemId) {
+        this.itemId = itemId;
     }
 
     public int getDurationMinutes() {

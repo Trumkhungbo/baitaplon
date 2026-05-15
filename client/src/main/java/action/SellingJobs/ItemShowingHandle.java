@@ -8,6 +8,8 @@ import java.util.ResourceBundle;
 
 import action.Authentication.StoreItemDataInit;
 import action.Core.SceneSwitch;
+import action.Core.StartScence;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -34,13 +36,14 @@ public class ItemShowingHandle implements Initializable {
 
     // Biến lưu giữ vị trí ảnh đang hiển thị
     private int currentIndex = 0;
-
-    /**
-     * Trong JavaFX, hàm initialize() luôn tự động được gọi SAU KHI
-     * file FXML đã nạp xong các giao diện. Đây là nơi chuẩn nhất để nạp dữ liệu.
-     */
     @FXML
     private Label name;
+    @FXML
+    private Label Type;
+    @FXML
+    private Label information1;
+    @FXML
+    private Label information2;
     @FXML
     private Label price;
     @FXML
@@ -53,6 +56,9 @@ public class ItemShowingHandle implements Initializable {
     }
     public void getItem(){
         name.setText(StoreItemDataInit.name);
+        Type.setText(StoreItemDataInit.itemType);
+        information1.setText(StoreItemDataInit.itemInformation1);
+        information2.setText(StoreItemDataInit.itemInformation2);
         price.setText(StoreItemDataInit.price);
         status.setText(StoreItemDataInit.status);
         description.setText(StoreItemDataInit.description);
@@ -65,7 +71,34 @@ public class ItemShowingHandle implements Initializable {
     @FXML
     private TextField money;
     @FXML
-    public void RaiseBind(ActionEvent actionEvent) {}
+    public void RaiseBind(ActionEvent actionEvent) {
+        String auctionId = StoreItemDataInit.description;
+        String amountText = money.getText();
+
+        if (auctionId == null || auctionId.isBlank()) {
+            status.setText("Missing auction id");
+            return;
+        }
+
+        if (amountText == null || !amountText.matches("\\d+(\\.\\d+)?")) {
+            status.setText("Invalid bid amount");
+            return;
+        }
+
+        StartScence.client.setServerListener(message -> {
+            Platform.runLater(() -> {
+                if (message.startsWith("BID_SUCCESS|") || message.startsWith("BID_UPDATE|")) {
+                    status.setText("RUNNING");
+                    price.setText(amountText);
+                    money.clear();
+                } else if (message.startsWith("ERROR|")) {
+                    status.setText(message.substring("ERROR|".length()));
+                }
+            });
+        });
+
+        StartScence.client.sendMessage("BID|" + auctionId + "|" + amountText);
+    }
     @FXML
     public void ReturnToInvesment(ActionEvent actionEvent) throws IOException {
         SceneSwitch sceneSwitch = new SceneSwitch();

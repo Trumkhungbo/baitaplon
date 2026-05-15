@@ -30,6 +30,8 @@
                         <TableColumn fx:id="STTColumn" maxWidth="50.0" minWidth="50.0" text="STT" />
                         <TableColumn fx:id="ProductName" text="Tên Sản Phẩm" />
                         <TableColumn fx:id="ProductDescription" text="Mô Tả" />
+                        <TableColumn fx:id="Productinfomation1" text="Thông tin1"/>
+                        <TableColumn fx:id = "Productinfomation2" text = "Thong tin2"/>
                         <TableColumn fx:id="ProductPrice" text="Giá Khởi Điểm" />
                         <TableColumn fx:id="ProductDate" text="Ngày Đấu" />
                         <TableColumn fx:id="ProductTime" text="Giờ Bắt Đầu" />

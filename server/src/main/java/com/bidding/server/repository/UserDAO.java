@@ -3,7 +3,6 @@ package com.bidding.server.repository;
 import com.bidding.common.enums.UserRole;
 import com.bidding.common.model.user.Admin;
 import com.bidding.common.model.user.Bidder;
-import com.bidding.common.model.user.Seller;
 import com.bidding.common.model.user.User;
 
 import java.sql.Connection;
@@ -17,7 +16,7 @@ import java.util.List;
 public class UserDAO extends BaseDAO {
 
     public User save(User user) {
-        String sql = "INSERT INTO users (username, password_hash, email, phone, personal_id, role, balance, rating, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO users (username, password_hash, email, phone, personal_id, role, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConn();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -26,10 +25,11 @@ public class UserDAO extends BaseDAO {
             ps.setString(3, user.getEmail());
             ps.setString(4, user.getPhone());
             ps.setString(5, user.getPersonalId());
-            ps.setString(6, user.getRole().name());
+            // BIDDER va SELLER deu hien thi la "USER" trong DB
+            String roleStr = (user.getRole() == UserRole.ADMIN) ? "ADMIN" : "USER";
+            ps.setString(6, roleStr);
             ps.setDouble(7, user instanceof Bidder b ? b.getBalance() : 0);
-            ps.setDouble(8, user instanceof Seller s ? s.getRating() : 0);
-            ps.setLong(9, user.getCreatedAt());
+            ps.setLong(8, user.getCreatedAt());
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -160,19 +160,16 @@ public class UserDAO extends BaseDAO {
     }
 
     private User map(ResultSet rs) throws SQLException {
-        UserRole role = UserRole.valueOf(rs.getString("role"));
+        String roleStr = rs.getString("role");
+        UserRole role = "ADMIN".equals(roleStr) ? UserRole.ADMIN : UserRole.BIDDER;
         User user = switch (role) {
             case BIDDER -> {
                 Bidder b = new Bidder();
                 b.setBalance(rs.getDouble("balance"));
                 yield b;
             }
-            case SELLER -> {
-                Seller s = new Seller();
-                s.setRating(rs.getDouble("rating"));
-                yield s;
-            }
             case ADMIN -> new Admin();
+            default -> new Bidder();
         };
         user.setId(rs.getLong("id"));
         user.setUsername(rs.getString("username"));

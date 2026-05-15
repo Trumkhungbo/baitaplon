@@ -69,7 +69,7 @@ public class RegisterHandle {
                         try {
                             // Tài khoản đã tồn tại hoặc lỗi
                             SceneSwitch sceneswitch = new SceneSwitch();
-                            sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
+                            sceneswitch.SwitchToLockPage(event, "/views/UsedAccount.fxml");
                         } catch (IOException e) {
                             e.printStackTrace();
                         }

@@ -122,7 +122,9 @@ public class AuctionServer {
     }
 
     public void broadcastAuctionListUpdate() {
-        broadcastService.broadcastLobbyUpdate();
+        broadcastService.broadcastLobbyUpdate(
+                auctionService.getAuctionList()
+        );
     }
 
     private void startAuctionMonitor() {
@@ -131,7 +133,9 @@ public class AuctionServer {
 
             for (String message : messages) {
                 broadcastService.broadcastAuctionClosedMessage(message);
-                broadcastService.broadcastLobbyUpdate();
+                broadcastService.broadcastLobbyUpdate(
+                        auctionService.getAuctionList()
+                );
                 System.out.println("[AUCTION MONITOR] " + message);
             }
         }, 1, 1, TimeUnit.SECONDS);

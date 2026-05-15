@@ -1,14 +1,14 @@
 package com.bidding.server.repository;
 
-import com.bidding.common.enums.ItemType;
-import com.bidding.common.model.item.Art;
-import com.bidding.server.core.Auction;
-import com.bidding.server.core.AuctionStatus;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import com.bidding.common.enums.AuctionStatus;
+import com.bidding.common.enums.ItemType;
+import com.bidding.common.model.item.Art;
+import com.bidding.server.core.Auction;
 
 public class AuctionRecordDAO extends BaseDAO {
 
@@ -45,8 +45,10 @@ public class AuctionRecordDAO extends BaseDAO {
         item.setName(itemName);
         item.setDescription("");
         item.setStartingPrice(startPrice);
-        item.setItemType(ItemType.OTHER);
+        item.setItemType(ItemType.ART);
         item.setImageUrl(null);
+        item.setArtist("Unknown");
+        item.setCreationYear(java.util.Calendar.getInstance().get(java.util.Calendar.YEAR));
         itemDAO.save(item, sellerUsername);
 
         String sql = """

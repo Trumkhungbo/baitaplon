@@ -1,16 +1,18 @@
 package com.bidding.server.database;
 
-import com.bidding.server.core.PasswordHasher;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import com.bidding.server.core.PasswordHasher;
+
 public class DatabaseInitializer {
 
     public static void initialize() {
-        Connection conn = DatabaseManager.getInstance().getConnection();
-        try (Statement st = conn.createStatement()) {
+        // Dùng try-with-resources: connection tự đóng sau khi xong
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement st = conn.createStatement()) {
+
             st.execute("""
                     CREATE TABLE IF NOT EXISTS users (
                         id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,16 +23,9 @@ public class DatabaseInitializer {
                         personal_id   TEXT,
                         role          TEXT    NOT NULL,
                         balance       REAL    DEFAULT 0,
-                        rating        REAL    DEFAULT 5.0,
                         created_at    INTEGER NOT NULL
                     )
                     """);
-            ensureColumnExists(conn, "users", "phone", "TEXT");
-            ensureColumnExists(conn, "users", "personal_id", "TEXT");
-            ensureColumnExists(conn, "users", "role", "TEXT NOT NULL DEFAULT 'BIDDER'");
-            ensureColumnExists(conn, "users", "balance", "REAL DEFAULT 0");
-            ensureColumnExists(conn, "users", "rating", "REAL DEFAULT 5.0");
-            ensureColumnExists(conn, "users", "created_at", "INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000)");
 
             st.execute("""
                     CREATE TABLE IF NOT EXISTS items (
@@ -46,7 +41,8 @@ public class DatabaseInitializer {
                         warranty_months INTEGER,
                         engine_type     TEXT,
                         mileage         INTEGER,
-                        image_url       TEXT
+                        image_url       TEXT,
+                        created_at      INTEGER NOT NULL
                     )
                     """);
 
@@ -64,8 +60,6 @@ public class DatabaseInitializer {
                         FOREIGN KEY (item_id) REFERENCES items(id)
                     )
                     """);
-            ensureColumnExists(conn, "auctions", "end_time", "TEXT");
-            ensureColumnExists(conn, "auctions", "duration_minutes", "INTEGER NOT NULL DEFAULT 5");
 
             st.execute("""
                     CREATE TABLE IF NOT EXISTS bid_transactions (
@@ -93,10 +87,6 @@ public class DatabaseInitializer {
                         bid_count        INTEGER NOT NULL DEFAULT 0
                     )
                     """);
-            ensureColumnExists(conn, "auction_runtime_state", "end_time", "INTEGER");
-            ensureColumnExists(conn, "auction_runtime_state", "start_time", "INTEGER");
-            ensureColumnExists(conn, "auction_runtime_state", "duration_minutes", "INTEGER NOT NULL DEFAULT 5");
-            backfillAuctionRuntimeSchedule(conn);
 
             st.execute("""
                     CREATE TABLE IF NOT EXISTS auto_bid_settings (
@@ -115,6 +105,16 @@ public class DatabaseInitializer {
                     VALUES ('admin', '%s', 'admin@bidding.vnu.edu.vn', '', '', 'ADMIN',
                             strftime('%%s','now') * 1000)
                     """.formatted(PasswordHasher.hash("admin123")));
+
+            // Seed user cho du lieu mac dinh
+            String sellerHash = PasswordHasher.hash("seller123");
+            st.execute(
+                    "INSERT OR IGNORE INTO users (username, password_hash, email, phone, personal_id, role, balance, created_at) VALUES " +
+                            "('seller1', '" + sellerHash + "', 'seller1@local.auction', '', '', 'USER', 0, strftime('%s','now') * 1000)," +
+                            "('seller2', '" + sellerHash + "', 'seller2@local.auction', '', '', 'USER', 0, strftime('%s','now') * 1000)," +
+                            "('seller3', '" + sellerHash + "', 'seller3@local.auction', '', '', 'USER', 0, strftime('%s','now') * 1000)"
+            );
+
             System.out.println("[DB] Schema khoi tao thanh cong.");
         } catch (Exception e) {
             throw new RuntimeException("Loi khoi tao database: " + e.getMessage(), e);
@@ -122,70 +122,38 @@ public class DatabaseInitializer {
     }
 
     public static void resetAuctionRuntimeData() {
-        Connection conn = DatabaseManager.getInstance().getConnection();
-        try (Statement st = conn.createStatement()) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement st = conn.createStatement()) {
             st.executeUpdate("DELETE FROM bid_transactions");
             st.executeUpdate("DELETE FROM auction_runtime_state");
             st.executeUpdate("DELETE FROM auto_bid_settings");
+            st.executeUpdate("DELETE FROM auctions");
+            st.executeUpdate("DELETE FROM items");
+            st.executeUpdate("DELETE FROM sqlite_sequence WHERE name IN ('bid_transactions', 'auto_bid_settings', 'auctions', 'items')");
         } catch (Exception e) {
             throw new RuntimeException("Loi reset du lieu auction runtime: " + e.getMessage(), e);
         }
     }
 
-    private static void ensureColumnExists(Connection conn, String tableName, String columnName, String definition) {
-        try (Statement statement = conn.createStatement();
+    // Không nhận conn tham số nữa — tự mở/đóng connection riêng
+    private static void ensureColumnExists(String tableName, String columnName, String definition) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement statement = conn.createStatement();
              ResultSet rs = statement.executeQuery("PRAGMA table_info(" + tableName + ")")) {
             while (rs.next()) {
                 if (columnName.equalsIgnoreCase(rs.getString("name"))) {
-                    return;
+                    return; // cột đã tồn tại
                 }
             }
         } catch (Exception e) {
             throw new RuntimeException("Loi kiem tra cot " + tableName + "." + columnName, e);
         }
 
-        try (Statement statement = conn.createStatement()) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement statement = conn.createStatement()) {
             statement.execute("ALTER TABLE " + tableName + " ADD COLUMN " + columnName + " " + definition);
         } catch (Exception e) {
             throw new RuntimeException("Loi them cot " + tableName + "." + columnName, e);
-        }
-    }
-
-    private static void backfillAuctionRuntimeSchedule(Connection conn) {
-        try (Statement statement = conn.createStatement()) {
-            statement.executeUpdate("""
-                    UPDATE auctions
-                    SET end_time = CASE
-                        WHEN end_time IS NOT NULL THEN end_time
-                        ELSE CAST(CAST(start_time AS INTEGER) + (COALESCE(duration_minutes, 5) * 60000) AS TEXT)
-                    END
-                    WHERE end_time IS NULL
-                    """);
-            statement.executeUpdate("""
-                    UPDATE auction_runtime_state
-                    SET duration_minutes = COALESCE(duration_minutes, 5)
-                    WHERE duration_minutes IS NULL OR duration_minutes <= 0
-                    """);
-            statement.executeUpdate("""
-                    UPDATE auction_runtime_state
-                    SET end_time = CASE
-                        WHEN end_time IS NOT NULL THEN end_time
-                        WHEN start_time IS NOT NULL THEN start_time + (COALESCE(duration_minutes, 5) * 60000)
-                        ELSE CAST(strftime('%s','now') * 1000 AS INTEGER) + (COALESCE(duration_minutes, 5) * 60000)
-                    END
-                    WHERE end_time IS NULL
-                    """);
-            statement.executeUpdate("""
-                    UPDATE auction_runtime_state
-                    SET start_time = CASE
-                        WHEN start_time IS NOT NULL THEN start_time
-                        WHEN end_time IS NOT NULL THEN end_time - (COALESCE(duration_minutes, 5) * 60000)
-                        ELSE CAST(strftime('%s','now') * 1000 AS INTEGER)
-                    END
-                    WHERE start_time IS NULL
-                    """);
-        } catch (Exception e) {
-            throw new RuntimeException("Loi cap nhat lich dau gia runtime", e);
         }
     }
 }
