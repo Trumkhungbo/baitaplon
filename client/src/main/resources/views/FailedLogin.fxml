@@ -8,7 +8,7 @@
 <?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.text.Font?>
 
-<StackPane prefHeight="250.0" prefWidth="400.0" style="-fx-background-color: transparent;" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1">
+<StackPane prefHeight="250.0" prefWidth="400.0" style="-fx-background-color: transparent;" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.Utilities.SomeThingUnFillHandle">
     <children>
         <VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" spacing="20.0" styleClass="card" style="-fx-border-color: #FF4444; -fx-border-width: 1.5; -fx-border-radius: 15;">
             <padding>
@@ -29,7 +29,7 @@
                     </children>
                 </VBox>
 
-                <Button mnemonicParsing="false" prefHeight="35.0" prefWidth="100.0" style="-fx-background-color: #FF4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" text="Đã hiểu" />
+                <Button mnemonicParsing="false" prefHeight="35.0" prefWidth="100.0" style="-fx-background-color: #FF4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" text="Đã hiểu" onAction="#ReturnPreviousPage" />
             </children>
         </VBox>
     </children>
