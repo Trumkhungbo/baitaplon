@@ -17,11 +17,8 @@ public class Auction {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     private final String id;
-    private final String Infomation1;
-    private final String Infomation2;
     private final String sellerUsername;
     private final String itemName;
-    private final String ItemType;
     private final double startPrice;
     private long itemId;
     private double currentPrice;
@@ -32,11 +29,8 @@ public class Auction {
     private Long exactEndTimeMillis;
     private final List<BidRecord> bidHistory;
 
-    public Auction(String id, String sellerUsername,String itemName,String ItemType,String Infomation1, String Infomation2, double startPrice, AuctionStatus status) {
+    public Auction(String id, String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
         this.id = id;
-        this.ItemType = ItemType;
-        this.Infomation1 = Infomation1;
-        this.Infomation2 = Infomation2;
         this.sellerUsername = sellerUsername;
         this.itemName = itemName;
         this.startPrice = startPrice;
@@ -59,15 +53,6 @@ public class Auction {
 
     public String getItemName() {
         return itemName;
-    }
-    public String getItemType() {
-        return ItemType;
-    }
-    public String getInfomation1() {
-        return Infomation1;
-    }
-    public String getInfomation2() {
-        return Infomation2;
     }
 
     public double getStartPrice() {
