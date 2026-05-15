@@ -36,7 +36,7 @@ public class AuctionService {
       
         this.nextAuctionId = new AtomicInteger((int) auctionRecordDAO.findMaxAuctionId() + 1);
         seedData();
-        //loadPersistedRuntimeAuctions();
+        loadPersistedRuntimeAuctions();
     }
 
     private void seedData() {

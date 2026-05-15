@@ -58,7 +58,7 @@ public class InvesterSellHandle implements Initializable {
             Time DUration = Time.valueOf(timeString);
             String priced = price.getText();
             Double priceFunc = Double.parseDouble(priced);
-            ItemsHolder item = new ItemsHolder(itemname.getText(), description.getValue(), description1.getText(),description2.getText(), priceFunc, date.getValue(), StarTime, DUration);
+            ItemsHolder item = new ItemsHolder("",itemname.getText(), description.getValue(), description1.getText(),description2.getText(), priceFunc, date.getValue(), StarTime, DUration);
             ShopDataBase.danhSachSanPham.add(item);
 
             System.out.println("Đăng bán thành công!");

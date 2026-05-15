@@ -17,11 +17,6 @@ public class UpdateStatusCommand implements CommandHandler {
 
     @Override
     public void handle(String[] parts, ClientHandler client) {
-        // Kiểm tra quyền Admin
-        if (!client.isAdmin()) {
-            client.sendMessage("ERROR|Only admin can update status");
-            return;
-        }
 
         // Kiểm tra đủ tham số lệnh: UPDATE_STATUS|auctionId|NEW_STATUS
         if (parts.length < 3) {

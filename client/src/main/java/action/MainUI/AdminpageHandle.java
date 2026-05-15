@@ -87,7 +87,7 @@ public class AdminpageHandle implements Initializable {
         for (ItemsHolder item : ItemsTable.getItems()) {
             if (item.getCheckBox().isSelected()){
                 // Gửi lệnh lên Server để duyệt sản phẩm thành OPEN
-                StartScence.client.sendMessage("UPDATE_STATUS|" + item.getItemname() + "|OPEN" );
+                StartScence.client.sendMessage("UPDATE_STATUS|" + item.getItemId() + "|RUNNING" );
             }
         }
 
@@ -104,14 +104,16 @@ public class AdminpageHandle implements Initializable {
             // Trang Admin chỉ hiển thị các sản phẩm chờ duyệt (PENDING)
             if ("PENDING".equals(status)) {
 
-                String itemName = (String) item.get(0);
+                String itemid = (String) item.get(1);
+                String itemname = (String) item.get(0);
                 String itemType = (String) item.get(2);
                 String itemInformation1 = (String) item.get(3);
                 String itemInformation2 = (String) item.get(4);
                 Double currentPrice = (Double) item.get(5);
 
                 ItemsHolder newProduct = new ItemsHolder(
-                        itemName,
+                        itemid,
+                        itemname,
                         itemType,              // ProductDescription (Lấy type làm info tạm)
                         itemInformation1,      // information 1
                         itemInformation2,      // information 2
