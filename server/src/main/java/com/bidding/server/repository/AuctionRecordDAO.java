@@ -6,13 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.bidding.common.enums.AuctionStatus;
-import com.bidding.common.enums.ItemType;
-import com.bidding.common.model.item.Art;
 import com.bidding.server.core.Auction;
 
 public class AuctionRecordDAO extends BaseDAO {
-
-    private final ItemDAO itemDAO = new ItemDAO();
 
     public boolean existsById(String auctionId) {
         String sql = "SELECT 1 FROM auctions WHERE id = ?";
@@ -40,17 +36,7 @@ public class AuctionRecordDAO extends BaseDAO {
         }
     }
 
-    public void save(String auctionId, String sellerUsername, String itemName, double startPrice, long startTimeMillis, int durationMinutes, AuctionStatus status) {
-        Art item = new Art();
-        item.setName(itemName);
-        item.setDescription("");
-        item.setStartingPrice(startPrice);
-        item.setItemType(ItemType.ART);
-        item.setImageUrl(null);
-        item.setArtist("Unknown");
-        item.setCreationYear(java.util.Calendar.getInstance().get(java.util.Calendar.YEAR));
-        itemDAO.save(item, sellerUsername);
-
+    public void save(String auctionId, long itemId, String sellerUsername, double startPrice, long startTimeMillis, long endTimeMillis, int durationMinutes, AuctionStatus status) {
         String sql = """
                 INSERT INTO auctions (
                     id, item_id, seller_username, start_time, end_time,
@@ -62,10 +48,10 @@ public class AuctionRecordDAO extends BaseDAO {
         try (Connection conn = getConn();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, Long.parseLong(auctionId));
-            ps.setLong(2, item.getId());
+            ps.setLong(2, itemId);
             ps.setString(3, sellerUsername);
             ps.setLong(4, startTimeMillis);
-            ps.setLong(5, startTimeMillis + (durationMinutes * 60_000L));
+            ps.setLong(5, endTimeMillis);
             ps.setInt(6, durationMinutes);
             ps.setString(7, status.name());
             ps.setDouble(8, startPrice);
@@ -73,6 +59,26 @@ public class AuctionRecordDAO extends BaseDAO {
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save auction record", e);
+        }
+    }
+
+    public void save(String auctionId, String sellerUsername, String itemName, double startPrice, long startTimeMillis, int durationMinutes, AuctionStatus status) {
+        throw new UnsupportedOperationException("Use save(...) with itemId");
+    }
+
+    public boolean approvePendingAuction(String auctionId) {
+        String sql = """
+                UPDATE auctions
+                SET status = 'OPEN'
+                WHERE id = ? AND status = 'PENDING'
+                """;
+
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, Long.parseLong(auctionId));
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to approve auction", e);
         }
     }
 

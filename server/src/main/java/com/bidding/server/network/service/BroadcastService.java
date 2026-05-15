@@ -54,7 +54,7 @@ public class BroadcastService {
     }
 
     public void broadcastLobbyUpdate() {
-        broadcastLobbyUpdate(auctionService.getAuctionList());
+        broadcastLobbyUpdate(auctionService.getAuctionList(false));
     }
 
     private String extractAuctionId(String message) {

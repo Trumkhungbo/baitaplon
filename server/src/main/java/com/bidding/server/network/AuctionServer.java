@@ -123,7 +123,7 @@ public class AuctionServer {
 
     public void broadcastAuctionListUpdate() {
         broadcastService.broadcastLobbyUpdate(
-                auctionService.getAuctionList()
+                auctionService.getAuctionList(false)
         );
     }
 
@@ -135,7 +135,7 @@ public class AuctionServer {
                 for (String message : messages) {
                     broadcastService.broadcastAuctionClosedMessage(message);
                     broadcastService.broadcastLobbyUpdate(
-                            auctionService.getAuctionList()
+                            auctionService.getAuctionList(false)
                     );
                     System.out.println("[AUCTION MONITOR] " + message);
                 }
