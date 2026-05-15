@@ -129,14 +129,19 @@ public class AuctionServer {
 
     private void startAuctionMonitor() {
         auctionMonitor.scheduleAtFixedRate(() -> {
-            var messages = auctionService.closeExpiredAuctions();
+            try {
+                var messages = auctionService.closeExpiredAuctions();
 
-            for (String message : messages) {
-                broadcastService.broadcastAuctionClosedMessage(message);
-                broadcastService.broadcastLobbyUpdate(
-                        auctionService.getAuctionList()
-                );
-                System.out.println("[AUCTION MONITOR] " + message);
+                for (String message : messages) {
+                    broadcastService.broadcastAuctionClosedMessage(message);
+                    broadcastService.broadcastLobbyUpdate(
+                            auctionService.getAuctionList()
+                    );
+                    System.out.println("[AUCTION MONITOR] " + message);
+                }
+            } catch (Exception e) {
+                System.err.println("[AUCTION MONITOR] Error while closing expired auctions: " + e.getMessage());
+                e.printStackTrace(System.err);
             }
         }, 1, 1, TimeUnit.SECONDS);
     }

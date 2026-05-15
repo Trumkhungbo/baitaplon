@@ -1,15 +1,14 @@
 package com.bidding.server.database;
 
+import com.bidding.server.core.PasswordHasher;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import com.bidding.server.core.PasswordHasher;
-
 public class DatabaseInitializer {
 
     public static void initialize() {
-        // Dùng try-with-resources: connection tự đóng sau khi xong
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              Statement st = conn.createStatement()) {
 
@@ -32,6 +31,8 @@ public class DatabaseInitializer {
                         id              INTEGER PRIMARY KEY AUTOINCREMENT,
                         name            TEXT    NOT NULL,
                         description     TEXT,
+                        information1    TEXT,
+                        information2    TEXT,
                         starting_price  REAL    NOT NULL,
                         item_type       TEXT    NOT NULL,
                         seller_username TEXT    NOT NULL,
@@ -51,8 +52,8 @@ public class DatabaseInitializer {
                         id                      INTEGER PRIMARY KEY AUTOINCREMENT,
                         item_id                 INTEGER NOT NULL,
                         seller_username         TEXT    NOT NULL,
-                        start_time              TEXT    NOT NULL,
-                        end_time                TEXT    NOT NULL,
+                        start_time              INTEGER NOT NULL,
+                        end_time                INTEGER NOT NULL,
                         duration_minutes        INTEGER NOT NULL DEFAULT 5,
                         status                  TEXT    NOT NULL DEFAULT 'OPEN',
                         current_highest_bid     REAL    NOT NULL,
@@ -67,7 +68,7 @@ public class DatabaseInitializer {
                         auction_id       INTEGER NOT NULL,
                         bidder_username  TEXT    NOT NULL,
                         bid_amount       REAL    NOT NULL,
-                        bid_time         TEXT    NOT NULL,
+                        bid_time         INTEGER NOT NULL,
                         FOREIGN KEY (auction_id) REFERENCES auctions(id)
                     )
                     """);
@@ -100,13 +101,23 @@ public class DatabaseInitializer {
                     )
                     """);
 
+            ensureColumnExists("items", "information1", "TEXT");
+            ensureColumnExists("items", "information2", "TEXT");
+
+            migrateAuctionsTableIfNeeded();
+            migrateBidTransactionsTableIfNeeded();
+            backfillItemInformationColumns();
+
+            st.execute("CREATE INDEX IF NOT EXISTS idx_bid_auction_id ON bid_transactions(auction_id)");
+            st.execute("CREATE INDEX IF NOT EXISTS idx_auto_bid_auction_id ON auto_bid_settings(auction_id)");
+            st.execute("CREATE INDEX IF NOT EXISTS idx_auto_bid_active ON auto_bid_settings(auction_id, is_active)");
+
             st.execute("""
                     INSERT OR IGNORE INTO users (username, password_hash, email, phone, personal_id, role, created_at)
                     VALUES ('admin', '%s', 'admin@bidding.vnu.edu.vn', '', '', 'ADMIN',
                             strftime('%%s','now') * 1000)
                     """.formatted(PasswordHasher.hash("admin123")));
 
-            // Seed user cho du lieu mac dinh
             String sellerHash = PasswordHasher.hash("seller123");
             st.execute(
                     "INSERT OR IGNORE INTO users (username, password_hash, email, phone, personal_id, role, balance, created_at) VALUES " +
@@ -135,14 +146,13 @@ public class DatabaseInitializer {
         }
     }
 
-    // Không nhận conn tham số nữa — tự mở/đóng connection riêng
     private static void ensureColumnExists(String tableName, String columnName, String definition) {
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              Statement statement = conn.createStatement();
              ResultSet rs = statement.executeQuery("PRAGMA table_info(" + tableName + ")")) {
             while (rs.next()) {
                 if (columnName.equalsIgnoreCase(rs.getString("name"))) {
-                    return; // cột đã tồn tại
+                    return;
                 }
             }
         } catch (Exception e) {
@@ -154,6 +164,130 @@ public class DatabaseInitializer {
             statement.execute("ALTER TABLE " + tableName + " ADD COLUMN " + columnName + " " + definition);
         } catch (Exception e) {
             throw new RuntimeException("Loi them cot " + tableName + "." + columnName, e);
+        }
+    }
+
+    private static void migrateAuctionsTableIfNeeded() {
+        if (isColumnType("auctions", "start_time", "INTEGER")
+                && isColumnType("auctions", "end_time", "INTEGER")) {
+            return;
+        }
+
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement st = conn.createStatement()) {
+            st.execute("ALTER TABLE auctions RENAME TO auctions_legacy");
+            st.execute("""
+                    CREATE TABLE auctions (
+                        id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+                        item_id                 INTEGER NOT NULL,
+                        seller_username         TEXT    NOT NULL,
+                        start_time              INTEGER NOT NULL,
+                        end_time                INTEGER NOT NULL,
+                        duration_minutes        INTEGER NOT NULL DEFAULT 5,
+                        status                  TEXT    NOT NULL DEFAULT 'OPEN',
+                        current_highest_bid     REAL    NOT NULL,
+                        highest_bidder_username TEXT,
+                        FOREIGN KEY (item_id) REFERENCES items(id)
+                    )
+                    """);
+            st.execute("""
+                    INSERT INTO auctions (
+                        id, item_id, seller_username, start_time, end_time,
+                        duration_minutes, status, current_highest_bid, highest_bidder_username
+                    )
+                    SELECT
+                        id,
+                        item_id,
+                        seller_username,
+                        CAST(start_time AS INTEGER),
+                        CAST(end_time AS INTEGER),
+                        COALESCE(duration_minutes, 5),
+                        COALESCE(status, 'OPEN'),
+                        COALESCE(current_highest_bid, 0),
+                        highest_bidder_username
+                    FROM auctions_legacy
+                    """);
+            st.execute("DROP TABLE auctions_legacy");
+        } catch (Exception e) {
+            throw new RuntimeException("Loi migrate bang auctions", e);
+        }
+    }
+
+    private static void migrateBidTransactionsTableIfNeeded() {
+        if (isColumnType("bid_transactions", "bid_time", "INTEGER")) {
+            return;
+        }
+
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement st = conn.createStatement()) {
+            st.execute("ALTER TABLE bid_transactions RENAME TO bid_transactions_legacy");
+            st.execute("""
+                    CREATE TABLE bid_transactions (
+                        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                        auction_id       INTEGER NOT NULL,
+                        bidder_username  TEXT    NOT NULL,
+                        bid_amount       REAL    NOT NULL,
+                        bid_time         INTEGER NOT NULL,
+                        FOREIGN KEY (auction_id) REFERENCES auctions(id)
+                    )
+                    """);
+            st.execute("""
+                    INSERT INTO bid_transactions (id, auction_id, bidder_username, bid_amount, bid_time)
+                    SELECT
+                        id,
+                        auction_id,
+                        bidder_username,
+                        bid_amount,
+                        CAST(bid_time AS INTEGER)
+                    FROM bid_transactions_legacy
+                    """);
+            st.execute("DROP TABLE bid_transactions_legacy");
+        } catch (Exception e) {
+            throw new RuntimeException("Loi migrate bang bid_transactions", e);
+        }
+    }
+
+    private static void backfillItemInformationColumns() {
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement st = conn.createStatement()) {
+            st.executeUpdate("""
+                    UPDATE items
+                    SET information1 = COALESCE(
+                            information1,
+                            CASE item_type
+                                WHEN 'ART' THEN artist
+                                WHEN 'ELECTRONICS' THEN brand
+                                WHEN 'VEHICLE' THEN engine_type
+                                ELSE NULL
+                            END
+                        ),
+                        information2 = COALESCE(
+                            information2,
+                            CASE item_type
+                                WHEN 'ART' THEN CAST(creation_year AS TEXT)
+                                WHEN 'ELECTRONICS' THEN CAST(warranty_months AS TEXT)
+                                WHEN 'VEHICLE' THEN CAST(mileage AS TEXT)
+                                ELSE NULL
+                            END
+                        )
+                    """);
+        } catch (Exception e) {
+            throw new RuntimeException("Loi backfill thong tin item", e);
+        }
+    }
+
+    private static boolean isColumnType(String tableName, String columnName, String expectedType) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             Statement statement = conn.createStatement();
+             ResultSet rs = statement.executeQuery("PRAGMA table_info(" + tableName + ")")) {
+            while (rs.next()) {
+                if (columnName.equalsIgnoreCase(rs.getString("name"))) {
+                    return expectedType.equalsIgnoreCase(rs.getString("type"));
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            throw new RuntimeException("Loi kiem tra kieu cot " + tableName + "." + columnName, e);
         }
     }
 }

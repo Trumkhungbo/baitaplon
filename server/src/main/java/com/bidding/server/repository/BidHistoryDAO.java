@@ -22,7 +22,7 @@ public class BidHistoryDAO extends BaseDAO {
             ps.setLong(1, Long.parseLong(auctionId));
             ps.setString(2, bidderUsername);
             ps.setDouble(3, bidAmount);
-            ps.setString(4, String.valueOf(bidTime));
+            ps.setLong(4, bidTime);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save bid history", e);
@@ -34,7 +34,7 @@ public class BidHistoryDAO extends BaseDAO {
                 SELECT bidder_username, bid_amount, bid_time
                 FROM bid_transactions
                 WHERE auction_id = ?
-                ORDER BY CAST(bid_time AS INTEGER), id
+                ORDER BY bid_time, id
                 """;
         List<BidRecord> records = new ArrayList<>();
 
@@ -47,7 +47,7 @@ public class BidHistoryDAO extends BaseDAO {
                     records.add(new BidRecord(
                             rs.getString("bidder_username"),
                             rs.getDouble("bid_amount"),
-                            Long.parseLong(rs.getString("bid_time"))
+                            rs.getLong("bid_time")
                     ));
                 }
             }
