@@ -58,21 +58,24 @@ public class AuctionService {
         persistAuctionState(auction);
     }
 
- //   private void loadPersistedRuntimeAuctions() {
- //       for (AuctionStateDAO.AuctionStateSnapshot snapshot : auctionStateDAO.findAll()) {
- //           if (auctions.containsKey(snapshot.auctionId())) {
- //               continue;
- //           }
-//
-  //           Auction auction = new Auction(
- //                   snapshot.auctionId(),
- //                   snapshot.sellerUsername(),
- //                   snapshot.itemName(),
- //                   snapshot.startPrice(), (AuctionStatus) snapshot.status());
- //           auctions.put(snapshot.auctionId(), auction);
- //           syncAuctionFromDatabase(auction);
- //       }
- //   }
+    private void loadPersistedRuntimeAuctions() {
+        for (AuctionStateDAO.AuctionStateSnapshot snapshot : auctionStateDAO.findAll()) {
+            if (auctions.containsKey(snapshot.auctionId())) {
+                continue;
+            }
+
+             Auction auction = new Auction(
+                    snapshot.auctionId(),
+                    snapshot.sellerUsername(),
+                    snapshot.itemName(),
+                    "Other",
+                     "",
+                     "",
+                    snapshot.startPrice(), (AuctionStatus) snapshot.status());
+            auctions.put(snapshot.auctionId(), auction);
+            syncAuctionFromDatabase(auction);
+        }
+    }
 
     public String closeAuction(String auctionId) {
         Auction auction = auctions.get(auctionId);

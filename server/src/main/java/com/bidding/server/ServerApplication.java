@@ -34,7 +34,12 @@ public class ServerApplication {
 
         serverThread.setDaemon(true);
         serverThread.start();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
-       // Application.launch(StartScence.class, args);
+        Application.launch(StartScence.class, args);
     }
 }

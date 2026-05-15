@@ -13,15 +13,14 @@ public class InvesmentSiteHandle implements Initializable {
     private FlowPane flowPane;
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        initData();
-    }
 
-    public void initData() {
+        AuctionItems.currentListener = () -> {fetchAuctionsFromServer();};
+        AuctionItems.requestData();
         if (flowPane != null) {
             flowPane.getChildren().clear();
-        }
-        fetchAuctionsFromServer();
     }
+        }
+
     public void fetchAuctionsFromServer() {
         for(List item:AuctionItems.list) {
             if(!item.isEmpty()) {

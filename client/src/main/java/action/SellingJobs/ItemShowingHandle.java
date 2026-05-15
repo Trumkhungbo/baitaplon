@@ -34,11 +34,6 @@ public class ItemShowingHandle implements Initializable {
 
     // Biến lưu giữ vị trí ảnh đang hiển thị
     private int currentIndex = 0;
-
-    /**
-     * Trong JavaFX, hàm initialize() luôn tự động được gọi SAU KHI
-     * file FXML đã nạp xong các giao diện. Đây là nơi chuẩn nhất để nạp dữ liệu.
-     */
     @FXML
     private Label name;
     @FXML
