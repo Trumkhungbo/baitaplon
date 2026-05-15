@@ -3,6 +3,7 @@ package com.bidding.server.repository;
 import com.bidding.common.enums.UserRole;
 import com.bidding.common.model.user.Admin;
 import com.bidding.common.model.user.Bidder;
+import com.bidding.common.model.user.Seller;
 import com.bidding.common.model.user.User;
 
 import java.sql.Connection;
@@ -25,8 +26,11 @@ public class UserDAO extends BaseDAO {
             ps.setString(3, user.getEmail());
             ps.setString(4, user.getPhone());
             ps.setString(5, user.getPersonalId());
-            // BIDDER va SELLER deu hien thi la "USER" trong DB
-            String roleStr = (user.getRole() == UserRole.ADMIN) ? "ADMIN" : "USER";
+            String roleStr = switch (user.getRole()) {
+                case ADMIN -> "ADMIN";
+                case SELLER -> "SELLER";
+                default -> "USER";
+            };
             ps.setString(6, roleStr);
             ps.setDouble(7, user instanceof Bidder b ? b.getBalance() : 0);
             ps.setLong(8, user.getCreatedAt());
@@ -161,13 +165,18 @@ public class UserDAO extends BaseDAO {
 
     private User map(ResultSet rs) throws SQLException {
         String roleStr = rs.getString("role");
-        UserRole role = "ADMIN".equals(roleStr) ? UserRole.ADMIN : UserRole.BIDDER;
+        UserRole role = switch (roleStr) {
+            case "ADMIN" -> UserRole.ADMIN;
+            case "SELLER" -> UserRole.SELLER;
+            default -> UserRole.BIDDER;
+        };
         User user = switch (role) {
             case BIDDER -> {
                 Bidder b = new Bidder();
                 b.setBalance(rs.getDouble("balance"));
                 yield b;
             }
+            case SELLER -> new Seller();
             case ADMIN -> new Admin();
             default -> new Bidder();
         };

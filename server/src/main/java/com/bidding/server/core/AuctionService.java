@@ -23,6 +23,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class AuctionService {
 
+    private static final long ANTI_SNIPE_THRESHOLD_MS = 30_000L;
+    private static final long ANTI_SNIPE_EXTENSION_MS = 60_000L;
+    private static final int DEFAULT_DURATION_MINUTES = 5;
+
     private final Map<String, Auction> auctions =
             new ConcurrentHashMap<>();
 
@@ -86,6 +90,7 @@ public class AuctionService {
                 startPrice,
                 status
         );
+        auction.setDurationMinutes(DEFAULT_DURATION_MINUTES);
 
         auctions.put(id, auction);
 
@@ -172,6 +177,7 @@ public class AuctionService {
                 savedItem.getStartingPrice(),
                 AuctionStatus.OPEN
         );
+        auction.setDurationMinutes(DEFAULT_DURATION_MINUTES);
 
         auction.setItemId(savedItem.getId());
 
@@ -829,9 +835,9 @@ public class AuctionService {
                 auction.getEndTime();
 
         if (remaining > 0
-                && remaining < 30000) {
+                && remaining < ANTI_SNIPE_THRESHOLD_MS) {
 
-            auction.extendEndTime(60000);
+            auction.extendEndTime(ANTI_SNIPE_EXTENSION_MS);
 
             System.out.println(
                     "[ANTI-SNIPING] Auction "
