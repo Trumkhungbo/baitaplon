@@ -56,7 +56,7 @@ public class LoginHandle {
                     } else if (message.startsWith("LOGIN_FAILED")) {
                             SceneSwitch sceneSwitch = new SceneSwitch();
                         try {
-                            sceneSwitch.SwitchToLockPage(clicked,"/víews/FailedLogin.fxml");
+                            sceneSwitch.SwitchToLockPage(clicked,"/views/FailedLogin.fxml");
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
