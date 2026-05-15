@@ -36,18 +36,20 @@ public class AuctionService {
       
         this.nextAuctionId = new AtomicInteger((int) auctionRecordDAO.findMaxAuctionId() + 1);
         seedData();
-        loadPersistedRuntimeAuctions();
+        //loadPersistedRuntimeAuctions();
     }
 
     private void seedData() {
-        addInitialAuction("seller1", "iPhone 15", 15000000, AuctionStatus.OPEN);
-        addInitialAuction("seller2", "MacBook Pro", 25000000, AuctionStatus.OPEN);
-        addInitialAuction("seller3", "Oil Painting", 5000000, AuctionStatus.OPEN);
+        addInitialAuction("seller1", "iPhone 15","ELECTRONICS","APPLE","15", 15000000, AuctionStatus.OPEN);
+        addInitialAuction("seller2", "MacBook Pro","ElECTRONICS","APPLE","3", 25000000, AuctionStatus.OPEN);
+        addInitialAuction("seller3", "Oil Painting","ART","MINIBOOM", "2020",5000000, AuctionStatus.OPEN);
+        addInitialAuction("seller4","IPAD","ELECTRONICS","APPLE","0",3000000, AuctionStatus.PENDING);
+        addInitialAuction("seller4","IPAD","ELECTRONICS","APPLE","2",6000000, AuctionStatus.RUNNING);
     }
 
-    private void addInitialAuction(String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
+    private void addInitialAuction(String sellerUsername, String itemName,String itemType,String itemInformation1,String itemInformation2, double startPrice, AuctionStatus status) {
         String id = String.valueOf(nextAuctionId.getAndIncrement());
-        Auction auction = new Auction(id, sellerUsername, itemName, startPrice, status);
+        Auction auction = new Auction(id, sellerUsername, itemName,itemType,itemInformation1,itemInformation2, startPrice, status);
         auctions.put(id, auction);
         if (!auctionRecordDAO.existsById(id)) {
                 auctionRecordDAO.save(auction);
@@ -56,21 +58,21 @@ public class AuctionService {
         persistAuctionState(auction);
     }
 
-    private void loadPersistedRuntimeAuctions() {
-        for (AuctionStateDAO.AuctionStateSnapshot snapshot : auctionStateDAO.findAll()) {
-            if (auctions.containsKey(snapshot.auctionId())) {
-                continue;
-            }
-
-            Auction auction = new Auction(
-                    snapshot.auctionId(),
-                    snapshot.sellerUsername(),
-                    snapshot.itemName(),
-                    snapshot.startPrice(), (AuctionStatus) snapshot.status());
-            auctions.put(snapshot.auctionId(), auction);
-            syncAuctionFromDatabase(auction);
-        }
-    }
+ //   private void loadPersistedRuntimeAuctions() {
+ //       for (AuctionStateDAO.AuctionStateSnapshot snapshot : auctionStateDAO.findAll()) {
+ //           if (auctions.containsKey(snapshot.auctionId())) {
+ //               continue;
+ //           }
+//
+  //           Auction auction = new Auction(
+ //                   snapshot.auctionId(),
+ //                   snapshot.sellerUsername(),
+ //                   snapshot.itemName(),
+ //                   snapshot.startPrice(), (AuctionStatus) snapshot.status());
+ //           auctions.put(snapshot.auctionId(), auction);
+ //           syncAuctionFromDatabase(auction);
+ //       }
+ //   }
 
     public String closeAuction(String auctionId) {
         Auction auction = auctions.get(auctionId);
@@ -120,6 +122,12 @@ public class AuctionService {
             sb.append(auction.getId())
                     .append(":")
                     .append(auction.getItemName())
+                    .append(":")
+                    .append(auction.getItemType())
+                    .append(":")
+                    .append(auction.getInfomation1())
+                    .append(":")
+                    .append(auction.getInfomation2())
                     .append(":")
                     .append((long) auction.getCurrentPrice())
                     .append(":")
@@ -201,7 +209,7 @@ public class AuctionService {
         return sb.toString();
     }
 
-    public String addAuction(String sellerUsername, String itemName, double startPrice) {
+    public String addAuction(String sellerUsername, String itemName,String itemType,String itemInformation1,String itemInformation2, double startPrice) {
         if (sellerUsername == null || sellerUsername.trim().isEmpty()) {
             return "ERROR|Seller username is required";
         }
@@ -215,7 +223,7 @@ public class AuctionService {
         }
 
         String id = String.valueOf(nextAuctionId.getAndIncrement());
-        Auction auction = new Auction(id, sellerUsername, itemName, startPrice, AuctionStatus.OPEN);
+        Auction auction = new Auction(id, sellerUsername, itemName,itemType,itemInformation1,itemInformation2, startPrice, AuctionStatus.PENDING);
         auctionRecordDAO.save(auction);
         auctions.put(id, auction);
         persistAuctionState(auction, 0);
@@ -223,6 +231,9 @@ public class AuctionService {
         return "ADD_AUCTION_SUCCESS|id=" + id
                 + "|seller=" + sellerUsername
                 + "|itemName=" + itemName
+                + "|itemType=" + itemType
+                + "|itemInformation1=" + itemInformation1
+                + "|itemInformation2=" + itemInformation2
                 + "|startPrice=" + (long) startPrice;
     }
 
