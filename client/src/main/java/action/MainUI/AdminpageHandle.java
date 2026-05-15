@@ -4,9 +4,12 @@ import java.net.URL;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import action.Core.StartScence;
+import action.SellingJobs.AuctionCardItem;
+import action.SellingJobs.AuctionItems;
 import action.SellingJobs.ItemsHolder;
 import action.SellingJobs.ShopDataBase;
 import javafx.event.ActionEvent;
@@ -94,46 +97,22 @@ public class AdminpageHandle implements Initializable {
         ItemsTable.getItems().clear();
     }
 
-    public void fetchAuctionsFromServer() {
-        // 1. Lắng nghe phản hồi từ Server
-        StartScence.client.setServerListener(message -> {
-            System.out.println("Nhận được từ Server: " + message);
+    public void fetchAuctionsFromServer(){
+        for(List item: AuctionItems.list) {
+            if(!item.isEmpty()) {
+                if(((String) item.get(6)).equals("PENDING")){
+                    ItemsTable.getItems().add( new ItemsHolder((String) item.get(0),
+                            (String) item.get(1),
+                            (String) item.get(2),
+                            (String) item.get(3),
+                            (Double) item.get(4),
+                            LocalDate.of(2026,12,12),
+                            LocalTime.of(10,10,10),
+                            Time.valueOf(LocalTime.of(10,10,10))));
 
-            if (message.startsWith("AUCTION_LIST|")) {
-                // Cắt bỏ phần header
-                String dataPart = message.substring("AUCTION_LIST|".length());
-
-                if (dataPart.isEmpty()) {
-                    System.out.println("Không có sản phẩm nào.");
-                    return;
                 }
-
-                // Dữ liệu trả về sẽ chạy trên Thread của Socket, cần đưa vào JavaFX Thread để cập nhật UI
-                Platform.runLater(() -> {
-                    // Xóa dữ liệu cũ trên giao diện nếu có (ví dụ VBox hoặc FlowPane)
-                    // vBoxLobby.getChildren().clear();
-
-                    // Phân tách từng Item bằng dấu chấm phẩy ";"
-                    String[] items = dataPart.split(";");
-                    for (String itemData : items) {
-                        // Phân tách các thuộc tính của 1 Item bằng dấu hai chấm ":"
-                        String[] attributes = itemData.split(":");
-                        if (attributes.length >= 4) {
-                            String id = attributes[0];
-                            String itemName = attributes[1];
-                            Double currentPrice = Double.parseDouble(attributes[2]);
-                            String status = attributes[3];
-                            //if(status.equals("PENDING")){
-                            ItemsHolder itemsHolder = new ItemsHolder(itemName,id,"","" , (double) currentPrice, LocalDate.of(2026, 6, 30),LocalTime.of(15,20,30),Time.valueOf(LocalTime.of(10,30)));
-                            ItemsTable.getItems().add(itemsHolder);
-                        }
-                    }
-                });
             }
-        });
-
-        // 2. Gửi yêu cầu lấy danh sách đến Server
-        StartScence.client.sendMessage("LIST_AUCTIONS");
+        }
 
     }
 }

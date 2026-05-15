@@ -31,16 +31,18 @@ public class AddAuctionCommand implements CommandHandler {
             client.sendMessage("ERROR|You can only create auctions for your own account");
             return;
         }
-
+        String itemType = parts[3];
+        String itemInfo = parts[4];
+        String itemInfo2 = parts[5];
         double startPrice;
         try {
-            startPrice = Double.parseDouble(parts[3]);
+            startPrice = Double.parseDouble(parts[6]);
         } catch (NumberFormatException e) {
             client.sendMessage("ERROR|Start price must be a number");
             return;
         }
 
-        client.sendMessage(auctionService.addAuction(sellerUsername, parts[2], startPrice));
+        client.sendMessage(auctionService.addAuction(sellerUsername, parts[2],itemType,itemInfo,itemInfo2, startPrice));
         broadcastService.broadcastLobbyUpdate();
     }
 }

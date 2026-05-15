@@ -42,6 +42,12 @@ public class ItemShowingHandle implements Initializable {
     @FXML
     private Label name;
     @FXML
+    private Label Type;
+    @FXML
+    private Label information1;
+    @FXML
+    private Label information2;
+    @FXML
     private Label price;
     @FXML
     private Label status;
@@ -53,6 +59,9 @@ public class ItemShowingHandle implements Initializable {
     }
     public void getItem(){
         name.setText(StoreItemDataInit.name);
+        Type.setText(StoreItemDataInit.itemType);
+        information1.setText(StoreItemDataInit.itemInformation1);
+        information2.setText(StoreItemDataInit.itemInformation2);
         price.setText(StoreItemDataInit.price);
         status.setText(StoreItemDataInit.status);
         description.setText(StoreItemDataInit.description);

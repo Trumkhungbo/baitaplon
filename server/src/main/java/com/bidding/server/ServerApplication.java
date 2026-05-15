@@ -35,6 +35,6 @@ public class ServerApplication {
         serverThread.setDaemon(true);
         serverThread.start();
 
-        Application.launch(StartScence.class, args);
+       // Application.launch(StartScence.class, args);
     }
 }
