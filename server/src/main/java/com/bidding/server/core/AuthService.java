@@ -25,7 +25,8 @@ public class AuthService {
             if (PasswordHasher.needsUpgrade(foundUser.getPasswordHash())) {
                 userDAO.updatePasswordHash(username, PasswordHasher.hash(password));
             }
-            return "LOGIN_SUCCESS|USER|Welcome " + username;
+            // Tra ve role de client luu vao session, tranh check admin bang username
+            return "LOGIN_SUCCESS|" + foundUser.getRole().name() + "|Welcome " + username;
         }
         return "LOGIN_FAILED|Invalid username or password";
     }
@@ -104,7 +105,7 @@ public class AuthService {
         try {
             User user = userDAO.findByUsername(username);
             if (user != null) {
-                userDAO.updatePasswordHash(username, newPassword);
+                userDAO.updatePasswordHash(username, PasswordHasher.hash(newPassword));
 
                 response.addProperty("status", "SUCCESS");
                 response.addProperty("message", "Đổi mật khẩu thành công!");

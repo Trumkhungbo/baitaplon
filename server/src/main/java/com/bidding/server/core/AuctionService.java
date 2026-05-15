@@ -1,4 +1,3 @@
-
 package com.bidding.server.core;
 
 import java.util.ArrayList;
@@ -33,9 +32,11 @@ public class AuctionService {
         this.auctionStateDAO = new AuctionStateDAO();
         this.auctionRecordDAO = new AuctionRecordDAO();
         this.autoBidDAO = new AutoBidDAO();
+        // Init nextAuctionId TRUOC seedData de addInitialAuction dung duoc
+        // findMaxAuctionId() tra 0 neu DB rong -> nextId bat dau tu 1
+        this.nextAuctionId = new AtomicInteger((int) auctionRecordDAO.findMaxAuctionId() + 1);
         seedData();
         loadPersistedRuntimeAuctions();
-        this.nextAuctionId = new AtomicInteger((int) auctionRecordDAO.findMaxAuctionId() + 1);
     }
 
     private void seedData() {
@@ -45,11 +46,13 @@ public class AuctionService {
     }
 
     private void addInitialAuction(String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
-        String id = String.valueOf(auctions.size() + 1);
+        // Dung nextAuctionId thay vi auctions.size()+1
+        // auctions.size() khong on dinh: phu thuoc thu tu goi, co the trung ID khi restart
+        String id = String.valueOf(nextAuctionId.getAndIncrement());
         Auction auction = new Auction(id, sellerUsername, itemName, startPrice, status);
         auctions.put(id, auction);
         if (!auctionRecordDAO.existsById(id)) {
-            auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getEndTime(), status);
+        auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getStartTimeMillis(), auction.getDurationMinutes(), status);
         }
         syncAuctionFromDatabase(auction);
         persistAuctionState(auction);
@@ -215,8 +218,8 @@ public class AuctionService {
 
         String id = String.valueOf(nextAuctionId.getAndIncrement());
         Auction auction = new Auction(id, sellerUsername, itemName, startPrice, AuctionStatus.OPEN);
-        auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getEndTime(), AuctionStatus.OPEN);
         auctions.put(id, auction);
+        auctionRecordDAO.save(id, sellerUsername, itemName, startPrice, auction.getStartTimeMillis(), auction.getDurationMinutes(), AuctionStatus.OPEN);
         persistAuctionState(auction, 0);
 
         return "ADD_AUCTION_SUCCESS|id=" + id
@@ -373,7 +376,7 @@ public class AuctionService {
         auction.setCurrentPrice(state.currentPrice());
         auction.setStatus((AuctionStatus) state.status());
         auction.setHighestBidder(state.highestBidder());
-        auction.setEndTime(state.endTime());
+        auction.setEndTime(state.endTimeMillis());
         return state;
     }
 

@@ -7,7 +7,9 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+
 import com.bidding.common.enums.AuctionStatus;
+
 public class Auction {
 
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();

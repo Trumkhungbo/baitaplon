@@ -23,7 +23,6 @@ public class DatabaseInitializer {
                         personal_id   TEXT,
                         role          TEXT    NOT NULL,
                         balance       REAL    DEFAULT 0,
-                        rating        REAL    DEFAULT 5.0,
                         created_at    INTEGER NOT NULL
                     )
                     """);
@@ -53,7 +52,7 @@ public class DatabaseInitializer {
                         seller_username         TEXT    NOT NULL,
                         start_time              TEXT    NOT NULL,
                         end_time                TEXT    NOT NULL,
-                        duration_minutes        INTEGER NOT NULL DEFAULT 0,
+                        duration_minutes        INTEGER NOT NULL DEFAULT 5,
                         status                  TEXT    NOT NULL DEFAULT 'OPEN',
                         current_highest_bid     REAL    NOT NULL,
                         highest_bidder_username TEXT,
@@ -82,8 +81,8 @@ public class DatabaseInitializer {
                         status           TEXT NOT NULL,
                         highest_bidder   TEXT,
                         end_time         INTEGER NOT NULL,
-                        start_time       INTEGER NOT NULL DEFAULT 0,
-                        duration_minutes INTEGER NOT NULL DEFAULT 0,
+                        start_time       INTEGER NOT NULL,
+                        duration_minutes INTEGER NOT NULL DEFAULT 5,
                         bid_count        INTEGER NOT NULL DEFAULT 0
                     )
                     """);
@@ -100,9 +99,20 @@ public class DatabaseInitializer {
                     )
                     """);
 
-            // Fix cú pháp format chuỗi của Java String Template
-            st.execute("INSERT OR IGNORE INTO users (username, password_hash, email, phone, personal_id, role, created_at) " +
-                    "VALUES ('admin', '" + PasswordHasher.hash("admin123") + "', 'admin@bidding.vnu.edu.vn', '', '', 'ADMIN', strftime('%s','now') * 1000)");
+            st.execute("""
+                    INSERT OR IGNORE INTO users (username, password_hash, email, phone, personal_id, role, created_at)
+                    VALUES ('admin', '%s', 'admin@bidding.vnu.edu.vn', '', '', 'ADMIN',
+                            strftime('%%s','now') * 1000)
+                    """.formatted(PasswordHasher.hash("admin123")));
+
+            // Seed user cho du lieu mac dinh
+            String sellerHash = PasswordHasher.hash("seller123");
+            st.execute(
+                    "INSERT OR IGNORE INTO users (username, password_hash, email, phone, personal_id, role, balance, created_at) VALUES " +
+                            "('seller1', '" + sellerHash + "', 'seller1@local.auction', '', '', 'USER', 0, strftime('%s','now') * 1000)," +
+                            "('seller2', '" + sellerHash + "', 'seller2@local.auction', '', '', 'USER', 0, strftime('%s','now') * 1000)," +
+                            "('seller3', '" + sellerHash + "', 'seller3@local.auction', '', '', 'USER', 0, strftime('%s','now') * 1000)"
+            );
 
             System.out.println("[DB] Schema khoi tao thanh cong.");
         } catch (Exception e) {
@@ -121,6 +131,7 @@ public class DatabaseInitializer {
         }
     }
 
+    // Không nhận conn tham số nữa — tự mở/đóng connection riêng
     private static void ensureColumnExists(String tableName, String columnName, String definition) {
         try (Connection conn = DatabaseManager.getInstance().getConnection();
              Statement statement = conn.createStatement();

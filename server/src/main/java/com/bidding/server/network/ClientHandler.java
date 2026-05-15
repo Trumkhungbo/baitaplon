@@ -1,5 +1,7 @@
 package com.bidding.server.network;
 
+import com.bidding.common.enums.UserRole;
+import com.bidding.common.enums.UserRole;
 import com.bidding.server.network.command.CommandDispatcher;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -23,6 +25,7 @@ public class ClientHandler implements Runnable {
 
     private volatile boolean connected;
     private String currentUser;
+    private UserRole currentRole;
     private String watchingAuctionId;
 
     public ClientHandler(Socket clientSocket, AuctionServer server, CommandDispatcher commandDispatcher) {
@@ -96,6 +99,12 @@ public class ClientHandler implements Runnable {
                         json.has("phone") ? json.get("phone").getAsString() : "",
                         json.has("personalID") ? json.get("personalID").getAsString() : ""
                 };
+            } else if (command.equals("RESET_PASSWORD")) {
+                parts = new String[]{
+                        "RESET_PASSWORD",
+                        json.has("username") ? json.get("username").getAsString() : "",
+                        json.has("newPassword") ? json.get("newPassword").getAsString() : ""
+                };
             } else {
                 parts = new String[]{command};
             }
@@ -159,11 +168,20 @@ public class ClientHandler implements Runnable {
         this.watchingAuctionId = watchingAuctionId;
     }
 
+    public UserRole getCurrentRole() {
+        return currentRole;
+    }
+
+    public void setCurrentRole(UserRole currentRole) {
+        this.currentRole = currentRole;
+    }
+
     public boolean isLoggedIn() {
         return currentUser != null;
     }
 
     public boolean isAdmin() {
-        return "admin".equals(currentUser);
+        // Kiem tra role thuc su tu DB, khong dua vao ten username
+        return currentRole == UserRole.ADMIN;
     }
 }
