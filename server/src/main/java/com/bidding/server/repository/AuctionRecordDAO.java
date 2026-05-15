@@ -64,8 +64,8 @@ public class AuctionRecordDAO extends BaseDAO {
             ps.setLong(1, Long.parseLong(auctionId));
             ps.setLong(2, item.getId());
             ps.setString(3, sellerUsername);
-            ps.setString(4, String.valueOf(startTimeMillis));
-            ps.setString(5, String.valueOf(startTimeMillis + (durationMinutes * 60_000L)));
+            ps.setLong(4, startTimeMillis);
+            ps.setLong(5, startTimeMillis + (durationMinutes * 60_000L));
             ps.setInt(6, durationMinutes);
             ps.setString(7, status.name());
             ps.setDouble(8, startPrice);
@@ -90,8 +90,8 @@ public class AuctionRecordDAO extends BaseDAO {
 
         try (Connection conn = getConn();
             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, String.valueOf(auction.getStartTimeMillis()));
-            ps.setString(2, String.valueOf(auction.getEndTime()));
+            ps.setLong(1, auction.getStartTimeMillis());
+            ps.setLong(2, auction.getEndTime());
             ps.setInt(3, auction.getDurationMinutes());
             ps.setString(4, auction.getStatus().name());
             ps.setDouble(5, auction.getCurrentPrice());
