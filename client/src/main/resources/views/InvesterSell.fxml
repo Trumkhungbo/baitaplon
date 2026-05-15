@@ -95,6 +95,5 @@
 
          </children>
       </VBox>
-      <Hyperlink text="Hyperlink" />
    </children>
 </StackPane>

@@ -218,3 +218,12 @@
 .custom-choice-box .menu-item .label {
     -fx-text-fill: white;
 }
+.btn-gold-hover {
+    -fx-background-color: -fx-primary-gold;
+    -fx-text-fill: #1A1A1A;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-border-color: #FACC15;
+    -fx-translate-y: -5px;
+}
