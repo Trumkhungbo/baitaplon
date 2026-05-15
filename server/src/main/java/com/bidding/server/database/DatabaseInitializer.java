@@ -121,9 +121,10 @@ public class DatabaseInitializer {
             String sellerHash = PasswordHasher.hash("seller123");
             st.execute(
                     "INSERT OR IGNORE INTO users (username, password_hash, email, phone, personal_id, role, balance, created_at) VALUES " +
-                            "('seller1', '" + sellerHash + "', 'seller1@local.auction', '', '', 'USER', 0, strftime('%s','now') * 1000)," +
-                            "('seller2', '" + sellerHash + "', 'seller2@local.auction', '', '', 'USER', 0, strftime('%s','now') * 1000)," +
-                            "('seller3', '" + sellerHash + "', 'seller3@local.auction', '', '', 'USER', 0, strftime('%s','now') * 1000)"
+                            "('seller1', '" + sellerHash + "', 'seller1@local.auction', '', '', 'SELLER', 0, strftime('%s','now') * 1000)," +
+                            "('seller2', '" + sellerHash + "', 'seller2@local.auction', '', '', 'SELLER', 0, strftime('%s','now') * 1000)," +
+                            "('seller3', '" + sellerHash + "', 'seller3@local.auction', '', '', 'SELLER', 0, strftime('%s','now') * 1000)," +
+                            "('seller4', '" + sellerHash + "', 'seller4@local.auction', '', '', 'SELLER', 0, strftime('%s','now') * 1000)"
             );
 
             System.out.println("[DB] Schema khoi tao thanh cong.");
