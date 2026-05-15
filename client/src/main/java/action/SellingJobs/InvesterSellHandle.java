@@ -36,8 +36,6 @@ public class InvesterSellHandle implements Initializable {
     @FXML
     private TextField price;
     @FXML
-    private DatePicker date;
-    @FXML
     private TextField TimeStart;
 
     @FXML
@@ -58,7 +56,7 @@ public class InvesterSellHandle implements Initializable {
             Time DUration = Time.valueOf(timeString);
             String priced = price.getText();
             Double priceFunc = Double.parseDouble(priced);
-            ItemsHolder item = new ItemsHolder("",itemname.getText(), description.getValue(), description1.getText(),description2.getText(), priceFunc, date.getValue(), StarTime, DUration);
+            ItemsHolder item = new ItemsHolder("",itemname.getText(), priceFunc, StarTime, DUration);
             ShopDataBase.danhSachSanPham.add(item);
 
             System.out.println("Đăng bán thành công!");
@@ -98,7 +96,7 @@ public class InvesterSellHandle implements Initializable {
 
     public void setDescription(ChoiceBox<String> description) {
         this.description = description;
-        description.getItems().addAll("","ELECTRONICS","ART","VEHICLE");
+        description.getItems().addAll("Thông Tin","ELECTRONICS","ART","VEHICLE");
         description.setValue(description.getItems().get(0));
     }
 }

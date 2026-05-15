@@ -2,10 +2,15 @@ package action.SellingJobs;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Time;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import action.Authentication.StoreDataInput;
 import action.Authentication.StoreItemDataInit;
 import action.Core.SceneSwitch;
 import action.Core.StartScence;
@@ -39,34 +44,37 @@ public class ItemShowingHandle implements Initializable {
     @FXML
     private Label name;
     @FXML
-    private Label Type;
-    @FXML
-    private Label information1;
-    @FXML
-    private Label information2;
-    @FXML
     private Label price;
     @FXML
     private Label status;
     @FXML
     private Label description;
+    @FXML
+    private Label date;
+    @FXML
+    private Label starTime;
+    @FXML
+    private Label duration;
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle){
         getItem();
     }
     public void getItem(){
-        name.setText(StoreItemDataInit.name);
-        Type.setText(StoreItemDataInit.itemType);
-        information1.setText(StoreItemDataInit.itemInformation1);
-        information2.setText(StoreItemDataInit.itemInformation2);
-        price.setText(StoreItemDataInit.price);
-        status.setText(StoreItemDataInit.status);
-        description.setText(StoreItemDataInit.description);
-        String image = StoreItemDataInit.image;
-        if(image!=null){
-            Image image1 = new Image("/assets/rubberDuck.jfif");
-        }
+        StartScence.client.setServerListener(message -> {
+            String dataPart = message.substring("AUCTION_DETAIL|".length());
+            String[] attributes = dataPart.split(":");
+            Platform.runLater(() -> {
+                String id = attributes[0];
+                name.setText(attributes[1]);
+                price.setText(attributes[3]);
+                status.setText(attributes[4]);
+                date.setText(attributes[5]);
+                starTime.setText(attributes[6]);
+                duration.setText(attributes[7]);
 
+            });
+        });
+        StartScence.client.sendMessage("GET_AUCTION_DETAILS|"+ StoreItemDataInit.description);
     }
     @FXML
     private TextField money;

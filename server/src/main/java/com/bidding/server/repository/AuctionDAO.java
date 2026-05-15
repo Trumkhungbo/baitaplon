@@ -240,7 +240,7 @@ public class AuctionDAO extends BaseDAO {
         a.setSellerUsername(rs.getString("seller_username"));
         a.setStartTime(rs.getTimestamp("start_time").toLocalDateTime());
         a.setEndTime(rs.getTimestamp("end_time").toLocalDateTime());
-        a.setStatus(AuctionStatus.valueOf(rs.getString("status")));
+        a.setStatus(parseStatus(rs.getString("status")));
         a.setCurrentHighestBid(rs.getDouble("current_highest_bid"));
         a.setHighestBidderUsername(rs.getString("highest_bidder_username"));
 

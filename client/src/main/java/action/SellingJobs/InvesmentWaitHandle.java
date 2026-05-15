@@ -23,8 +23,8 @@ public class InvesmentWaitHandle implements Initializable {
     public void fetchAuctionsFromServer() {
         for(List item:AuctionItems.list) {
             if(!item.isEmpty()) {
-                if(((String) item.get(6)).equals("OPEN")){
-                    AuctionCardItem cardItem = new AuctionCardItem((String) item.get(0),(String) item.get(1),(String) item.get(2),(String) item.get(3),(String) item.get(4),(Double) item.get(5),(String) item.get(6));
+                if(((String) item.get(3)).equals("OPEN")){
+                    AuctionCardItem cardItem = new AuctionCardItem((String) item.get(0),(String) item.get(1),(Double) item.get(2),(String) item.get(3));
                     if (flowPane != null) {
                         flowPane.getChildren().add(cardItem);
                     }

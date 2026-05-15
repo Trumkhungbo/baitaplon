@@ -11,21 +11,32 @@ import java.util.ResourceBundle;
 public class InvesmentSiteHandle implements Initializable {
     @FXML
     private FlowPane flowPane;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-
-        AuctionItems.currentListener = () -> {fetchAuctionsFromServer();};
+        AuctionItems.currentListener = () -> { fetchAuctionsFromServer(); };
         AuctionItems.requestData();
         if (flowPane != null) {
             flowPane.getChildren().clear();
-    }
         }
+    }
 
     public void fetchAuctionsFromServer() {
-        for(List item:AuctionItems.list) {
-            if(!item.isEmpty()) {
-                if(((String) item.get(6)).equals("RUNNING")){
-                    AuctionCardItem cardItem = new AuctionCardItem((String) item.get(0),(String) item.get(1),(String) item.get(2),(String) item.get(3),(String) item.get(4),(Double) item.get(5),(String) item.get(6));
+        if (flowPane != null) {
+            flowPane.getChildren().clear(); // Xóa sạch danh sách cũ trước khi vẽ danh sách mới
+        }
+
+        for (List item : AuctionItems.list) {
+            if (!item.isEmpty()) {
+                String status = (String) item.get(3);
+                // Hiển thị cả phiên đấu giá đang chạy (RUNNING) và mới mở (OPEN)
+                if ("RUNNING".equals(status) ) {
+                    AuctionCardItem cardItem = new AuctionCardItem(
+                            (String) item.get(0),
+                            (String) item.get(1),
+                            (Double) item.get(2),
+                            status
+                    );
                     if (flowPane != null) {
                         flowPane.getChildren().add(cardItem);
                     }
@@ -33,5 +44,4 @@ public class InvesmentSiteHandle implements Initializable {
             }
         }
     }
-
 }
