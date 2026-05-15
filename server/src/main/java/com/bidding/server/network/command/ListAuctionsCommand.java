@@ -14,6 +14,6 @@ public class ListAuctionsCommand implements CommandHandler {
     @Override
     public void handle(String[] parts, ClientHandler client) {
         client.setWatchingAuctionId(null);
-        client.sendMessage(auctionService.getAuctionList());
+        client.sendMessage(auctionService.getAuctionList(client.isAdmin()));
     }
 }

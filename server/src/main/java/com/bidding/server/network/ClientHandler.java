@@ -116,7 +116,7 @@ public class ClientHandler implements Runnable {
                     getJsonString(json, "username"),
                     getJsonString(json, "newPassword")
             };
-            case "GET_AUCTION_DETAIL", "GET_BID_HISTORY", "GET_WINNER", "WATCH", "CLOSE_AUCTION" -> new String[]{
+            case "GET_AUCTION_DETAIL", "GET_BID_HISTORY", "GET_WINNER", "WATCH", "CLOSE_AUCTION", "APPROVE_AUCTION" -> new String[]{
                     command,
                     getJsonString(json, "auctionId")
             };
@@ -142,23 +142,16 @@ public class ClientHandler implements Runnable {
     }
 
     private String[] buildJsonAddAuctionParts(JsonObject json) {
-        String seller = firstJsonString(json, "sellerUsername", "seller", "username");
-        String itemType = getJsonString(json, "itemType");
-        String itemName = firstJsonString(json, "itemName", "name");
-        String startPrice = firstJsonString(json, "startPrice", "startingPrice");
-
-        if (itemType.isBlank()) {
-            return new String[]{"ADD_AUCTION", seller, itemName, startPrice};
-        }
-
         return new String[]{
                 "ADD_AUCTION",
-                seller,
-                itemType,
-                itemName,
-                startPrice,
-                firstJsonString(json, "param1", "brand", "engineType", "artist"),
-                firstJsonString(json, "param2", "warrantyMonths", "mileage", "creationYear")
+                firstJsonString(json, "sellerUsername", "seller", "username"),
+                getJsonString(json, "itemType"),
+                firstJsonString(json, "itemName", "name"),
+                firstJsonString(json, "des1", "param1", "brand", "engineType", "artist"),
+                firstJsonString(json, "des2", "param2", "warrantyMonths", "mileage", "creationYear"),
+                firstJsonString(json, "price", "startPrice", "startingPrice"),
+                getJsonString(json, "startTime"),
+                getJsonString(json, "durationMinutes")
         };
     }
 

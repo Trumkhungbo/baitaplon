@@ -92,14 +92,26 @@ public class AuctionService {
         );
         auction.setDurationMinutes(DEFAULT_DURATION_MINUTES);
 
+        Item item = new Art(
+                itemName,
+                "",
+                startPrice,
+                "",
+                "Unknown",
+                Calendar.getInstance().get(Calendar.YEAR)
+        );
+        Item savedItem = itemDAO.save(item, sellerUsername);
+        auction.setItemId(savedItem.getId());
+
         auctions.put(id, auction);
 
         auctionRecordDAO.save(
                 id,
+                savedItem.getId(),
                 sellerUsername,
-                itemName,
                 startPrice,
                 auction.getStartTimeMillis(),
+                auction.getEndTime(),
                 auction.getDurationMinutes(),
                 status
         );
@@ -185,10 +197,11 @@ public class AuctionService {
 
         auctionRecordDAO.save(
                 auctionId,
+                savedItem.getId(),
                 sellerUsername,
-                savedItem.getName(),
                 savedItem.getStartingPrice(),
                 auction.getStartTimeMillis(),
+                auction.getEndTime(),
                 auction.getDurationMinutes(),
                 AuctionStatus.OPEN
         );
@@ -199,6 +212,69 @@ public class AuctionService {
                 + "|auctionId=" + auctionId
                 + "|itemId=" + savedItem.getId()
                 + "|itemType=" + savedItem.getItemType();
+    }
+
+    public String createPendingAuction(
+            String sellerUsername,
+            Item item,
+            long startTime,
+            long durationMinutes
+    ) {
+
+        if (item == null) {
+            return "ERROR|Item is null";
+        }
+
+        if (sellerUsername == null || sellerUsername.isBlank()) {
+            return "ERROR|Seller username required";
+        }
+
+        if (item.getStartingPrice() <= 0) {
+            return "ERROR|Invalid start price";
+        }
+
+        if (startTime <= 0) {
+            return "ERROR|Invalid start time";
+        }
+
+        if (durationMinutes <= 0) {
+            return "ERROR|Invalid duration";
+        }
+
+        Item savedItem = itemDAO.save(item, sellerUsername);
+
+        String auctionId = String.valueOf(nextAuctionId.getAndIncrement());
+
+        Auction auction = new Auction(
+                auctionId,
+                sellerUsername,
+                savedItem.getName(),
+                savedItem.getStartingPrice(),
+                AuctionStatus.PENDING
+        );
+        auction.setItemId(savedItem.getId());
+        auction.setStartTimeMillis(startTime);
+        auction.setDurationMinutes(Math.toIntExact(durationMinutes));
+
+        long endTime = startTime + durationMinutes * 60_000L;
+        auction.setEndTime(endTime);
+
+        auctions.put(auctionId, auction);
+
+        auctionRecordDAO.save(
+                auctionId,
+                savedItem.getId(),
+                sellerUsername,
+                savedItem.getStartingPrice(),
+                startTime,
+                endTime,
+                auction.getDurationMinutes(),
+                AuctionStatus.PENDING
+        );
+
+        persistAuctionState(auction, 0);
+
+        return "ADD_AUCTION_PENDING|auctionId=" + auctionId;
     }
 
     public String addAuction(
@@ -308,6 +384,10 @@ public class AuctionService {
     }
 
     public String getAuctionList() {
+        return getAuctionList(false);
+    }
+
+    public String getAuctionList(boolean includePending) {
 
         StringBuilder sb =
                 new StringBuilder("AUCTION_LIST|");
@@ -317,6 +397,12 @@ public class AuctionService {
         for (Auction auction : auctions.values()) {
 
             syncAuctionFromDatabase(auction);
+
+            if (!includePending
+                    && auction.getStatus() != AuctionStatus.OPEN
+                    && auction.getStatus() != AuctionStatus.RUNNING) {
+                continue;
+            }
 
             if (!first) {
                 sb.append(";");
@@ -334,6 +420,31 @@ public class AuctionService {
         }
 
         return sb.toString();
+    }
+
+    public String approveAuction(String auctionId) {
+        Auction auction = auctions.get(auctionId);
+
+        if (auction == null) {
+            return "ERROR|Auction not found";
+        }
+
+        synchronized (auction) {
+            syncAuctionFromDatabase(auction);
+
+            if (auction.getStatus() != AuctionStatus.PENDING) {
+                return "ERROR|Auction is not pending";
+            }
+
+            if (!auctionRecordDAO.approvePendingAuction(auctionId)) {
+                return "ERROR|Auction approval failed";
+            }
+
+            auction.setStatus(AuctionStatus.OPEN);
+            persistAuctionState(auction, bidHistoryDAO.countByAuctionId(auctionId));
+        }
+
+        return "APPROVE_AUCTION_SUCCESS|auctionId=" + auctionId;
     }
 
     public Auction findAuctionById(String auctionId) {
@@ -404,6 +515,8 @@ public class AuctionService {
             }
 
             if (auction.getStatus()
+                    == AuctionStatus.PENDING
+                    || auction.getStatus()
                     == AuctionStatus.FINISHED
                     || auction.getStatus()
                     == AuctionStatus.PAID
