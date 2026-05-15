@@ -34,9 +34,6 @@ public class SocketClient {
                     String serverMessage;
                     while ((serverMessage = serverReader.readLine()) != null) {
                         System.out.println("Signal received: " + serverMessage);
-                        if (serverMessage.startsWith("AUCTION_LIST|")) {
-                            action.SellingJobs.AuctionItems.updateListFromServer(serverMessage);
-                        }
                         if (listener != null) {
                             listener.onMessageReceived(serverMessage);
                         }
