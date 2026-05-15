@@ -39,7 +39,7 @@ public class LoginHandle {
         StoreDataInput.username=user1;
         StoreDataInput.password=password1;
         if (password1.isBlank() || user1.isBlank()) {
-            sceneSwitch.SwitchToLockPage(clicked, "/views/FailedLogin.fxml");
+            sceneSwitch.SwitchToLockPage(clicked, "/views/SomeThingUnFill.fxml");
 
         }
         //else-if(false){
@@ -55,11 +55,11 @@ public class LoginHandle {
                         }
                     } else if (message.startsWith("LOGIN_FAILED")) {
                             SceneSwitch sceneSwitch = new SceneSwitch();
-                   /*     try {
-                            sceneSwitch.SwitchToLockPage(clicked,"/víews/SomeThingUnFill.fxml");
+                        try {
+                            sceneSwitch.SwitchToLockPage(clicked,"/víews/FailedLogin.fxml");
                         } catch (IOException e) {
                             throw new RuntimeException(e);
-                        }*/
+                        }
 
                     }
 
