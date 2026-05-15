@@ -31,6 +31,11 @@ public class AuthService {
         return "LOGIN_FAILED|Invalid username or password";
     }
 
+    public UserRole getUserRole(String username) {
+        User foundUser = userDAO.findByUsername(username);
+        return foundUser != null ? foundUser.getRole() : null;
+    }
+
     public String register(String username, String password,String phoneNumber,String email,String personalID) {
         if (username == null || username.trim().isEmpty()) {
             return "REGISTER_FAILED|Empty username";
