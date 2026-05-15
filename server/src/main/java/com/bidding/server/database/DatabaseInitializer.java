@@ -41,7 +41,8 @@ public class DatabaseInitializer {
                         warranty_months INTEGER,
                         engine_type     TEXT,
                         mileage         INTEGER,
-                        image_url       TEXT
+                        image_url       TEXT,
+                        created_at      INTEGER NOT NULL
                     )
                     """);
 
@@ -126,6 +127,9 @@ public class DatabaseInitializer {
             st.executeUpdate("DELETE FROM bid_transactions");
             st.executeUpdate("DELETE FROM auction_runtime_state");
             st.executeUpdate("DELETE FROM auto_bid_settings");
+            st.executeUpdate("DELETE FROM auctions");
+            st.executeUpdate("DELETE FROM items");
+            st.executeUpdate("DELETE FROM sqlite_sequence WHERE name IN ('bid_transactions', 'auto_bid_settings', 'auctions', 'items')");
         } catch (Exception e) {
             throw new RuntimeException("Loi reset du lieu auction runtime: " + e.getMessage(), e);
         }

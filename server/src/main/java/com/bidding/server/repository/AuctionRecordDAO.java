@@ -45,8 +45,10 @@ public class AuctionRecordDAO extends BaseDAO {
         item.setName(itemName);
         item.setDescription("");
         item.setStartingPrice(startPrice);
-        item.setItemType(ItemType.OTHER);
+        item.setItemType(ItemType.ART);
         item.setImageUrl(null);
+        item.setArtist("Unknown");
+        item.setCreationYear(java.util.Calendar.getInstance().get(java.util.Calendar.YEAR));
         itemDAO.save(item, sellerUsername);
 
         String sql = """

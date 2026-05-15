@@ -1,7 +1,6 @@
 package com.bidding.server.network;
 
 import com.bidding.common.enums.UserRole;
-import com.bidding.common.enums.UserRole;
 import com.bidding.server.network.command.CommandDispatcher;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -41,7 +40,7 @@ public class ClientHandler implements Runnable {
             initStreams();
 
             sendMessage("CONNECTED|Welcome to the Auction Server");
-            sendMessage("INFO|Supported commands: PING, LOGIN|user|pass, LIST_AUCTIONS, GET_AUCTION_DETAIL|auctionId, ADD_AUCTION|seller|itemName|startPrice, WATCH|auctionId, BID|auctionId|user|amount, QUIT");
+            sendMessage("INFO|Supported commands: PING, LOGIN|user|pass, LIST_AUCTIONS, GET_AUCTION_DETAIL|auctionId, ADD_AUCTION|seller|itemName|startPrice, WATCH|auctionId, BID|auctionId|amount, QUIT");
 
             String clientMessage;
             while (connected && (clientMessage = reader.readLine()) != null) {
@@ -73,47 +72,110 @@ public class ClientHandler implements Runnable {
             JsonObject json = JsonParser.parseString(request).getAsJsonObject();
             command = json.get("command").getAsString().toUpperCase();
 
-            if (command.equals("GET_ACCOUNTINFORMATION")) {
-                parts = new String[]{"GET_ACCOUNTINFORMATION", json.get("username").getAsString()};
-            } else if (command.equals("ADD_MONEY")) {
-                parts = new String[]{"ADD_MONEY", json.get("username").getAsString(), json.get("money").getAsString()};
-            } else if (command.equals("LOGIN")) {
-                parts = new String[]{
-                        "LOGIN",
-                        json.has("username") ? json.get("username").getAsString() : "",
-                        json.has("password") ? json.get("password").getAsString() : ""
-                };
-            } else if (command.equals("REGISTER")) {
-                parts = new String[]{
-                        "REGISTER",
-                        json.has("username") ? json.get("username").getAsString() : "",
-                        json.has("password") ? json.get("password").getAsString() : "",
-                        json.has("phone") ? json.get("phone").getAsString() : "",
-                        json.has("email") ? json.get("email").getAsString() : "",
-                        json.has("personalID") ? json.get("personalID").getAsString() : ""
-                };
-            } else if (command.equals("FORGOT_PASSWORD")) {
-                parts = new String[]{
-                        "FORGOT_PASSWORD",
-                        json.has("username") ? json.get("username").getAsString() : "",
-                        json.has("phone") ? json.get("phone").getAsString() : "",
-                        json.has("personalID") ? json.get("personalID").getAsString() : ""
-                };
-            } else if (command.equals("RESET_PASSWORD")) {
-                parts = new String[]{
-                        "RESET_PASSWORD",
-                        json.has("username") ? json.get("username").getAsString() : "",
-                        json.has("newPassword") ? json.get("newPassword").getAsString() : ""
-                };
-            } else {
-                parts = new String[]{command};
-            }
+            parts = buildJsonCommandParts(command, json);
         } catch (Exception e) {
             parts = request.split("\\|");
             command = parts[0].toUpperCase();
         }
 
         commandDispatcher.dispatch(command, parts, this);
+    }
+
+    private String[] buildJsonCommandParts(String command, JsonObject json) {
+        return switch (command) {
+            case "LOGIN" -> new String[]{
+                    "LOGIN",
+                    getJsonString(json, "username"),
+                    getJsonString(json, "password")
+            };
+            case "REGISTER" -> new String[]{
+                    "REGISTER",
+                    getJsonString(json, "username"),
+                    getJsonString(json, "password"),
+                    getJsonString(json, "phone"),
+                    getJsonString(json, "email"),
+                    getJsonString(json, "personalID")
+            };
+            case "GET_ACCOUNTINFORMATION" -> new String[]{
+                    "GET_ACCOUNTINFORMATION",
+                    getJsonString(json, "username")
+            };
+            case "ADD_MONEY" -> new String[]{
+                    "ADD_MONEY",
+                    getJsonString(json, "username"),
+                    getJsonString(json, "money")
+            };
+            case "FORGOT_PASSWORD" -> new String[]{
+                    "FORGOT_PASSWORD",
+                    getJsonString(json, "username"),
+                    getJsonString(json, "phone"),
+                    getJsonString(json, "personalID")
+            };
+            case "RESET_PASSWORD" -> new String[]{
+                    "RESET_PASSWORD",
+                    getJsonString(json, "username"),
+                    getJsonString(json, "newPassword")
+            };
+            case "GET_AUCTION_DETAIL", "GET_BID_HISTORY", "GET_WINNER", "WATCH", "CLOSE_AUCTION" -> new String[]{
+                    command,
+                    getJsonString(json, "auctionId")
+            };
+            case "BID" -> new String[]{
+                    "BID",
+                    getJsonString(json, "auctionId"),
+                    getJsonString(json, "amount")
+            };
+            case "SET_AUTO_BID" -> new String[]{
+                    "SET_AUTO_BID",
+                    getJsonString(json, "auctionId"),
+                    getJsonString(json, "maxBid"),
+                    getJsonString(json, "increment")
+            };
+            case "UPDATE_STATUS" -> new String[]{
+                    "UPDATE_STATUS",
+                    getJsonString(json, "auctionId"),
+                    getJsonString(json, "status")
+            };
+            case "ADD_AUCTION" -> buildJsonAddAuctionParts(json);
+            default -> new String[]{command};
+        };
+    }
+
+    private String[] buildJsonAddAuctionParts(JsonObject json) {
+        String seller = firstJsonString(json, "sellerUsername", "seller", "username");
+        String itemType = getJsonString(json, "itemType");
+        String itemName = firstJsonString(json, "itemName", "name");
+        String startPrice = firstJsonString(json, "startPrice", "startingPrice");
+
+        if (itemType.isBlank()) {
+            return new String[]{"ADD_AUCTION", seller, itemName, startPrice};
+        }
+
+        return new String[]{
+                "ADD_AUCTION",
+                seller,
+                itemType,
+                itemName,
+                startPrice,
+                firstJsonString(json, "param1", "brand", "engineType", "artist"),
+                firstJsonString(json, "param2", "warrantyMonths", "mileage", "creationYear")
+        };
+    }
+
+    private String firstJsonString(JsonObject json, String... keys) {
+        for (String key : keys) {
+            String value = getJsonString(json, key);
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
+    }
+
+    private String getJsonString(JsonObject json, String key) {
+        return json.has(key) && !json.get(key).isJsonNull()
+                ? json.get(key).getAsString()
+                : "";
     }
 
     public void sendMessage(String message) {

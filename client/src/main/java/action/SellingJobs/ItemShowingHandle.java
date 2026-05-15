@@ -8,6 +8,8 @@ import java.util.ResourceBundle;
 
 import action.Authentication.StoreItemDataInit;
 import action.Core.SceneSwitch;
+import action.Core.StartScence;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -65,7 +67,34 @@ public class ItemShowingHandle implements Initializable {
     @FXML
     private TextField money;
     @FXML
-    public void RaiseBind(ActionEvent actionEvent) {}
+    public void RaiseBind(ActionEvent actionEvent) {
+        String auctionId = StoreItemDataInit.description;
+        String amountText = money.getText();
+
+        if (auctionId == null || auctionId.isBlank()) {
+            status.setText("Missing auction id");
+            return;
+        }
+
+        if (amountText == null || !amountText.matches("\\d+(\\.\\d+)?")) {
+            status.setText("Invalid bid amount");
+            return;
+        }
+
+        StartScence.client.setServerListener(message -> {
+            Platform.runLater(() -> {
+                if (message.startsWith("BID_SUCCESS|") || message.startsWith("BID_UPDATE|")) {
+                    status.setText("RUNNING");
+                    price.setText(amountText);
+                    money.clear();
+                } else if (message.startsWith("ERROR|")) {
+                    status.setText(message.substring("ERROR|".length()));
+                }
+            });
+        });
+
+        StartScence.client.sendMessage("BID|" + auctionId + "|" + amountText);
+    }
     @FXML
     public void ReturnToInvesment(ActionEvent actionEvent) throws IOException {
         SceneSwitch sceneSwitch = new SceneSwitch();
