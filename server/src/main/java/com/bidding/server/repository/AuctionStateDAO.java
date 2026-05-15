@@ -35,7 +35,7 @@ public class AuctionStateDAO extends BaseDAO {
                         rs.getString("item_name"),
                         rs.getDouble("start_price"),
                         rs.getDouble("current_price"),
-                        AuctionStatus.valueOf(rs.getString("status")),
+                        parseStatus(rs.getString("status")),
                         rs.getString("highest_bidder"),
                         rs.getLong("end_time"),
                         rs.getLong("start_time"),

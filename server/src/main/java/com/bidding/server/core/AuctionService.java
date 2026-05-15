@@ -86,7 +86,7 @@ public class AuctionService {
                 startPrice,
                 status
         );
-
+        auction.setDurationMinutes(10);
         auctions.put(id, auction);
 
         auctionRecordDAO.save(
@@ -170,7 +170,7 @@ public class AuctionService {
                 sellerUsername,
                 savedItem.getName(),
                 savedItem.getStartingPrice(),
-                AuctionStatus.OPEN
+                AuctionStatus.PENDING
         );
 
         auction.setItemId(savedItem.getId());
