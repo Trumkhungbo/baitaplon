@@ -3,9 +3,6 @@ package com.bidding.server;
 import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.network.AuctionServer;
 
-import action.Core.StartScence;
-import javafx.application.Application;
-
 public class ServerApplication {
     public static void main(String[] args) {
         try {
@@ -30,16 +27,8 @@ public class ServerApplication {
 
             AuctionServer server = new AuctionServer(port);
             server.start();
-        });
+        }, "auction-server-main");
 
-        serverThread.setDaemon(true);
         serverThread.start();
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        Application.launch(StartScence.class, args);
     }
 }

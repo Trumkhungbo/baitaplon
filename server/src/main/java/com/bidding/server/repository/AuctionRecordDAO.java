@@ -1,14 +1,14 @@
 package com.bidding.server.repository;
 
-import com.bidding.common.enums.ItemType;
-import com.bidding.common.model.item.Art;
-import com.bidding.server.core.Auction;
-import com.bidding.common.enums.AuctionStatus;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import com.bidding.common.enums.AuctionStatus;
+import com.bidding.common.enums.ItemType;
+import com.bidding.common.model.item.Art;
+import com.bidding.server.core.Auction;
 
 public class AuctionRecordDAO extends BaseDAO {
 
@@ -39,42 +39,42 @@ public class AuctionRecordDAO extends BaseDAO {
             throw new RuntimeException("Failed to get max auction id", e);
         }
     }
-    public void save(Auction auction) {
+
+    public void save(String auctionId, String sellerUsername, String itemName, double startPrice, long startTimeMillis, int durationMinutes, AuctionStatus status) {
         Art item = new Art();
-        item.setName(auction.getItemName());
+        item.setName(itemName);
         item.setDescription("");
-        item.setStartingPrice(auction.getStartPrice());
-        item.setItemType(ItemType.OTHER);
+        item.setStartingPrice(startPrice);
+        item.setItemType(ItemType.ART);
         item.setImageUrl(null);
-        itemDAO.save(item, auction.getSellerUsername());
+        item.setArtist("Unknown");
+        item.setCreationYear(java.util.Calendar.getInstance().get(java.util.Calendar.YEAR));
+        itemDAO.save(item, sellerUsername);
 
         String sql = """
-            INSERT INTO auctions (
-                id, item_id, seller_username, start_time, end_time,
-                duration_minutes, status, current_highest_bid, highest_bidder_username
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """;
+                INSERT INTO auctions (
+                    id, item_id, seller_username, start_time, end_time,
+                    duration_minutes, status, current_highest_bid, highest_bidder_username
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
 
         try (Connection conn = getConn();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setLong(1, Long.parseLong(auction.getId()));
+            ps.setLong(1, Long.parseLong(auctionId));
             ps.setLong(2, item.getId());
-            ps.setString(3, auction.getSellerUsername());
-            ps.setString(4, String.valueOf(auction.getStartTimeMillis()));
-            ps.setString(5, String.valueOf(auction.getEndTime()));
-            ps.setInt(6, auction.getDurationMinutes());
-            ps.setString(7, auction.getStatus().name());
-            ps.setDouble(8, auction.getStartPrice());
+            ps.setString(3, sellerUsername);
+            ps.setString(4, String.valueOf(startTimeMillis));
+            ps.setString(5, String.valueOf(startTimeMillis + (durationMinutes * 60_000L)));
+            ps.setInt(6, durationMinutes);
+            ps.setString(7, status.name());
+            ps.setDouble(8, startPrice);
             ps.setString(9, null);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save auction record", e);
         }
     }
-
-
-
 
     public void updateState(Auction auction) {
         String sql = """

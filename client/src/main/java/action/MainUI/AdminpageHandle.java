@@ -86,8 +86,7 @@ public class AdminpageHandle implements Initializable {
     public void Confirm(ActionEvent event) {
         for (ItemsHolder item : ItemsTable.getItems()) {
             if (item.getCheckBox().isSelected()){
-                // Gửi lệnh lên Server để duyệt sản phẩm thành OPEN
-                StartScence.client.sendMessage("UPDATE_STATUS|" + item.getItemname() + "|OPEN" );
+                StartScence.client.sendMessage("UPDATE_STATUS|" + item.getIteminfomation()+"|OPEN" );
             }
         }
 

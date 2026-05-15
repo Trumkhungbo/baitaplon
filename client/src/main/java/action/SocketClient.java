@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class SocketClient {
     private Socket socket;
@@ -24,8 +25,8 @@ public class SocketClient {
     public void connect(String host, int port) {
         try {
             socket = new Socket(host, port);
-            serverReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            serverWriter = new PrintWriter(socket.getOutputStream(), true);
+            serverReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            serverWriter = new PrintWriter(new java.io.OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
             System.out.println("Login to Server!");
 
             Thread listenerThread = new Thread(() -> {
