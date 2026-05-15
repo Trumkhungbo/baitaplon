@@ -1,17 +1,34 @@
 package com.bidding.common.model.item;
 
+import com.bidding.common.enums.ItemType;
+
 public class Vehicle extends Item {
+
     private String engineType;
     private int mileage;
 
     public Vehicle() {
         super();
-        setItemType(com.bidding.common.enums.ItemType.VEHICLE);
+        setItemType(ItemType.VEHICLE);
     }
 
-    public Vehicle(String name, String description, double startingPrice, String engineType, int mileage) {
-        super(name, description, startingPrice);
-        setItemType(com.bidding.common.enums.ItemType.VEHICLE);
+    public Vehicle(
+            String name,
+            String description,
+            double startingPrice,
+            String imageUrl,
+            String engineType,
+            int mileage
+    ) {
+
+        super(
+                name,
+                description,
+                startingPrice,
+                ItemType.VEHICLE,
+                imageUrl
+        );
+
         this.engineType = engineType;
         this.mileage = mileage;
     }
@@ -21,6 +38,11 @@ public class Vehicle extends Item {
     }
 
     public void setEngineType(String engineType) {
+
+        if (engineType == null || engineType.trim().isEmpty()) {
+            throw new IllegalArgumentException("Engine type cannot be empty");
+        }
+
         this.engineType = engineType;
     }
 
@@ -29,11 +51,27 @@ public class Vehicle extends Item {
     }
 
     public void setMileage(int mileage) {
+
+        if (mileage < 0) {
+            throw new IllegalArgumentException("Mileage must be >= 0");
+        }
+
         this.mileage = mileage;
     }
 
     @Override
     public String getItemDetails() {
-        return "Vehicle: " + getName() + " | Engine: " + engineType + " | Mileage: " + mileage + " km | Starting Price: $" + getStartingPrice();
+
+        return "Vehicle{" +
+                "name='" + getName() + '\'' +
+                ", engineType='" + engineType + '\'' +
+                ", mileage=" + mileage +
+                " km, startingPrice=$" + getStartingPrice() +
+                '}';
+    }
+
+    @Override
+    public String toString() {
+        return getItemDetails();
     }
 }

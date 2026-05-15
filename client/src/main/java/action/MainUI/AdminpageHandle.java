@@ -88,6 +88,7 @@ public class AdminpageHandle implements Initializable {
             if (item.getCheckBox().isSelected()){
                 // Gửi lệnh lên Server để duyệt sản phẩm thành OPEN
                 StartScence.client.sendMessage("UPDATE_STATUS|" + item.getItemId() + "|RUNNING" );
+                StartScence.client.sendMessage("UPDATE_STATUS|" + item.getIteminfomation()+"|OPEN" );
             }
         }
 

@@ -49,8 +49,12 @@ public class BroadcastService {
         server.broadcastToAuctionRoom(message, auctionId);
     }
 
+    public void broadcastLobbyUpdate(String message) {
+        server.broadcastToLobby(message);
+    }
+
     public void broadcastLobbyUpdate() {
-        server.broadcastToLobby(auctionService.getAuctionList());
+        broadcastLobbyUpdate(auctionService.getAuctionList());
     }
 
     private String extractAuctionId(String message) {

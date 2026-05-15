@@ -1,8 +1,5 @@
 package com.bidding.server.repository;
 
-import com.bidding.server.core.Auction;
-import com.bidding.common.enums.AuctionStatus;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,6 +7,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.bidding.common.enums.AuctionStatus;
+import com.bidding.server.core.Auction;
 
 public class AuctionStateDAO extends BaseDAO {
 
@@ -133,7 +133,6 @@ public class AuctionStateDAO extends BaseDAO {
             long startTimeMillis,
             int durationMinutes,
             int bidCount
-
     ) {
     }
 }
