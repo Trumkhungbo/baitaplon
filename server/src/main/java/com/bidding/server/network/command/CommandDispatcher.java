@@ -32,7 +32,7 @@ public class CommandDispatcher {
         register("ADD_MONEY", new GetNewMoneyCommand(authService));
         register("FORGOT_PASSWORD", new ForgotPasswordCommand(authService));
         register("RESET_PASSWORD", new ResetPasswordCommand(authService));
-       // register("UPDATE_STATUS", new UpdateStatusCommand(auctionService, broadcastService));
+        register("UPDATE_STATUS", new UpdateStatusCommand(auctionService));
     }
 
     public void dispatch(String command, String[] parts, ClientHandler client) {

@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 public class ItemsHolder {
+    String itemId;
     String itemname;
     String iteminfomation;
     String iteminformation1;
@@ -16,23 +17,18 @@ public class ItemsHolder {
     LocalTime itemtime;
     Time itemduration;
     CheckBox checkbox;
-    public ItemsHolder(String name, String infomation, String information1,String information2,  Double price, LocalDate date, LocalTime time, Time duration) {
+    public ItemsHolder(String id,String name,  Double price, LocalTime time, Time duration) {
+        this.itemId = id;
         this.itemname = name;
-        this.iteminfomation = infomation;
         this.itemprice = price;
-        this.itemdate = date;
         this.itemtime = time;
         this.itemduration = duration;
         this.checkbox=new CheckBox();
-        this.iteminformation1 = information1;
-        this.iteminformation2 = information2;
+
 
     }
     public String getItemname() {
         return itemname;
-    }
-    public String getIteminfomation(){
-        return iteminfomation;
     }
     public Double getItemprice(){
         return itemprice;
@@ -47,11 +43,7 @@ public class ItemsHolder {
         return itemduration;
     }
     public CheckBox getCheckBox(){return checkbox;}
-    public String getIteminformation1(){
-        return iteminformation1;
+    public String getItemId() {
+        return itemId;
     }
-    public String getIteminformation2(){
-        return iteminformation2;
-    }
-
 }

@@ -227,3 +227,6 @@
     -fx-border-color: #FACC15;
     -fx-translate-y: -5px;
 }
+.btn-red {
+    -fx-text-fill: #FF0000;
+}

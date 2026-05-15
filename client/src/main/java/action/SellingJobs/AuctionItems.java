@@ -18,6 +18,11 @@ public class AuctionItems {
     // Yêu cầu Server gửi dữ liệu mới
     public static void requestData() {
         StartScence.client.sendMessage("LIST_AUCTIONS");
+        StartScence.client.setServerListener(message -> {
+            if (message != null && message.startsWith("AUCTION_LIST|")) {
+                updateListFromServer(message);
+            }
+        });
     }
 
     // Hàm này được SocketClient gọi khi nhận được chuỗi
@@ -30,16 +35,13 @@ public class AuctionItems {
                 String[] items = dataPart.split(";");
                 for (String itemData : items) {
                     String[] attributes = itemData.split(":");
-                    if (attributes.length >= 7) {
+                    if (attributes.length ==4) {
                         String id = attributes[0];
                         String itemName = attributes[1];
-                        String itemType = attributes[2];
-                        String itemInformation1 = attributes[3];
-                        String itemInformation2 = attributes[4];
-                        Double currentPrice = Double.parseDouble(attributes[5]);
-                        String status = attributes[6];
+                        Double currentPrice = Double.parseDouble(attributes[2]);
+                        String status = attributes[3];
                         // Lưu theo đúng thứ tự
-                        list.add(List.of(itemName, id, itemType, itemInformation1, itemInformation2, currentPrice, status));
+                        list.add(List.of(itemName, id, currentPrice, status));
                     }
                 }
             }

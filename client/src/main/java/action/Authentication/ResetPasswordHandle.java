@@ -47,11 +47,14 @@ public class ResetPasswordHandle {
         try {
           // 2. Cố gắng dịch JSON
           JsonObject res = JsonParser.parseString(message).getAsJsonObject();
-          String status = res.get("status").getAsString();
+           String status = res.get("status").getAsString();
+          System.out.println(status);
 
           if (status.equals("SUCCESS")) {
             try {
+
               SceneSwitch sceneswitch = new SceneSwitch();
+              sceneswitch.SwitchToLockPage(event, "/views/ResetPasswordPopUp.fxml");
               sceneswitch.SwitchToLogin(event);
               sceneswitch.SwitchToLockPage(event, "/views/ResetPasswordPopUp.fxml");
             } catch (IOException e) {

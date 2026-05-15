@@ -59,7 +59,7 @@ public class AuctionService {
     private void seedData() {
 
         addInitialAuction("seller1", "iPhone 15", 15000000, AuctionStatus.OPEN);
-        addInitialAuction("seller2", "MacBook Pro", 25000000, AuctionStatus.OPEN);
+        addInitialAuction("seller2", "MacBook Pro", 25000000, AuctionStatus.PENDING);
         addInitialAuction("seller3", "Oil Painting", 5000000, AuctionStatus.OPEN);
     }
 

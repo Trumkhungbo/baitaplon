@@ -50,13 +50,10 @@ public class AdminpageHandle implements Initializable {
     public void initialize(URL location, ResourceBundle resource) {
         // Ánh xạ các cột trong bảng với thuộc tính của ItemsHolder
         ProductName.setCellValueFactory(new PropertyValueFactory<>("itemname"));
-        Productinfomation1.setCellValueFactory(new PropertyValueFactory<>("iteminformation1"));
-        Productinfomation2.setCellValueFactory(new PropertyValueFactory<>("iteminformation2"));
         ProductPrice.setCellValueFactory(new PropertyValueFactory<>("itemprice"));
         ProductDate.setCellValueFactory(new PropertyValueFactory<>("itemdate"));
         ProductTime.setCellValueFactory(new PropertyValueFactory<>("itemtime"));
         SellingTime.setCellValueFactory(new PropertyValueFactory<>("itemduration"));
-        ProductDescription.setCellValueFactory(new PropertyValueFactory<>("iteminfomation"));
         CheckBox.setCellValueFactory(new PropertyValueFactory<>("checkBox"));
 
         STTColumn.setCellFactory(column -> new TableCell<ItemsHolder, String>() {
@@ -86,7 +83,8 @@ public class AdminpageHandle implements Initializable {
     public void Confirm(ActionEvent event) {
         for (ItemsHolder item : ItemsTable.getItems()) {
             if (item.getCheckBox().isSelected()){
-                StartScence.client.sendMessage("UPDATE_STATUS|" + item.getIteminfomation()+"|OPEN" );
+                // Gửi lệnh lên Server để duyệt sản phẩm thành OPEN
+                StartScence.client.sendMessage("UPDATE_STATUS|" + item.getItemId()+"|OPEN" );
             }
         }
 
@@ -98,24 +96,20 @@ public class AdminpageHandle implements Initializable {
         ItemsTable.getItems().clear(); // Xóa dữ liệu cũ
 
         for (List<Object> item : AuctionItems.list) {
-            String status = (String) item.get(6);
+            String status = (String) item.get(3);
 
             // Trang Admin chỉ hiển thị các sản phẩm chờ duyệt (PENDING)
             if ("PENDING".equals(status)) {
 
-                String itemName = (String) item.get(0);
-                String itemType = (String) item.get(2);
-                String itemInformation1 = (String) item.get(3);
-                String itemInformation2 = (String) item.get(4);
-                Double currentPrice = (Double) item.get(5);
+                String itemid = (String) item.get(1);
+                String itemname = (String) item.get(0);
+
+                Double currentPrice = (Double) item.get(2);
 
                 ItemsHolder newProduct = new ItemsHolder(
-                        itemName,
-                        itemType,              // ProductDescription (Lấy type làm info tạm)
-                        itemInformation1,      // information 1
-                        itemInformation2,      // information 2
+                        itemid,
+                        itemname,
                         currentPrice,
-                        LocalDate.of(2026, 12, 12),     // Dummy date
                         LocalTime.of(10, 10, 10),       // Dummy time
                         Time.valueOf(LocalTime.of(10, 10, 10)) // Dummy duration
                 );
