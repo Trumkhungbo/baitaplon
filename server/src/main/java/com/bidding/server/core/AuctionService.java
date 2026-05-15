@@ -284,6 +284,10 @@ public class AuctionService {
 
         syncAuctionFromDatabase(auction);
 
+        if (isActiveAuction(auction)) {
+            return "ERROR|Auction is still running";
+        }
+
         String winner =
                 auction.getHighestBidder() == null
                         ? "NONE"
@@ -367,6 +371,12 @@ public class AuctionService {
             );
         }
 
+        if (auction.getSellerUsername().equals(username)) {
+            throw new InvalidBidException(
+                    "Seller cannot bid on their own auction"
+            );
+        }
+
         synchronized (auction) {
 
             long now = System.currentTimeMillis();
@@ -442,8 +452,6 @@ public class AuctionService {
 
                 persistAuctionState(auction);
 
-                processAutoBidChain(auction, now);
-
             } catch (RuntimeException e) {
 
                 auction.setStatus(previousStatus);
@@ -466,6 +474,8 @@ public class AuctionService {
                             now
                     )
             );
+
+            processAutoBidChain(auction, now);
 
             return "BID_SUCCESS"
                     + "|auctionId=" + auctionId
@@ -567,7 +577,9 @@ public class AuctionService {
         return auction.getStatus()
                 == AuctionStatus.OPEN
                 || auction.getStatus()
-                == AuctionStatus.RUNNING;
+                == AuctionStatus.RUNNING
+                || auction.getStatus()
+                == AuctionStatus.PENDING;
     }
 
     private String finishAuction(
