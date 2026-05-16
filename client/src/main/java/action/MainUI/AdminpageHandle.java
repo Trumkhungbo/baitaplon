@@ -4,13 +4,13 @@ import java.net.URL;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import action.Core.StartScence;
-import action.SellingJobs.AuctionItems;
+import action.SocketClient;
+import action.SocketListener;
 import action.SellingJobs.ItemsHolder;
-import action.SellingJobs.ShopDataBase;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -21,7 +21,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.application.Platform;
 
-public class AdminpageHandle implements Initializable {
+public class AdminpageHandle implements Initializable, SocketListener {
 
     @FXML
     private TableView<ItemsHolder> ItemsTable;
@@ -45,6 +45,8 @@ public class AdminpageHandle implements Initializable {
     private TableColumn<ItemsHolder, CheckBox> CheckBox;
     @FXML
     private TableColumn<ItemsHolder, String> STTColumn;
+
+    private List<List<Object>> list = new ArrayList<>();
 
     @Override
     public void initialize(URL location, ResourceBundle resource) {
@@ -71,31 +73,24 @@ public class AdminpageHandle implements Initializable {
         });
         STTColumn.setStyle("-fx-alignment: CENTER;");
 
-        // Đăng ký nghe sự kiện cập nhật dữ liệu (để vẽ bảng)
-        AuctionItems.currentListener = () -> {
-            renderAuctions();
-        };
-
-        // Yêu cầu tải dữ liệu từ Server
-        AuctionItems.requestData();
+        SocketClient.getInstance().addListener(this);
+        SocketClient.getInstance().requestData("LIST_AUCTIONS");
     }
 
     public void Confirm(ActionEvent event) {
         for (ItemsHolder item : ItemsTable.getItems()) {
             if (item.getCheckBox().isSelected()){
                 // Gửi lệnh lên Server để duyệt sản phẩm thành OPEN
-                StartScence.client.sendMessage("UPDATE_STATUS|" + item.getItemId()+"|OPEN" );
+                SocketClient.getInstance().requestData("UPDATE_STATUS|" + item.getItemId()+"|OPEN" );
             }
         }
-
-        // Sau khi Confirm, có thể yêu cầu tải lại dữ liệu cho chắc chắn
-        AuctionItems.requestData();
+        SocketClient.getInstance().requestData("LIST_AUCTIONS");
     }
 
     private void renderAuctions() {
         ItemsTable.getItems().clear(); // Xóa dữ liệu cũ
 
-        for (List<Object> item : AuctionItems.list) {
+        for (List<Object> item : list) {
             String status = (String) item.get(3);
 
             // Trang Admin chỉ hiển thị các sản phẩm chờ duyệt (PENDING)
@@ -116,6 +111,32 @@ public class AdminpageHandle implements Initializable {
 
                 ItemsTable.getItems().add(newProduct);
             }
+        }
+    }
+
+    @Override
+    public void onDataReceived(String data) {
+        if (data != null && data.startsWith("AUCTION_LIST|")) {
+            String dataPart = data.substring("AUCTION_LIST|".length());
+
+            Platform.runLater(() -> {
+                list.clear(); // Xóa cũ đi
+                if (!dataPart.isEmpty()) {
+                    String[] items = dataPart.split(";");
+                    for (String itemData : items) {
+                        String[] attributes = itemData.split(":");
+                        if (attributes.length ==4) {
+                            String id = attributes[0];
+                            String itemName = attributes[1];
+                            Double currentPrice = Double.parseDouble(attributes[2]);
+                            String status = attributes[3];
+                            // Lưu theo đúng thứ tự
+                            list.add(List.of(itemName, id, currentPrice, status));
+                        }
+                    }
+                }
+                renderAuctions();
+            });
         }
     }
 }

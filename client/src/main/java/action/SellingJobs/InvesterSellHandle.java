@@ -2,7 +2,7 @@ package action.SellingJobs;
 
 import action.Authentication.StoreDataInput;
 import action.Core.SceneSwitch;
-import action.Core.StartScence;
+import action.SocketClient;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -61,7 +61,7 @@ public class InvesterSellHandle implements Initializable {
             // Định dạng chuẩn: ADD_AUCTION|sellerUsername|itemType|itemName|startPrice|param1|param2
 
             String message = "ADD_AUCTION|"+StoreDataInput.getUsername()+"|"+description.getValue()+"|"+itemname.getText()+"|"+description1.getText()+"|"+description2.getText()+"|" + priceFunc +"|"+StarTime+"|"+DUration;
-            StartScence.client.sendMessage(message);
+            SocketClient.getInstance().requestData(message);
             System.out.println(message);
 
 
@@ -106,4 +106,3 @@ public class InvesterSellHandle implements Initializable {
         description.setValue(description.getItems().get(0));
     }
 }
-

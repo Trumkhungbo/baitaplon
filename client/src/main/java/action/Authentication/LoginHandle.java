@@ -1,7 +1,8 @@
 package action.Authentication;
 
 import action.Core.SceneSwitch;
-import action.Core.StartScence;
+import action.SocketClient;
+import action.SocketListener;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -13,7 +14,7 @@ import javafx.scene.control.TextField;
 
 import java.io.IOException;
 
-public class LoginHandle {
+public class LoginHandle implements SocketListener {
     SceneSwitch sceneSwitch = new SceneSwitch();
     @FXML
     private TextField login;
@@ -31,6 +32,7 @@ public class LoginHandle {
         passVisible.setManaged(false);
         passVisible.setVisible(false);
         passVisible.textProperty().bindBidirectional(pass.textProperty());
+        SocketClient.getInstance().addListener(this);
     }
 
     public void Login(ActionEvent clicked) throws IOException {
@@ -42,35 +44,12 @@ public class LoginHandle {
             sceneSwitch.SwitchToLockPage(clicked, "/views/SomeThingUnFill.fxml");
 
         }
-        //else-if(false){
-        // sceneSwitch.SwitchToLockPage(clicked,"/SomeThingUnFill.fxml")}
         else {
-            StartScence.client.setServerListener(message -> {
-                Platform.runLater(() -> {
-                    if (message.startsWith("LOGIN_SUCCESS")) {
-                        try {
-                            sceneSwitch.SwitchToAnyWhere(clicked, "/views/Lobby.fxml");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (message.startsWith("LOGIN_FAILED")) {
-                            SceneSwitch sceneSwitch = new SceneSwitch();
-                        try {
-                            sceneSwitch.SwitchToLockPage(clicked,"/views/FailedLogin.fxml");
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-
-                    }
-
-                });
-            });
-
             JsonObject req = new JsonObject();
             req.addProperty("command", "LOGIN");
             req.addProperty("username", user1);
             req.addProperty("password", password1);
-            StartScence.client.sendMessage(req.toString());
+            SocketClient.getInstance().requestData(req.toString());
         }
     }
 
@@ -96,5 +75,25 @@ public class LoginHandle {
 
     private boolean isPasswordVisible() {
         return passVisible != null && passVisible.isVisible();
+    }
+
+    @Override
+    public void onDataReceived(String data) {
+        Platform.runLater(() -> {
+            if (data.startsWith("LOGIN_SUCCESS")) {
+                try {
+                    sceneSwitch.SwitchToAnyWhere(new ActionEvent(login.getScene().getWindow(), null), "/views/Lobby.fxml");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else if (data.startsWith("LOGIN_FAILED")) {
+                SceneSwitch sceneSwitch = new SceneSwitch();
+                try {
+                    sceneSwitch.SwitchToLockPage(new ActionEvent(login.getScene().getWindow(), null),"/views/FailedLogin.fxml");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 }

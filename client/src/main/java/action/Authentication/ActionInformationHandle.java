@@ -1,7 +1,8 @@
 package action.Authentication;
 
 import action.Core.SceneSwitch;
-import action.Core.StartScence;
+import action.SocketClient;
+import action.SocketListener;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import javafx.application.Platform;
@@ -11,7 +12,7 @@ import javafx.scene.control.TextField;
 import javafx.event.ActionEvent;
 import java.io.IOException;
 
-public class ActionInformationHandle {
+public class ActionInformationHandle implements SocketListener {
     @FXML
     private Label personalID ;
     @FXML
@@ -28,31 +29,11 @@ public class ActionInformationHandle {
     private TextField moneyIn ;
     @FXML
     public void initialize(){
+        SocketClient.getInstance().addListener(this);
         JsonObject req = new JsonObject();
         req.addProperty("command", "GET_ACCOUNTINFORMATION");
         req.addProperty("username", StoreDataInput.username);
-        StartScence.client.sendMessage(req.toString());
-
-        StartScence.client.setServerListener(message -> {
-            Platform.runLater(() -> {
-                try {
-                    // Dùng máy quét JSON để đọc tin nhắn
-                    JsonObject res = JsonParser.parseString(message).getAsJsonObject();
-
-                    // Nếu đúng là nhãn dán ACCOUNT_INFO thì mới bóc quà
-                    if (res.get("command").getAsString().equals("ACCOUNT_INFO")) {
-                        name.setText(res.get("username").getAsString());
-                        password.setText(res.get("password").getAsString());
-                        phone.setText(res.get("phone").getAsString());
-                        email.setText(res.get("email").getAsString());
-                        personalID.setText(res.get("personalID").getAsString());
-                        money.setText(res.get("balance").getAsString()); // Hiện BALANCE=0.0
-                    }
-                } catch (Exception e) {
-                    // Mọi lỗi định dạng sẽ bị bỏ qua
-                }
-            });
-       });
+        SocketClient.getInstance().requestData(req.toString());
     }
 
     public void addMoney(ActionEvent event) throws IOException {
@@ -70,26 +51,37 @@ public class ActionInformationHandle {
             addReq.addProperty("command", "ADD_MONEY");
             addReq.addProperty("username", StoreDataInput.username);
             addReq.addProperty("money", moneyVao);
-            StartScence.client.sendMessage(addReq.toString());
-
-            StartScence.client.setServerListener(message -> {
-                Platform.runLater(() -> {
-                    try {
-                        // Bóc hộp quà JSON
-                        JsonObject res = JsonParser.parseString(message).getAsJsonObject();
-                        // Nếu đúng là nhãn MONEY_UPDATE
-                        if (res.has("command") && res.get("command").getAsString().equals("MONEY_UPDATE")) {
-                            // Lấy số dư mới và cập nhật lên Label
-                            money.setText(res.get("balance").getAsString());
-                            moneyIn.clear();
-                        }
-                    } catch (Exception e) {}
-                });
-            });
+            SocketClient.getInstance().requestData(addReq.toString());
         }
     }
-  public void ReturnToLogin(ActionEvent event) throws IOException {
-    SceneSwitch sceneSwitch = new SceneSwitch();
-    sceneSwitch.SwitchToLogin(event);
-  }
+    public void ReturnToLogin(ActionEvent event) throws IOException {
+        SceneSwitch sceneSwitch = new SceneSwitch();
+        sceneSwitch.SwitchToLogin(event);
+    }
+
+    @Override
+    public void onDataReceived(String data) {
+        Platform.runLater(() -> {
+            try {
+                // Dùng máy quét JSON để đọc tin nhắn
+                JsonObject res = JsonParser.parseString(data).getAsJsonObject();
+
+                // Nếu đúng là nhãn dán ACCOUNT_INFO thì mới bóc quà
+                if (res.get("command").getAsString().equals("ACCOUNT_INFO")) {
+                    name.setText(res.get("username").getAsString());
+                    password.setText(res.get("password").getAsString());
+                    phone.setText(res.get("phone").getAsString());
+                    email.setText(res.get("email").getAsString());
+                    personalID.setText(res.get("personalID").getAsString());
+                    money.setText(res.get("balance").getAsString()); // Hiện BALANCE=0.0
+                } else if (res.has("command") && res.get("command").getAsString().equals("MONEY_UPDATE")) {
+                    // Lấy số dư mới và cập nhật lên Label
+                    money.setText(res.get("balance").getAsString());
+                    moneyIn.clear();
+                }
+            } catch (Exception e) {
+                // Mọi lỗi định dạng sẽ bị bỏ qua
+            }
+        });
+    }
 }

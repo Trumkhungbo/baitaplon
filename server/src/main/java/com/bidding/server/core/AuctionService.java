@@ -439,7 +439,6 @@ public class AuctionService {
             }
 
             auction.setStatus(AuctionStatus.OPEN);
-            persistAuctionState(auction, bidHistoryDAO.countByAuctionId(auctionId));
         }
 
         return "APPROVE_AUCTION_SUCCESS|auctionId=" + auctionId;

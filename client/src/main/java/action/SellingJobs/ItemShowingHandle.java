@@ -2,21 +2,16 @@ package action.SellingJobs;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Time;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import action.Authentication.StoreDataInput;
 import action.Authentication.StoreItemDataInit;
 import action.Core.SceneSwitch;
-import action.Core.StartScence;
+import action.SocketClient;
+import action.SocketListener;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -25,7 +20,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-public class ItemShowingHandle implements Initializable {
+public class ItemShowingHandle implements Initializable, SocketListener {
 
     // Nếu bạn có gán ID cho 2 nút này trong Scene Builder thì thêm @FXML vào
     @FXML
@@ -57,24 +52,11 @@ public class ItemShowingHandle implements Initializable {
     private Label duration;
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle){
+        SocketClient.getInstance().addListener(this);
         getItem();
     }
     public void getItem(){
-        StartScence.client.setServerListener(message -> {
-            String dataPart = message.substring("AUCTION_DETAIL|".length());
-            String[] attributes = dataPart.split(":");
-            Platform.runLater(() -> {
-                String id = attributes[0];
-                name.setText(attributes[1]);
-                price.setText(attributes[3]);
-                status.setText(attributes[4]);
-                date.setText(attributes[5]);
-                starTime.setText(attributes[6]);
-                duration.setText(attributes[7]);
-
-            });
-        });
-        StartScence.client.sendMessage("GET_AUCTION_DETAILS|"+ StoreItemDataInit.description);
+        SocketClient.getInstance().requestData("GET_AUCTION_DETAILS|"+ StoreItemDataInit.description);
     }
     @FXML
     private TextField money;
@@ -93,28 +75,36 @@ public class ItemShowingHandle implements Initializable {
             return;
         }
 
-        StartScence.client.setServerListener(message -> {
-            Platform.runLater(() -> {
-                if (message.startsWith("BID_SUCCESS|") || message.startsWith("BID_UPDATE|")) {
-                    status.setText("RUNNING");
-                    price.setText(amountText);
-                    money.clear();
-                } else if (message.startsWith("ERROR|")) {
-                    status.setText(message.substring("ERROR|".length()));
-                }
-            });
-        });
-
-        StartScence.client.sendMessage("BID|" + auctionId + "|" + amountText);
+        SocketClient.getInstance().requestData("BID|" + auctionId + "|" + amountText);
     }
     @FXML
     public void ReturnToInvesment(ActionEvent actionEvent) throws IOException {
         SceneSwitch sceneSwitch = new SceneSwitch();
         sceneSwitch.SwitchToAnyWhere(actionEvent,"/views/Lobby.fxml");
-        }
+    }
     @FXML
     public ImageView image;
+
+    @Override
+    public void onDataReceived(String data) {
+        Platform.runLater(() -> {
+            if (data.startsWith("AUCTION_DETAIL|")) {
+                String dataPart = data.substring("AUCTION_DETAIL|".length());
+                String[] attributes = dataPart.split(":");
+                String id = attributes[0];
+                name.setText(attributes[1]);
+                price.setText(attributes[3]);
+                status.setText(attributes[4]);
+                date.setText(attributes[5]);
+                starTime.setText(attributes[6]);
+                duration.setText(attributes[7]);
+            } else if (data.startsWith("BID_SUCCESS|") || data.startsWith("BID_UPDATE|")) {
+                status.setText("RUNNING");
+                price.setText(money.getText());
+                money.clear();
+            } else if (data.startsWith("ERROR|")) {
+                status.setText(data.substring("ERROR|".length()));
+            }
+        });
     }
-
-
-
+}
