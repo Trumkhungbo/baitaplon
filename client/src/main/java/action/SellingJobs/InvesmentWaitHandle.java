@@ -1,30 +1,37 @@
 package action.SellingJobs;
+import action.SocketClient;
+import action.SocketListener;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.layout.FlowPane;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class InvesmentWaitHandle implements Initializable {
+public class InvesmentWaitHandle implements Initializable, SocketListener {
     @FXML
     private FlowPane flowPane;
+    private List<List<Object>> list = new ArrayList<>();
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-
-        AuctionItems.currentListener = () -> {fetchAuctionsFromServer();};
-        AuctionItems.requestData();
         if (flowPane != null) {
             flowPane.getChildren().clear();
         }
+        SocketClient.getInstance().addListener(this);
+        SocketClient.getInstance().requestData("LIST_AUCTIONS");
     }
 
     public void fetchAuctionsFromServer() {
-        for(List item:AuctionItems.list) {
+        if (flowPane != null) {
+            flowPane.getChildren().clear();
+        }
+        for(List item: list) {
             if(!item.isEmpty()) {
-                if(((String) item.get(6)).equals("OPEN")){
-                    AuctionCardItem cardItem = new AuctionCardItem((String) item.get(0),(String) item.get(1),(String) item.get(2),(String) item.get(3),(String) item.get(4),(Double) item.get(5),(String) item.get(6));
+                if(((String) item.get(3)).equals("OPEN")){
+                    AuctionCardItem cardItem = new AuctionCardItem((String) item.get(0),(String) item.get(1),(Double) item.get(2),(String) item.get(3));
                     if (flowPane != null) {
                         flowPane.getChildren().add(cardItem);
                     }
@@ -33,4 +40,29 @@ public class InvesmentWaitHandle implements Initializable {
         }
     }
 
+    @Override
+    public void onDataReceived(String data) {
+        if (data != null && data.startsWith("AUCTION_LIST|")) {
+            String dataPart = data.substring("AUCTION_LIST|".length());
+
+            Platform.runLater(() -> {
+                list.clear(); // Xóa cũ đi
+                if (!dataPart.isEmpty()) {
+                    String[] items = dataPart.split(";");
+                    for (String itemData : items) {
+                        String[] attributes = itemData.split(":");
+                        if (attributes.length ==4) {
+                            String id = attributes[0];
+                            String itemName = attributes[1];
+                            Double currentPrice = Double.parseDouble(attributes[2]);
+                            String status = attributes[3];
+                            // Lưu theo đúng thứ tự
+                            list.add(List.of(itemName, id, currentPrice, status));
+                        }
+                    }
+                }
+                fetchAuctionsFromServer();
+            });
+        }
+    }
 }

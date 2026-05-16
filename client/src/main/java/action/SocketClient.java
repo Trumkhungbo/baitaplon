@@ -6,20 +6,35 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SocketClient {
     private Socket socket;
     private BufferedReader serverReader;
     private PrintWriter serverWriter;
-    private ServerListener listener;
+    private List<SocketListener> listeners = new ArrayList<>();
+    private static SocketClient instance;
 
-    public interface ServerListener {
-        void onMessageReceived(String message);
+    private SocketClient() {}
+
+    public static synchronized SocketClient getInstance() {
+        if (instance == null) {
+            instance = new SocketClient();
+        }
+        return instance;
     }
 
+    public void addListener(SocketListener listener) {
+        synchronized (listeners) {
+            listeners.add(listener);
+        }
+    }
 
-    public void setServerListener(ServerListener listener) {
-        this.listener = listener;
+    public void removeListener(SocketListener listener) {
+        synchronized (listeners) {
+            listeners.remove(listener);
+        }
     }
 
     public void connect(String host, int port) {
@@ -34,8 +49,10 @@ public class SocketClient {
                     String serverMessage;
                     while ((serverMessage = serverReader.readLine()) != null) {
                         System.out.println("Signal received: " + serverMessage);
-                        if (listener != null) {
-                            listener.onMessageReceived(serverMessage);
+                        synchronized (listeners) {
+                            for (SocketListener listener : listeners) {
+                                listener.onDataReceived(serverMessage);
+                            }
                         }
                     }
                 } catch (IOException e) {
@@ -51,7 +68,7 @@ public class SocketClient {
     }
 
 
-    public void sendMessage(String message) {
+    public void requestData(String message) {
         if (serverWriter != null) {
             serverWriter.println(message);
         }

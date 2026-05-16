@@ -14,27 +14,19 @@ import java.text.DecimalFormat;
 
 public class AuctionCardItem extends VBox {
 
-    public AuctionCardItem(String name, String id,String itemType,String itemInformation1,String itemInformation2, Double currentPrice, String status) {
-        // Cấu trúc khung thẻ
+    public AuctionCardItem(String name, String id, Double currentPrice, String status) {
         this.setSpacing(15);
-        this.getStyleClass().add("auction-card"); // Dùng class trong CSS
-        this.setPrefWidth(280); // Cố định chiều rộng để các card đều nhau khi dùng FlowPane
+        this.getStyleClass().add("auction-card");
+        this.setPrefWidth(280);
         this.setPadding(new Insets(20));
-
-        // Tiêu đề sản phẩm
         Label lblTitle = new Label(name);
         lblTitle.getStyleClass().add("card-title");
-
-        // Dòng chứa ID và Trạng thái
         HBox infoBox = new HBox(10);
         Label lblId = new Label("#" + id);
         lblId.setStyle("-fx-text-fill: #666666; -fx-font-size: 11px;");
-
         Label lblStatus = new Label(status.toUpperCase());
         lblStatus.getStyleClass().add(status.equalsIgnoreCase("FINISHED") ? "status-finished" : "status-active");
         infoBox.getChildren().addAll(lblId, lblStatus);
-
-        // Hiển thị giá tiền (Fix lỗi 1.5E7)
         DecimalFormat formatter = new DecimalFormat("#,###");
         Label lblPriceTag = new Label("Giá hiện tại:");
         lblPriceTag.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
@@ -46,13 +38,9 @@ public class AuctionCardItem extends VBox {
         Button actionBtn = new Button("Tham gia đấu giá");
         actionBtn.setMaxWidth(Double.MAX_VALUE);
         actionBtn.getStyleClass().add("btn-gold-sm");
-
         actionBtn.setOnAction(e -> {
             StoreItemDataInit.name = name;
             StoreItemDataInit.description = id;
-            StoreItemDataInit.itemInformation1 = itemInformation1;
-            StoreItemDataInit.itemInformation2 = itemInformation2;
-            StoreItemDataInit.itemType = itemType;
             StoreItemDataInit.price = formatter.format(currentPrice);
             StoreItemDataInit.status = status;
 

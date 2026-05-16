@@ -1,20 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
 
-
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1">
+<StackPane prefHeight="768.0" prefWidth="1024.0" style="-fx-background-color: rgba(0, 0, 0, 0.85);" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.Utilities.SomeThingUnFillHandle">
    <children>
-      <Pane layoutX="108.0" layoutY="101.0" prefHeight="200.0" prefWidth="383.0">
+      <VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefWidth="420.0" spacing="20.0" styleClass="card" style="-fx-border-color: #EAB308; -fx-border-width: 1; -fx-border-radius: 20;">
+         <padding>
+            <Insets bottom="35.0" left="40.0" right="40.0" top="25.0" />
+         </padding>
          <children>
-            <Label layoutX="62.0" layoutY="91.0" prefHeight="18.0" prefWidth="260.0" text="Bạn Đã Nhập Sai Format" textFill="#ea1f1f">
-               <font>
-                  <Font size="23.0" />
-               </font>
-            </Label>
+
+            <HBox alignment="CENTER" spacing="10.0">
+               <children>
+                  <ImageView fitHeight="28.0" fitWidth="28.0" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../assets/Icon.png" />
+                     </image>
+                  </ImageView>
+                  <Label style="-fx-text-fill: #FACC15; -fx-font-size: 15px; -fx-font-weight: bold; -fx-letter-spacing: 1.5;" text="MINIBOOM" />
+               </children>
+            </HBox>
+
+            <Separator maxWidth="100.0" opacity="0.1" />
+
+            <StackPane>
+               <children>
+                  <Circle fill="TRANSPARENT" radius="35.0" stroke="#EAB308" strokeType="INSIDE" strokeWidth="2.0" />
+                  <Label text="✎" textFill="#EAB308">
+                     <font>
+                        <Font name="System Bold" size="40.0" />
+                     </font>
+                  </Label>
+               </children>
+            </StackPane>
+
+            <VBox alignment="CENTER" spacing="8.0">
+               <children>
+                  <Label style="-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;" text="Sai Định Dạng" />
+                  <Label style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;" text="Thông tin bạn nhập không đúng định dạng yêu cầu.&#10;Vui lòng kiểm tra lại các ô nhập liệu." textAlignment="CENTER" wrapText="true" />
+               </children>
+            </VBox>
+
+            <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#ReturnPreviousPage" prefHeight="45.0" style="-fx-background-color: #EAB308; -fx-text-fill: #1A1A1A; -fx-font-weight: bold; -fx-background-radius: 10; -fx-cursor: hand;" text="KIỂM TRA LẠI" />
+
          </children>
-      </Pane>
+      </VBox>
    </children>
-</AnchorPane>
+</StackPane>

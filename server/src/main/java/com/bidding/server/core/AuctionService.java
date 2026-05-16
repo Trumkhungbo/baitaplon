@@ -23,10 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class AuctionService {
 
-    private static final long ANTI_SNIPE_THRESHOLD_MS = 30_000L;
-    private static final long ANTI_SNIPE_EXTENSION_MS = 60_000L;
-    private static final int DEFAULT_DURATION_MINUTES = 5;
-
     private final Map<String, Auction> auctions =
             new ConcurrentHashMap<>();
 
@@ -90,28 +86,15 @@ public class AuctionService {
                 startPrice,
                 status
         );
-        auction.setDurationMinutes(DEFAULT_DURATION_MINUTES);
-
-        Item item = new Art(
-                itemName,
-                "",
-                startPrice,
-                "",
-                "Unknown",
-                Calendar.getInstance().get(Calendar.YEAR)
-        );
-        Item savedItem = itemDAO.save(item, sellerUsername);
-        auction.setItemId(savedItem.getId());
 
         auctions.put(id, auction);
 
         auctionRecordDAO.save(
                 id,
-                savedItem.getId(),
                 sellerUsername,
+                itemName,
                 startPrice,
                 auction.getStartTimeMillis(),
-                auction.getEndTime(),
                 auction.getDurationMinutes(),
                 status
         );
@@ -189,7 +172,6 @@ public class AuctionService {
                 savedItem.getStartingPrice(),
                 AuctionStatus.OPEN
         );
-        auction.setDurationMinutes(DEFAULT_DURATION_MINUTES);
 
         auction.setItemId(savedItem.getId());
 
@@ -197,11 +179,10 @@ public class AuctionService {
 
         auctionRecordDAO.save(
                 auctionId,
-                savedItem.getId(),
                 sellerUsername,
+                savedItem.getName(),
                 savedItem.getStartingPrice(),
                 auction.getStartTimeMillis(),
-                auction.getEndTime(),
                 auction.getDurationMinutes(),
                 AuctionStatus.OPEN
         );
@@ -212,69 +193,6 @@ public class AuctionService {
                 + "|auctionId=" + auctionId
                 + "|itemId=" + savedItem.getId()
                 + "|itemType=" + savedItem.getItemType();
-    }
-
-    public String createPendingAuction(
-            String sellerUsername,
-            Item item,
-            long startTime,
-            long durationMinutes
-    ) {
-
-        if (item == null) {
-            return "ERROR|Item is null";
-        }
-
-        if (sellerUsername == null || sellerUsername.isBlank()) {
-            return "ERROR|Seller username required";
-        }
-
-        if (item.getStartingPrice() <= 0) {
-            return "ERROR|Invalid start price";
-        }
-
-        if (startTime <= 0) {
-            return "ERROR|Invalid start time";
-        }
-
-        if (durationMinutes <= 0) {
-            return "ERROR|Invalid duration";
-        }
-
-        Item savedItem = itemDAO.save(item, sellerUsername);
-
-        String auctionId = String.valueOf(nextAuctionId.getAndIncrement());
-
-        Auction auction = new Auction(
-                auctionId,
-                sellerUsername,
-                savedItem.getName(),
-                savedItem.getStartingPrice(),
-                AuctionStatus.PENDING
-        );
-        auction.setItemId(savedItem.getId());
-        auction.setStartTimeMillis(startTime);
-        auction.setDurationMinutes(Math.toIntExact(durationMinutes));
-
-        long endTime = startTime + durationMinutes * 60_000L;
-        auction.setEndTime(endTime);
-
-        auctions.put(auctionId, auction);
-
-        auctionRecordDAO.save(
-                auctionId,
-                savedItem.getId(),
-                sellerUsername,
-                savedItem.getStartingPrice(),
-                startTime,
-                endTime,
-                auction.getDurationMinutes(),
-                AuctionStatus.PENDING
-        );
-
-        persistAuctionState(auction, 0);
-
-        return "ADD_AUCTION_PENDING|auctionId=" + auctionId;
     }
 
     public String addAuction(
@@ -366,10 +284,6 @@ public class AuctionService {
 
         syncAuctionFromDatabase(auction);
 
-        if (isActiveAuction(auction)) {
-            return "ERROR|Auction is still running";
-        }
-
         String winner =
                 auction.getHighestBidder() == null
                         ? "NONE"
@@ -384,10 +298,6 @@ public class AuctionService {
     }
 
     public String getAuctionList() {
-        return getAuctionList(false);
-    }
-
-    public String getAuctionList(boolean includePending) {
 
         StringBuilder sb =
                 new StringBuilder("AUCTION_LIST|");
@@ -397,12 +307,6 @@ public class AuctionService {
         for (Auction auction : auctions.values()) {
 
             syncAuctionFromDatabase(auction);
-
-            if (!includePending
-                    && auction.getStatus() != AuctionStatus.OPEN
-                    && auction.getStatus() != AuctionStatus.RUNNING) {
-                continue;
-            }
 
             if (!first) {
                 sb.append(";");
@@ -420,31 +324,6 @@ public class AuctionService {
         }
 
         return sb.toString();
-    }
-
-    public String approveAuction(String auctionId) {
-        Auction auction = auctions.get(auctionId);
-
-        if (auction == null) {
-            return "ERROR|Auction not found";
-        }
-
-        synchronized (auction) {
-            syncAuctionFromDatabase(auction);
-
-            if (auction.getStatus() != AuctionStatus.PENDING) {
-                return "ERROR|Auction is not pending";
-            }
-
-            if (!auctionRecordDAO.approvePendingAuction(auctionId)) {
-                return "ERROR|Auction approval failed";
-            }
-
-            auction.setStatus(AuctionStatus.OPEN);
-            persistAuctionState(auction, bidHistoryDAO.countByAuctionId(auctionId));
-        }
-
-        return "APPROVE_AUCTION_SUCCESS|auctionId=" + auctionId;
     }
 
     public Auction findAuctionById(String auctionId) {
@@ -488,12 +367,6 @@ public class AuctionService {
             );
         }
 
-        if (auction.getSellerUsername().equals(username)) {
-            throw new InvalidBidException(
-                    "Seller cannot bid on their own auction"
-            );
-        }
-
         synchronized (auction) {
 
             long now = System.currentTimeMillis();
@@ -515,8 +388,6 @@ public class AuctionService {
             }
 
             if (auction.getStatus()
-                    == AuctionStatus.PENDING
-                    || auction.getStatus()
                     == AuctionStatus.FINISHED
                     || auction.getStatus()
                     == AuctionStatus.PAID
@@ -571,6 +442,8 @@ public class AuctionService {
 
                 persistAuctionState(auction);
 
+                processAutoBidChain(auction, now);
+
             } catch (RuntimeException e) {
 
                 auction.setStatus(previousStatus);
@@ -593,8 +466,6 @@ public class AuctionService {
                             now
                     )
             );
-
-            processAutoBidChain(auction, now);
 
             return "BID_SUCCESS"
                     + "|auctionId=" + auctionId
@@ -696,9 +567,7 @@ public class AuctionService {
         return auction.getStatus()
                 == AuctionStatus.OPEN
                 || auction.getStatus()
-                == AuctionStatus.RUNNING
-                || auction.getStatus()
-                == AuctionStatus.PENDING;
+                == AuctionStatus.RUNNING;
     }
 
     private String finishAuction(
@@ -948,9 +817,9 @@ public class AuctionService {
                 auction.getEndTime();
 
         if (remaining > 0
-                && remaining < ANTI_SNIPE_THRESHOLD_MS) {
+                && remaining < 30000) {
 
-            auction.extendEndTime(ANTI_SNIPE_EXTENSION_MS);
+            auction.extendEndTime(60000);
 
             System.out.println(
                     "[ANTI-SNIPING] Auction "

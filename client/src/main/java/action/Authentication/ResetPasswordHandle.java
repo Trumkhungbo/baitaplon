@@ -1,7 +1,8 @@
 package action.Authentication;
 
 import action.Core.SceneSwitch;
-import action.Core.StartScence;
+import action.SocketClient;
+import action.SocketListener;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import javafx.application.Platform;
@@ -13,13 +14,18 @@ import javafx.scene.control.PasswordField;
 
 import java.io.IOException;
 
-public class ResetPasswordHandle {
+public class ResetPasswordHandle implements SocketListener {
 
   @FXML private PasswordField newPassword;
   @FXML private PasswordField confirmPassword;
   @FXML private Label errorLabel; // Nhãn báo lỗi nếu có
 
   SceneSwitch sceneSwitch = new SceneSwitch();
+
+  @FXML
+  public void initialize() {
+    SocketClient.getInstance().addListener(this);
+  }
 
   public void ConfirmReset(ActionEvent event) {
     String pass = newPassword.getText();
@@ -36,43 +42,50 @@ public class ResetPasswordHandle {
     }
 
     // 2. Lắng nghe phản hồi từ Server
-    StartScence.client.setServerListener(message -> {
-      Platform.runLater(() -> {
-        // 1. Kiểm tra xem Server có gửi lỗi dạng Text thuần không
-        if (message.startsWith("ERROR|")) {
-          errorLabel.setText("Lỗi Server: " + message.replace("ERROR|", ""));
-          return;
-        }
-
-        try {
-          // 2. Cố gắng dịch JSON
-          JsonObject res = JsonParser.parseString(message).getAsJsonObject();
-          String status = res.get("status").getAsString();
-
-          if (status.equals("SUCCESS")) {
-            try {
-              SceneSwitch sceneswitch = new SceneSwitch();
-              sceneswitch.SwitchToLogin(event);
-              sceneswitch.SwitchToLockPage(event, "/views/ResetPasswordPopUp.fxml");
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
-          } else {
-            String errorMsg = res.get("message").getAsString();
-            errorLabel.setText(errorMsg);
-          }
-        } catch (Exception e) {
-          errorLabel.setText("Server phản hồi sai định dạng!");
-          System.out.println("Lỗi parse JSON: " + message);
-        }
-      });
-    });
-
     String req = "RESET_PASSWORD|" + StoreDataInput.username + "|" + pass;
-    StartScence.client.sendMessage(req);
+    SocketClient.getInstance().requestData(req);
   }
 
   public void Cancel(ActionEvent event) throws IOException {
     sceneSwitch.SwitchToLogin(event);
+  }
+
+  @Override
+  public void onDataReceived(String data) {
+    Platform.runLater(() -> {
+      // 1. Kiểm tra xem Server có gửi lỗi dạng Text thuần không
+      if (data.startsWith("ERROR|")) {
+        errorLabel.setText("Lỗi Server: " + data.replace("ERROR|", ""));
+        return;
+      }
+
+      try {
+        // 2. Cố gắng dịch JSON
+        JsonObject res = JsonParser.parseString(data).getAsJsonObject();
+        String status = res.get("status").getAsString();
+        System.out.println(status);
+
+        if (status.equals("SUCCESS")) {
+          try {
+
+            ActionEvent dummyEvent = new ActionEvent(newPassword, null);
+
+            // 1. Hiện PopUp báo Reset thành công (Màn hình này sẽ khóa giao diện cho đến khi user tắt đi)
+            sceneSwitch.SwitchToLockPage(dummyEvent, "/views/ResetPasswordPopUp.fxml");
+
+            // 2. Sau khi user tắt PopUp, tự động chuyển họ về màn hình đăng nhập
+            sceneSwitch.SwitchToLogin(dummyEvent);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        } else {
+          String errorMsg = res.get("message").getAsString();
+          errorLabel.setText(errorMsg);
+        }
+      } catch (Exception e) {
+        errorLabel.setText("Server phản hồi sai định dạng!");
+        System.out.println("Lỗi parse JSON: " + data);
+      }
+    });
   }
 }

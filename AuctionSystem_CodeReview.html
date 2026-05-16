@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<title>Code Review – Java Auction System</title>
+<style>
+  :root {
+    --gold: #FACC15;
+    --dark: #0F0F0F;
+    --card: #161616;
+    --card2: #1E1E1E;
+    --border: rgba(255,255,255,0.08);
+    --red: #F87171;
+    --orange: #FB923C;
+    --yellow: #FCD34D;
+    --green: #4ADE80;
+    --blue: #60A5FA;
+    --muted: #9CA3AF;
+    --text: #F3F4F6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    padding: 40px 24px 80px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 32px;
+    margin-bottom: 48px;
+  }
+  .header h1 {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .header .sub { color: var(--muted); font-size: 14px; }
+
+  /* Score panel */
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    margin: 32px 0;
+  }
+  .score-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 12px;
+    text-align: center;
+  }
+  .score-card .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .6px; }
+  .score-card .value { font-size: 28px; font-weight: 700; }
+  .s-high { color: var(--green); }
+  .s-mid  { color: var(--yellow); }
+  .s-low  { color: var(--orange); }
+  .s-crit { color: var(--red); }
+
+  /* Section */
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--gold);
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 16px; font-weight: 600; margin: 28px 0 10px; color: #E5E7EB; }
+
+  /* Issue card */
+  .issue {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid #555;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+  }
+  .issue.critical { border-left-color: var(--red); }
+  .issue.high     { border-left-color: var(--orange); }
+  .issue.medium   { border-left-color: var(--yellow); }
+  .issue.low      { border-left-color: var(--blue); }
+
+  .issue-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .badge.critical { background: rgba(248,113,113,.2); color: var(--red); }
+  .badge.high     { background: rgba(251,146,60,.2);  color: var(--orange); }
+  .badge.medium   { background: rgba(252,211,77,.2);  color: var(--yellow); }
+  .badge.low      { background: rgba(96,165,250,.2);  color: var(--blue); }
+
+  .issue-title { font-weight: 600; font-size: 15px; }
+  .file-ref { font-size: 12px; color: var(--muted); font-family: monospace; }
+  .issue p { color: #D1D5DB; margin-bottom: 8px; font-size: 14px; }
+  .issue p:last-child { margin-bottom: 0; }
+  strong { color: #F9FAFB; }
+
+  /* Code block */
+  pre {
+    background: #0D0D0D;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 13px;
+    font-family: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', monospace;
+    line-height: 1.6;
+    margin: 10px 0;
+    color: #E2E8F0;
+  }
+  code { font-family: 'Cascadia Code', monospace; font-size: 13px; background: rgba(255,255,255,.07); padding: 1px 5px; border-radius: 3px; }
+
+  /* Top 15 list */
+  .todo-list { list-style: none; }
+  .todo-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  .todo-num {
+    min-width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    font-weight: 700; font-size: 13px;
+    flex-shrink: 0;
+  }
+  .n-crit { background: rgba(248,113,113,.2); color: var(--red); }
+  .n-high { background: rgba(251,146,60,.2);  color: var(--orange); }
+  .n-mid  { background: rgba(252,211,77,.2);  color: var(--yellow); }
+  .n-low  { background: rgba(96,165,250,.2);  color: var(--blue); }
+
+  /* Checklist */
+  .checklist { list-style: none; }
+  .checklist li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    color: #D1D5DB;
+    font-size: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .checklist li::before {
+    content: '☐';
+    font-size: 16px;
+    color: var(--muted);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* Strength/weakness */
+  .sw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .sw-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .sw-card h4 { font-size: 14px; margin-bottom: 12px; }
+  .sw-card h4.good { color: var(--green); }
+  .sw-card h4.bad  { color: var(--red); }
+  .sw-card ul { list-style: none; }
+  .sw-card ul li {
+    font-size: 13px;
+    color: #D1D5DB;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    padding-left: 14px;
+    position: relative;
+  }
+  .sw-card.good ul li::before { content: '✓'; position: absolute; left: 0; color: var(--green); }
+  .sw-card.bad  ul li::before { content: '✗'; position: absolute; left: 0; color: var(--red); }
+
+  /* vấn đáp table */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; padding: 10px 14px; background: var(--card2); color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: #D1D5DB; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+
+  /* refactor */
+  .refactor-item {
+    display: flex;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .refactor-item .tag {
+    min-width: 90px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--blue);
+    padding-top: 2px;
+  }
+
+  @media (max-width: 640px) {
+    .sw-grid { grid-template-columns: 1fr; }
+    .score-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<div class="header">
+  <h1>🔍 Code Review: Java Auction System</h1>
+  <div class="sub">Senior Full-Stack Engineering Review · Backend · Frontend · Architecture · Database · Realtime · Security</div>
+  <div class="sub" style="margin-top:4px">Reviewed by: Senior Engineer (AI-assisted) · Ngày: 2026-05-16</div>
+</div>
+
+<!-- SCORES -->
+<section>
+  <h2>📊 Điểm Tổng Quan</h2>
+  <div class="score-grid">
+    <div class="score-card"><div class="label">Backend</div><div class="value s-mid">6.5</div></div>
+    <div class="score-card"><div class="label">Frontend</div><div class="value s-low">5.0</div></div>
+    <div class="score-card"><div class="label">Architecture</div><div class="value s-mid">6.0</div></div>
+    <div class="score-card"><div class="label">Database</div><div class="value s-mid">6.5</div></div>
+    <div class="score-card"><div class="label">Security</div><div class="value s-mid">6.0</div></div>
+    <div class="score-card"><div class="label">Overall</div><div class="value s-mid">6.0</div></div>
+  </div>
+</section>
+
+<!-- STRENGTHS / WEAKNESSES -->
+<section>
+  <h2>💪 Điểm Mạnh &amp; Điểm Yếu</h2>
+  <div class="sw-grid">
+    <div class="sw-card good">
+      <h4 class="good">✅ Điểm mạnh</h4>
+      <ul>
+        <li>PBKDF2 password hashing chuẩn (65 536 vòng, salt ngẫu nhiên)</li>
+        <li>Command Pattern đúng với CommandDispatcher + CommandHandler interface</li>
+        <li>ConcurrentHashMap cho auctions map → thread-safe lookup</li>
+        <li>Anti-sniping (gia hạn 60s khi bid trong 30s cuối) — tính năng cao cấp</li>
+        <li>AutoBid chain với safety counter tránh infinite loop</li>
+        <li>Prepared Statement toàn bộ DAO — không SQL injection</li>
+        <li>Migration tự động bảng auctions/bid_transactions</li>
+        <li>Dual-format protocol (JSON + pipe-delimited text)</li>
+        <li>Có unit test + concurrency test (AuctionServiceTest)</li>
+        <li>Dark-mode UI với color palette nhất quán (global.css)</li>
+      </ul>
+    </div>
+    <div class="sw-card bad">
+      <h4 class="bad">❌ Điểm yếu lớn nhất</h4>
+      <ul>
+        <li>Client KHÔNG xác thực server-side — spoofing username dễ dàng</li>
+        <li>ResetPassword không yêu cầu xác thực danh tính trước</li>
+        <li>AuctionService tự new DAO trong constructor — vi phạm DI</li>
+        <li>Static global state (AuctionItems.list, StoreDataInput) toàn client</li>
+        <li>setServerListener() ghi đè listener cũ → mất message bất kỳ</li>
+        <li>AdminpageHandle.Confirm dùng UPDATE_STATUS thay vì APPROVE_AUCTION</li>
+        <li>ItemShowingHandle.RaiseBid dùng StoreItemDataInit.description làm auctionId</li>
+        <li>addAuction() luôn tạo item type Art — bỏ qua ELECTRONICS/VEHICLE</li>
+        <li>createAuction() tạo OPEN thay vì PENDING — bypass admin approval</li>
+        <li>Không có dequeue listener/timer → memory leak lớn khi switch scene</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- PART 1: ARCHITECTURE -->
+<section>
+  <h2>🏛️ Phần 1 — Kiến Trúc Tổng Thể</h2>
+
+  <div class="issue critical">
+    <div class="issue-header">
+      <span class="badge critical">Critical</span>
+      <span class="issue-title">AuctionService tự khởi tạo toàn bộ DAO → vi phạm DI và SRP</span>
+      <span class="file-ref">AuctionService.java constructor</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Constructor gọi <code>new BidHistoryDAO()</code>, <code>new AuctionStateDAO()</code>... 5 lần. Cũng gọi <code>DatabaseInitializer.initialize()</code> — DB khởi tạo bên trong service layer.</p>
+    <p><strong>Nguy hiểm:</strong> Không thể mock DAO để unit test; nếu DB không ready sẽ throw ở constructor; vi phạm SRP và DIP. AuthService.java cũng làm y chang.</p>
+    <p><strong>Sửa:</strong> Inject qua constructor hoặc dùng factory. DB init phải ở application startup (ServerApplication.java).</p>
+    <pre>// TRƯỚC (bad)
+public AuctionService() {
+    DatabaseInitializer.initialize();
+    this.bidHistoryDAO = new BidHistoryDAO();
+}
+
+// SAU (good) — inject
+public AuctionService(BidHistoryDAO bidHistoryDAO,
+                      AuctionStateDAO auctionStateDAO, ...) {
+    this.bidHistoryDAO = bidHistoryDAO;
+    ...
+}</pre>
+  </div>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">AuctionService là God Object — 500+ dòng, 10+ trách nhiệm</span>
+      <span class="file-ref">AuctionService.java</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Một class vừa quản lý auction lifecycle, vừa xử lý bidding, vừa anti-sniping, vừa auto-bid chain, vừa persistence, vừa seeding data.</p>
+    <p><strong>Sửa:</strong> Tách thành <code>AuctionLifecycleService</code>, <code>BiddingService</code>, <code>AutoBidService</code>. Persistence chỉ qua DAO layer.</p>
+  </div>
+
+  <div class="issue medium">
+    <div class="issue-header">
+      <span class="badge medium">Medium</span>
+      <span class="issue-title">Command layer không có validation layer riêng</span>
+      <span class="file-ref">AddAuctionCommand.java, BidCommand.java</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Validation logic (price &gt; 0, parts.length checks) nằm trực tiếp trong CommandHandler. Mỗi command lặp lại cùng pattern.</p>
+    <p><strong>Sửa:</strong> Tạo <code>RequestValidator</code> interface, inject vào command. Tách validation khỏi business logic.</p>
+  </div>
+
+  <div class="issue medium">
+    <div class="issue-header">
+      <span class="badge medium">Medium</span>
+      <span class="issue-title">Không có DTO layer — string protocol bị parse ở nhiều nơi</span>
+      <span class="file-ref">ClientHandler.java, AuctionItems.java, LobbypaneHandle.java</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Response format như <code>AUCTION_LIST|id:name:type:info1:info2:price:status</code> được parse bằng <code>split(";")</code> và <code>split(":")</code> ở nhiều controller client. Thay đổi format là break toàn bộ client.</p>
+    <p><strong>Sửa:</strong> Dùng JSON format nhất quán (đã có Gson). Common module có DTO classes, server serialize, client deserialize.</p>
+  </div>
+</section>
+
+<!-- PART 2: BACKEND -->
+<section>
+  <h2>⚙️ Phần 2 — Backend / Socket Server</h2>
+
+  <div class="issue critical">
+    <div class="issue-header">
+      <span class="badge critical">Critical</span>
+      <span class="issue-title">createAuction() tạo OPEN ngay — bypass hoàn toàn admin approval flow</span>
+      <span class="file-ref">AuctionService.java:createAuction()</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Hàm <code>createAuction()</code> tạo auction với <code>AuctionStatus.OPEN</code>. Trong khi đó <code>createPendingAuction()</code> mới dùng <code>PENDING</code>. Hàm <code>addAuction()</code> delegate tới <code>createAuction()</code> → tất cả auction cũ không cần admin approve vẫn live ngay.</p>
+    <p><strong>Nguy hiểm:</strong> Seller có thể bán sản phẩm không được kiểm duyệt. Logic nghiệp vụ sai hoàn toàn với flow PENDING→OPEN.</p>
+    <p><strong>Sửa:</strong> <code>createAuction()</code> phải dùng <code>AuctionStatus.PENDING</code>. Chỉ <code>approveAuction()</code> mới chuyển sang OPEN.</p>
+  </div>
+
+  <div class="issue critical">
+    <div class="issue-header">
+      <span class="badge critical">Critical</span>
+      <span class="issue-title">isActiveAuction() bao gồm PENDING — bidder có thể bid vào auction chưa duyệt</span>
+      <span class="file-ref">AuctionService.java:isActiveAuction(), placeBid()</span>
+    </div>
+    <p><strong>Vấn đề:</strong> <code>isActiveAuction()</code> trả về <code>true</code> cho PENDING. Trong <code>placeBid()</code>, chỉ check PENDING ở block sau — nhưng block đầu gọi <code>finishAuction()</code> nếu hết giờ, và bỏ sót case "auction PENDING chưa start".</p>
+    <pre>// HIỆN TẠI — PENDING bị coi là active
+private boolean isActiveAuction(Auction a) {
+    return a.getStatus() == OPEN || a.getStatus() == RUNNING
+           || a.getStatus() == PENDING; // ← BUG
+}
+
+// ĐỀ XUẤT
+private boolean isActiveAuction(Auction a) {
+    return a.getStatus() == OPEN || a.getStatus() == RUNNING;
+}</pre>
+  </div>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">syncAuctionFromDatabase() gọi trong mọi read — N+1 query problem</span>
+      <span class="file-ref">AuctionService.java:getAuctionList(), closeExpiredAuctions()</span>
+    </div>
+    <p><strong>Vấn đề:</strong> <code>getAuctionList()</code> iterate qua mọi auction, mỗi cái gọi <code>syncAuctionFromDatabase()</code> → 1 DB query/auction. 100 auctions = 100 queries/lần gọi LIST_AUCTIONS.</p>
+    <p><strong>Sửa:</strong> Cache in-memory đã có (ConcurrentHashMap), đừng sync từ DB mỗi lần. Chỉ sync khi cần thiết (sau restart, hoặc theo TTL).</p>
+  </div>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">BroadcastService.broadcastBidUpdate() không thread-safe với sendMessage()</span>
+      <span class="file-ref">BroadcastService.java, AuctionServer.java:broadcastToAuctionRoom()</span>
+    </div>
+    <p><strong>Vấn đề:</strong> <code>broadcastToAuctionRoom()</code> iterate <code>connectedClients</code> (ConcurrentHashMap.newKeySet() — OK), nhưng mỗi <code>client.sendMessage()</code> đã <code>synchronized</code>. Tuy nhiên <code>broadcastBidUpdate</code> call từ handler thread — nếu nhiều bid đồng thời, nhiều broadcast thread cùng iterate và gọi sendMessage trên cùng client. PrintWriter synchronized nên OK, nhưng thứ tự message có thể lộn xộn.</p>
+    <p><strong>Sửa:</strong> Dùng ExecutorService riêng cho broadcast, hoặc queue message.</p>
+  </div>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">addAuction() luôn tạo item type Art — ELECTRONICS/VEHICLE bị bỏ qua</span>
+      <span class="file-ref">AuctionService.java:addAuction()</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Hàm legacy <code>addAuction(sellerUsername, itemName, startPrice)</code> tạo <code>new Art(...)</code> hardcode. Nếu client gọi lệnh ADD_AUCTION 4-field, sẽ bypass type selection.</p>
+    <pre>// BUG: luôn là Art bất kể type
+Item item = new Art(itemName, "No description", startPrice, "",
+                    "Unknown", Calendar.getInstance().get(YEAR));</pre>
+  </div>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">Auction monitor chạy mỗi 1 giây — gọi closeExpiredAuctions() liên tục</span>
+      <span class="file-ref">AuctionServer.java:startAuctionMonitor()</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Mỗi tick gọi <code>closeExpiredAuctions()</code> → iterate toàn bộ auctions, mỗi cái lock + sync DB. Với nhiều auction, CPU spike đáng kể.</p>
+    <p><strong>Sửa:</strong> Tăng interval lên 5-10s. Hoặc dùng <code>ScheduledExecutorService</code> với delay tính từ endTime thực tế.</p>
+  </div>
+
+  <div class="issue medium">
+    <div class="issue-header">
+      <span class="badge medium">Medium</span>
+      <span class="issue-title">MAX_CLIENT_THREADS = 50 hardcode — không configurable</span>
+      <span class="file-ref">AuctionServer.java</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Thread pool cố định 50, không có backpressure khi vượt. Nên dùng <code>Executors.newCachedThreadPool()</code> hoặc config từ properties file.</p>
+  </div>
+
+  <div class="issue medium">
+    <div class="issue-header">
+      <span class="badge medium">Medium</span>
+      <span class="issue-title">closeExpiredAuctions() có logic ngược — ưu tiên local endTime thấp hơn DB</span>
+      <span class="file-ref">AuctionService.java:closeExpiredAuctions()</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Sau khi sync DB, nếu <code>localEndTime &lt; auction.getEndTime()</code> (DB đã extend do anti-sniping), code lại gán lại local time thấp hơn → auction bị đóng sớm hơn dự định.</p>
+    <pre>// BUG: ghi đè endTime DB bằng local cũ hơn
+long localEndTime = auction.getEndTime();
+syncAuctionFromDatabase(auction);
+if (localEndTime &lt; auction.getEndTime()) {
+    auction.setEndTime(localEndTime); // ← SAI: đây là giá trị cũ hơn
+}</pre>
+    <p><strong>Sửa:</strong> Bỏ block đó đi. Sau sync, dùng endTime từ DB là chuẩn.</p>
+  </div>
+</section>
+
+<!-- PART 3: SECURITY -->
+<section>
+  <h2>🔐 Phần 3 — Auth &amp; Security</h2>
+
+  <div class="issue critical">
+    <div class="issue-header">
+      <span class="badge critical">Critical</span>
+      <span class="issue-title">Client tự gửi sellerUsername — có thể spoof, đăng bán giả danh người khác</span>
+      <span class="file-ref">AddAuctionCommand.java, ClientHandler.java</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Command ADD_AUCTION nhận <code>sellerUsername = parts[1]</code> từ client. Có kiểm tra <code>sellerUsername.equals(client.getCurrentUser())</code> — tốt. Tuy nhiên GET_ACCOUNTINFORMATION nhận username từ client không verify:</p>
+    <pre>// GetAccountInformationCommand.java
+String username = parts[1]; // ← bất kỳ client nào gửi username khác đều được</pre>
+    <p><strong>Sửa:</strong> Với GET_ACCOUNTINFORMATION, luôn dùng <code>client.getCurrentUser()</code> thay vì <code>parts[1]</code>.</p>
+  </div>
+
+  <div class="issue critical">
+    <div class="issue-header">
+      <span class="badge critical">Critical</span>
+      <span class="issue-title">ResetPassword không yêu cầu FORGOT_PASSWORD verification trước</span>
+      <span class="file-ref">AuthService.java:resetPassword(), ResetPasswordCommand.java</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Client có thể gửi thẳng <code>RESET_PASSWORD|username|newPassword</code> mà không cần qua FORGOT_PASSWORD flow. Server xử lý thẳng không kiểm tra session state.</p>
+    <p><strong>Nguy hiểm:</strong> Attacker biết username có thể reset mật khẩu của bất kỳ ai.</p>
+    <p><strong>Sửa:</strong> Server cần lưu "reset token" sau FORGOT_PASSWORD thành công, RESET_PASSWORD phải gửi token đó. Hoặc ít nhất kiểm tra phone+personalID trong RESET_PASSWORD.</p>
+  </div>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">PasswordHasher.matches() có plain-text fallback nguy hiểm</span>
+      <span class="file-ref">PasswordHasher.java:matches()</span>
+    </div>
+    <p><strong>Vấn đề:</strong></p>
+    <pre>if (!storedValue.startsWith(PREFIX)) {
+    // Fallback: so sánh plain-text bằng byte comparison!
+    return MessageDigest.isEqual(rawPassword.getBytes(), storedValue.getBytes());
+}</pre>
+    <p>Nếu ai đó insert user với password plain-text vào DB (SQL injection, admin access...), họ vẫn đăng nhập được.</p>
+    <p><strong>Sửa:</strong> Fallback nên return <code>false</code>, log warning. Không bao giờ accept plain-text password.</p>
+  </div>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">AdminpageHandle dùng UPDATE_STATUS thay vì APPROVE_AUCTION</span>
+      <span class="file-ref">AdminpageHandle.java:Confirm()</span>
+    </div>
+    <p><strong>Vấn đề:</strong></p>
+    <pre>// Admin client gửi
+StartScence.client.sendMessage("UPDATE_STATUS|" + item.getIteminfomation() + "|OPEN");</pre>
+    <p>UPDATE_STATUS command không check <code>client.isAdmin()</code>. Bất kỳ bidder nào cũng có thể gửi UPDATE_STATUS để approve auction của mình.</p>
+    <pre>// UpdateStatusCommand.java — không có auth check!
+public void handle(String[] parts, ClientHandler client) {
+    if (!client.isLoggedIn()) { ... } // ← chỉ check logged in, không check isAdmin()
+    String response = auctionService.updateStatus(parts[1], newStatus);
+}</pre>
+    <p><strong>Sửa:</strong> Admin UI dùng APPROVE_AUCTION. Hoặc thêm <code>if (!client.isAdmin())</code> vào UpdateStatusCommand.</p>
+  </div>
+
+  <div class="issue medium">
+    <div class="issue-header">
+      <span class="badge medium">Medium</span>
+      <span class="issue-title">Không có rate limiting — có thể spam bid/register</span>
+      <span class="file-ref">AuctionServer.java, ClientHandler.java</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Không có limit số request/giây từ một client. Attacker có thể flood server với hàng nghìn bid/giây, hoặc brute force password.</p>
+    <p><strong>Sửa:</strong> Thêm per-client request counter với sliding window. Disconnect nếu vượt threshold.</p>
+  </div>
+
+  <div class="issue low">
+    <div class="issue-header">
+      <span class="badge low">Low</span>
+      <span class="issue-title">DatabaseInitializer dùng SQL string formatting cho seed data</span>
+      <span class="file-ref">DatabaseInitializer.java</span>
+    </div>
+    <pre>// Không phải injection vì hash là từ hàm nội bộ, nhưng style xấu
+st.execute("INSERT OR IGNORE INTO users ... VALUES ('seller1', '" + sellerHash + "'...)");</pre>
+    <p><strong>Sửa:</strong> Dùng PreparedStatement cho tất cả INSERT, kể cả seed data.</p>
+  </div>
+</section>
+
+<!-- PART 4: AUCTION FLOW -->
+<section>
+  <h2>🏷️ Phần 4 — Auction Flow</h2>
+
+  <div class="issue critical">
+    <div class="issue-header">
+      <span class="badge critical">Critical</span>
+      <span class="issue-title">ItemShowingHandle dùng StoreItemDataInit.description làm auctionId — logic sai hoàn toàn</span>
+      <span class="file-ref">ItemShowingHandle.java:RaiseBind()</span>
+    </div>
+    <pre>// BUG: description field chứa auctionId???
+String auctionId = StoreItemDataInit.description;
+StartScence.client.sendMessage("BID|" + auctionId + "|" + amountText);</pre>
+    <p><strong>Vấn đề:</strong> <code>StoreItemDataInit.description</code> là field mô tả item. Không có field <code>auctionId</code> trong StoreItemDataInit. Bid sẽ gửi sai auctionId (là description text của item).</p>
+    <p><strong>Sửa:</strong> Thêm <code>public static String auctionId</code> vào StoreItemDataInit, gán đúng khi user click vào auction card.</p>
+  </div>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">AuctionItems.updateListFromServer() expect 7 fields nhưng server gửi 4 fields</span>
+      <span class="file-ref">AuctionItems.java, AuctionService.java:getAuctionList()</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Client parse:</p>
+    <pre>if (attributes.length >= 7) {
+    String id = attributes[0];
+    String itemName = attributes[1];
+    String itemType = attributes[2];    // ← KHÔNG TỒN TẠI
+    String itemInformation1 = attributes[3]; // ← KHÔNG TỒN TẠI
+    ...
+}</pre>
+    <p>Nhưng server gửi:</p>
+    <pre>sb.append(auction.getId()).append(":").append(auction.getItemName())
+  .append(":").append(currentPrice).append(":").append(status);
+// = id:itemName:price:status — chỉ 4 fields!</pre>
+    <p><strong>Hậu quả:</strong> <code>attributes.length >= 7</code> luôn false → list trống, admin page và lobby trống hoàn toàn.</p>
+    <p><strong>Sửa:</strong> Server phải gửi đủ 7 fields hoặc client parse đúng 4 fields hiện có.</p>
+  </div>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">InvesmentSiteHandle chỉ hiển thị RUNNING — bỏ qua OPEN</span>
+      <span class="file-ref">InvesmentSiteHandle.java:fetchAuctionsFromServer()</span>
+    </div>
+    <pre>if(((String) item.get(6)).equals("RUNNING")) { // ← chỉ RUNNING, bỏ OPEN
+    flowPane.getChildren().add(cardItem);
+}</pre>
+    <p><strong>Vấn đề:</strong> Auction mới tạo có status OPEN. User sẽ không thấy auction nào cho đến khi có bid đầu tiên.</p>
+  </div>
+
+  <div class="issue medium">
+    <div class="issue-header">
+      <span class="badge medium">Medium</span>
+      <span class="issue-title">AdminpageHandle dùng dummy date/time hardcode</span>
+      <span class="file-ref">AdminpageHandle.java:renderAuctions()</span>
+    </div>
+    <pre>new ItemsHolder(...,
+    LocalDate.of(2026, 12, 12),         // ← hardcode!
+    LocalTime.of(10, 10, 10),           // ← hardcode!
+    Time.valueOf(LocalTime.of(10, 10, 10)) // ← hardcode!
+);</pre>
+    <p><strong>Vấn đề:</strong> Admin không thấy được thời gian thực của auction. Server cần gửi startTime/endTime trong AUCTION_LIST response.</p>
+  </div>
+</section>
+
+<!-- PART 5: DATABASE -->
+<section>
+  <h2>🗄️ Phần 5 — Database / SQLite</h2>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">Hai bảng lưu trạng thái auction — có thể không đồng bộ</span>
+      <span class="file-ref">DatabaseInitializer.java: auctions + auction_runtime_state</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Cả <code>auctions</code> và <code>auction_runtime_state</code> đều lưu <code>status</code>, <code>current_highest_bid</code>, <code>highest_bidder_username</code>. <code>persistAuctionState()</code> update cả hai — nhưng không trong cùng một transaction.</p>
+    <pre>// Nếu update auctions thành công nhưng auction_runtime_state fail
+// → 2 bảng có state khác nhau
+auctionStateDAO.upsert(auction, bidCount); // ← không atomic
+auctionRecordDAO.updateState(auction);     // ← có thể fail sau khi trên thành công</pre>
+    <p><strong>Sửa:</strong> Wrap cả hai trong một DB transaction, hoặc bỏ một bảng (auction_runtime_state là redundant).</p>
+  </div>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">Không có FOREIGN KEY enforcement — orphan records có thể tồn tại</span>
+      <span class="file-ref">DatabaseInitializer.java</span>
+    </div>
+    <p><strong>Vấn đề:</strong> SQLite có FOREIGN KEY nhưng mặc định OFF. Phải bật <code>PRAGMA foreign_keys = ON</code> mỗi connection.</p>
+    <pre>// Thêm vào DatabaseManager.getConnection()
+try (Statement st = conn.createStatement()) {
+    st.execute("PRAGMA foreign_keys = ON");
+}</pre>
+  </div>
+
+  <div class="issue medium">
+    <div class="issue-header">
+      <span class="badge medium">Medium</span>
+      <span class="issue-title">UserDAO.save() lưu BIDDER role là "USER" thay vì "BIDDER"</span>
+      <span class="file-ref">UserDAO.java:save()</span>
+    </div>
+    <pre>String roleStr = switch (user.getRole()) {
+    case ADMIN  -> "ADMIN";
+    case SELLER -> "SELLER";
+    default     -> "USER"; // ← lưu "USER", nhưng map() đọc ra BIDDER
+};</pre>
+    <p><strong>Vấn đề:</strong> <code>map()</code> dùng <code>default -> UserRole.BIDDER</code> nên vẫn hoạt động, nhưng không nhất quán. Nếu ai query thẳng DB sẽ thấy "USER" thay vì "BIDDER". Sửa thành <code>"BIDDER"</code>.</p>
+  </div>
+
+  <div class="issue medium">
+    <div class="issue-header">
+      <span class="badge medium">Medium</span>
+      <span class="issue-title">bidHistoryDAO.countByAuctionId() gọi trong mọi persistAuctionState()</span>
+      <span class="file-ref">AuctionService.java:persistAuctionState(Auction)</span>
+    </div>
+    <pre>private void persistAuctionState(Auction auction) {
+    persistAuctionState(auction,
+        bidHistoryDAO.countByAuctionId(auction.getId())); // ← 1 DB query mỗi lần persist
+}</pre>
+    <p><strong>Vấn đề:</strong> Mỗi bid triggers 3 DB queries: save bid + count bids + upsert state. Count có thể track in-memory.</p>
+  </div>
+
+  <div class="issue low">
+    <div class="issue-header">
+      <span class="badge low">Low</span>
+      <span class="issue-title">currentPrice lưu dưới dạng REAL — floating point precision issue</span>
+      <span class="file-ref">DatabaseInitializer.java schema</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Giá tiền (VND) lưu REAL (double). Với số lớn như 25,000,000 VND, double OK, nhưng cộng/trừ nhiều lần có thể lộn. Nên dùng INTEGER (đơn vị đồng) hoặc NUMERIC.</p>
+  </div>
+</section>
+
+<!-- PART 6: FRONTEND -->
+<section>
+  <h2>🎨 Phần 6 — Frontend / JavaFX UI</h2>
+
+  <div class="issue critical">
+    <div class="issue-header">
+      <span class="badge critical">Critical</span>
+      <span class="issue-title">setServerListener() ghi đè listener cũ — mất tất cả global broadcasts</span>
+      <span class="file-ref">SocketClient.java, ItemShowingHandle.java:RaiseBid(), LoginHandle.java:Login()</span>
+    </div>
+    <p><strong>Vấn đề:</strong> <code>SocketClient</code> chỉ có 1 listener. Mỗi lần click "Bid" hay "Login", controller ghi đè listener toàn cục:</p>
+    <pre>StartScence.client.setServerListener(message -> {
+    Platform.runLater(() -> {
+        if (message.startsWith("BID_SUCCESS|") || message.startsWith("BID_UPDATE|")) {
+            status.setText("RUNNING");
+        }
+    });
+});
+// ← Mọi message khác (AUCTION_CLOSED, LOBBY_UPDATE...) bị nuốt mất!</pre>
+    <p><strong>Hậu quả:</strong> Auction đóng không notification; lobby không update realtime; mọi server message ngoài BID_SUCCESS đều mất.</p>
+    <p><strong>Sửa:</strong> Dùng publish-subscribe. SocketClient expose <code>addListener(topic, handler)</code> / <code>removeListener()</code>. Message routing theo prefix.</p>
+    <pre>// Ví dụ đơn giản:
+public class MessageRouter {
+    private final Map&lt;String, Consumer&lt;String&gt;&gt; handlers = new ConcurrentHashMap&lt;&gt;();
+    public void register(String prefix, Consumer&lt;String&gt; handler) { ... }
+    public void route(String message) {
+        handlers.entrySet().stream()
+            .filter(e -> message.startsWith(e.getKey()))
+            .forEach(e -> e.getValue().accept(message));
+    }
+}</pre>
+  </div>
+
+  <div class="issue critical">
+    <div class="issue-header">
+      <span class="badge critical">Critical</span>
+      <span class="issue-title">Static global state cho session data — race condition và stale data</span>
+      <span class="file-ref">StoreDataInput.java, StoreItemDataInit.java, AuctionItems.java</span>
+    </div>
+    <p><strong>Vấn đề:</strong> <code>StoreDataInput.username</code>, <code>StoreDataInput.password</code>, <code>AuctionItems.list</code>, <code>AuctionItems.currentListener</code> tất cả là <code>public static</code>. Khi navigate giữa scenes, cũ/mới share cùng state.</p>
+    <p><strong>Nguy hiểm:</strong> Password lưu static field. Nếu navigate về login và login lại, password cũ vẫn còn. Nếu hai scene register listener, chỉ cái cuối nhận được event.</p>
+    <p><strong>Sửa:</strong> Dùng singleton session store với proper lifecycle. Clear sensitive data sau logout.</p>
+  </div>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">Không cleanup listener khi rời scene — memory leak</span>
+      <span class="file-ref">InvesmentSiteHandle.java, AdminpageHandle.java, ItemShowingHandle.java</span>
+    </div>
+    <pre>// InvesmentSiteHandle.initialize()
+AuctionItems.currentListener = () -> { fetchAuctionsFromServer(); };
+// ← KHÔNG có cleanup. Scene cũ vẫn giữ reference qua listener</pre>
+    <p><strong>Vấn đề:</strong> Khi navigate sang scene khác, listener của scene cũ vẫn giữ reference tới controller → controller không được GC → JavaFX nodes không release.</p>
+    <p><strong>Sửa:</strong> Implement <code>Cleanable</code> interface với <code>cleanup()</code>, gọi khi scene bị replace. Hoặc dùng WeakReference.</p>
+  </div>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">LobbyHandle dùng Singleton pattern sai — không thread-safe, không JavaFX-safe</span>
+      <span class="file-ref">LobbyHandle.java</span>
+    </div>
+    <pre>private static LobbyHandle instance;
+public LobbyHandle() {
+    instance = this; // ← ghi đè mỗi lần constructor gọi
+}
+public static LobbyHandle getInstance() { return instance; }</pre>
+    <p><strong>Vấn đề:</strong> FXML loader có thể tạo multiple instances. Static instance không volatile → không visible giữa threads.</p>
+  </div>
+
+  <div class="issue medium">
+    <div class="issue-header">
+      <span class="badge medium">Medium</span>
+      <span class="issue-title">Naming convention không nhất quán — PascalCase method, tiếng Anh lẫn tiếng Việt</span>
+      <span class="file-ref">Toàn bộ client/</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Java convention: method phải camelCase. Code có <code>MovingCenter()</code>, <code>ReturnLobby()</code>, <code>Clicked()</code>, <code>RaiseBind()</code>. File <code>laucher.java</code> (typo, nên là <code>Launcher.java</code>). Class <code>DesignerHounerHandle</code> (typo kép). Package <code>action</code> không theo convention <code>com.company.project</code>.</p>
+  </div>
+
+  <div class="issue medium">
+    <div class="issue-header">
+      <span class="badge medium">Medium</span>
+      <span class="issue-title">ItemShowingHandle.getItem() load image sai — tạo Image nhưng không gán vào ImageView</span>
+      <span class="file-ref">ItemShowingHandle.java:getItem()</span>
+    </div>
+    <pre>if(image != null) {
+    Image image1 = new Image("/assets/rubberDuck.jfif"); // ← tạo nhưng không gán
+}
+// imageView.setImage(image1); ← dòng này bị bỏ quên</pre>
+  </div>
+
+  <div class="issue low">
+    <div class="issue-header">
+      <span class="badge low">Low</span>
+      <span class="issue-title">StartScence có class Client dead code bên trong</span>
+      <span class="file-ref">StartScence.java</span>
+    </div>
+    <pre>// Dead code không được dùng đến
+public static class Client {
+    public void sendMessage(String message) {
+        System.out.println("Gửi dữ liệu: " + message);
+    }
+}</pre>
+    <p>Cũng có comment <code>//else-if(false)</code> trong LoginHandle — dead code cần xóa.</p>
+  </div>
+</section>
+
+<!-- PART 7: REALTIME -->
+<section>
+  <h2>⚡ Phần 7 — Realtime &amp; Multithreading</h2>
+
+  <div class="issue high">
+    <div class="issue-header">
+      <span class="badge high">High</span>
+      <span class="issue-title">Auction state update không atomic với DB persist</span>
+      <span class="file-ref">AuctionService.java:placeBid()</span>
+    </div>
+    <p><strong>Vấn đề:</strong> Trong <code>placeBid()</code>, sau khi update in-memory auction state (setCurrentPrice, setHighestBidder), code gọi <code>bidHistoryDAO.save()</code> rồi <code>persistAuctionState()</code>. Nếu DB fail sau khi update memory, rollback đúng — tốt. Nhưng giữa lúc <code>bidHistoryDAO.save()</code> thành công và <code>persistAuctionState()</code> bắt đầu, nếu server crash → bid history được lưu nhưng auction state không update → inconsistent.</p>
+    <p><strong>Sửa:</strong> Wrap <code>bidHistoryDAO.save()</code> và <code>persistAuctionState()</code> trong cùng một DB transaction.</p>
+  </div>
+
+  <div class="issue medium">
+    <div class="issue-header">
+      <span class="badge medium">Medium</span>
+      <span class="issue-title">Client listener thread không có reconnect logic</span>
+      <span class="file-ref">SocketClient.java</span>
+    </div>
+    <pre>} catch (IOException e) {
+    System.out.println("Disconnected from server."); // ← chỉ log, không reconnect
+}</pre>
+    <p><strong>Vấn đề:</strong> Nếu server restart hoặc network drop, client bị disconnect vĩnh viễn. UI không thông báo. Không có retry.</p>
+    <p><strong>Sửa:</strong> Exponential backoff reconnect. Notify user qua dialog khi mất kết nối.</p>
+  </div>
+
+  <div class="issue medium">
+    <div class="issue-header">
+      <span class="badge medium">Medium</span>
+      <span class="issue-title">Broadcast sau bid không gửi endTime mới (sau anti-sniping)</span>
+      <span class="file-ref">BroadcastService.java:broadcastBidUpdate()</span>
+    </div>
+    <pre>server.broadcastToAuctionRoom(
+    "BID_UPDATE|auctionId=" + auctionId
+    + "|highestBid=" + (long) auction.getCurrentPrice()
+    + "|bidder=" + auction.getHighestBidder()
+    + "|startDate=..." + "|startTime=..." + "|duration=...",
+    auctionId
+);
+// ← Thiếu |endTime=... sau anti-sniping extend</pre>
+    <p><strong>Hậu quả:</strong> Client countdown timer không biết auction đã extend. User thấy countdown hết nhưng auction vẫn chạy.</p>
+  </div>
+</section>
+
+<!-- TOP 15 -->
+<section>
+  <h2>🚨 Top 15 Việc Cần Sửa Trước Demo/Nộp</h2>
+  <ol class="todo-list">
+    <li><span class="todo-num n-crit">1</span><div><strong>[CRITICAL — Bug chức năng]</strong> Fix mismatch protocol: server gửi 4 fields (id:name:price:status), client parse 7 fields → list trống. Đồng bộ format.</div></li>
+    <li><span class="todo-num n-crit">2</span><div><strong>[CRITICAL — Bug chức năng]</strong> Fix ItemShowingHandle.RaiseBid() dùng <code>StoreItemDataInit.description</code> làm auctionId. Thêm field <code>auctionId</code> vào StoreItemDataInit.</div></li>
+    <li><span class="todo-num n-crit">3</span><div><strong>[CRITICAL — Security]</strong> AddAuctionCommand.UpdateStatus không check isAdmin() → bidder tự approve auction của mình. Thêm auth check hoặc Admin UI dùng APPROVE_AUCTION command.</div></li>
+    <li><span class="todo-num n-crit">4</span><div><strong>[CRITICAL — Bug logic]</strong> Fix setServerListener() ghi đè listener toàn cục. Implement MessageRouter với multiple listeners theo topic prefix.</div></li>
+    <li><span class="todo-num n-crit">5</span><div><strong>[CRITICAL — Security]</strong> RESET_PASSWORD không cần xác thực. Thêm verification step (token hoặc phone+personalID check trong cùng command).</div></li>
+    <li><span class="todo-num n-crit">6</span><div><strong>[CRITICAL — Bug flow]</strong> createAuction() tạo OPEN thay vì PENDING. Sửa thành PENDING, chỉ approveAuction() mới chuyển OPEN.</div></li>
+    <li><span class="todo-num n-high">7</span><div><strong>[High — Bug logic]</strong> isActiveAuction() bao gồm PENDING → bidder bid vào auction chưa duyệt. Loại PENDING khỏi active check.</div></li>
+    <li><span class="todo-num n-high">8</span><div><strong>[High — Bug chức năng]</strong> InvesmentSiteHandle chỉ show RUNNING, bỏ OPEN. Thêm OPEN vào điều kiện hiển thị.</div></li>
+    <li><span class="todo-num n-high">9</span><div><strong>[High — Bug chức năng]</strong> addAuction() hardcode tạo item type Art. Đổi sang parse type từ parameter hoặc dùng createPendingAuction() nhất quán.</div></li>
+    <li><span class="todo-num n-high">10</span><div><strong>[High — Bug logic]</strong> closeExpiredAuctions() gán lại endTime cũ sau sync, có thể đóng auction trước giờ. Xóa block gán lại localEndTime.</div></li>
+    <li><span class="todo-num n-high">11</span><div><strong>[High — Security]</strong> GetAccountInformationCommand nhận username từ client. Dùng <code>client.getCurrentUser()</code> thay vì <code>parts[1]</code>.</div></li>
+    <li><span class="todo-num n-high">12</span><div><strong>[High — Bug chức năng]</strong> BroadcastBidUpdate thiếu endTime mới sau anti-sniping. Thêm <code>|endTime=</code> vào broadcast message.</div></li>
+    <li><span class="todo-num n-mid">13</span><div><strong>[Medium — UX]</strong> AdminpageHandle dùng dummy date hardcode. Server cần gửi startTime/endTime trong AUCTION_LIST. Client hiển thị từ data thực.</div></li>
+    <li><span class="todo-num n-mid">14</span><div><strong>[Medium — Stability]</strong> PasswordHasher.matches() có plain-text fallback. Đổi fallback thành return false.</div></li>
+    <li><span class="todo-num n-mid">15</span><div><strong>[Medium — Data integrity]</strong> Bật PRAGMA foreign_keys = ON trong DatabaseManager. Wrap persistAuctionState() trong DB transaction.</div></li>
+  </ol>
+</section>
+
+<!-- CHECKLIST TEST MANUAL -->
+<section>
+  <h2>✅ Checklist Test Manual Đầy Đủ</h2>
+  <h3>Auth Flow</h3>
+  <ul class="checklist">
+    <li>Đăng ký tài khoản mới với đủ thông tin → nhận REGISTER_SUCCESS</li>
+    <li>Đăng ký username trùng → nhận REGISTER_FAILED</li>
+    <li>Đăng nhập đúng credentials → vào được Lobby</li>
+    <li>Đăng nhập sai password → hiển thị FailedLogin</li>
+    <li>Đăng nhập để trống username/password → hiển thị SomeThingUnFill</li>
+    <li>Đăng nhập với tài khoản admin → vào được AdminPage</li>
+    <li>Forgot password với thông tin đúng → nhận SUCCESS</li>
+    <li>Forgot password với thông tin sai → nhận FAILED</li>
+    <li>Reset password → đăng nhập lại với password mới thành công</li>
+    <li>Thử RESET_PASSWORD trực tiếp qua socket không qua FORGOT_PASSWORD → phải bị chặn</li>
+  </ul>
+
+  <h3>Seller Flow</h3>
+  <ul class="checklist">
+    <li>Seller đăng sản phẩm ELECTRONICS với brand + warrantyMonths → lưu đúng DB</li>
+    <li>Seller đăng sản phẩm ART với artist + creationYear → lưu đúng DB</li>
+    <li>Seller đăng sản phẩm VEHICLE với engineType + mileage → lưu đúng DB</li>
+    <li>Sản phẩm sau khi đăng có status PENDING (chưa duyệt)</li>
+    <li>Seller thấy sản phẩm của mình trong InvesmentWait</li>
+    <li>Seller KHÔNG thể bid vào auction của chính mình</li>
+  </ul>
+
+  <h3>Admin Flow</h3>
+  <ul class="checklist">
+    <li>Admin thấy danh sách PENDING items trong AdminPage</li>
+    <li>Admin tick chọn item và Confirm → item chuyển OPEN</li>
+    <li>Item OPEN xuất hiện trong Lobby của bidder</li>
+    <li>Admin không thể bid (không có UI bidding cho admin)</li>
+    <li>Thử UPDATE_STATUS|{id}|OPEN từ bidder account → phải bị từ chối</li>
+  </ul>
+
+  <h3>Bidding Flow</h3>
+  <ul class="checklist">
+    <li>Bidder thấy danh sách auction OPEN/RUNNING trong Lobby</li>
+    <li>Click vào auction → vào ItemShowing với thông tin đúng</li>
+    <li>Bid cao hơn giá hiện tại → nhận BID_SUCCESS, giá update realtime</li>
+    <li>Bid thấp hơn hoặc bằng giá hiện tại → nhận ERROR</li>
+    <li>Bid sau khi auction đóng → nhận ERROR|Auction is not available</li>
+    <li>Hai client bid cùng lúc → chỉ một thắng, client còn lại thấy giá mới</li>
+    <li>Bid trong 30s cuối → endTime tự động extend 60s (anti-sniping)</li>
+    <li>Đặt AutoBid với maxBid và increment → tự động outbid khi người khác bid</li>
+  </ul>
+
+  <h3>Auction Lifecycle</h3>
+  <ul class="checklist">
+    <li>Auction hết giờ → tự động đóng, thông báo AUCTION_CLOSED broadcast</li>
+    <li>Auction đóng có winner → getWinner trả về đúng winner + finalPrice</li>
+    <li>Auction đóng không có bid → winner = NONE</li>
+    <li>closeAuction thủ công (admin) → hoạt động đúng</li>
+    <li>Restart server → load lại đúng auctions từ DB</li>
+    <li>Restart server → bid history không mất</li>
+    <li>Restart server → auction đang RUNNING vẫn tiếp tục đúng endTime</li>
+  </ul>
+
+  <h3>Realtime</h3>
+  <ul class="checklist">
+    <li>Client A bid → Client B đang xem cùng auction thấy BID_UPDATE ngay lập tức</li>
+    <li>Client A bid → Lobby của Client C thấy giá mới trong AUCTION_LIST update</li>
+    <li>Disconnect một client → server tiếp tục bình thường, không crash</li>
+    <li>10+ client kết nối cùng lúc → server xử lý ổn định</li>
+    <li>Bid storm (nhiều bid liên tiếp) → không deadlock, không data corruption</li>
+  </ul>
+</section>
+
+<!-- CÂU HỎI VẤNÁP -->
+<section>
+  <h2>🎤 Câu Hỏi Giảng Viên Có Thể Hỏi Khi Vấn Đáp</h2>
+  <table>
+    <thead>
+      <tr><th>Câu hỏi</th><th>Điểm yếu bị lộ</th><th>Trả lời gợi ý</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>"Nếu 100 người bid cùng lúc, hệ thống xử lý thế nào?"</td>
+        <td>Thread safety, synchronized block</td>
+        <td>Mỗi auction có synchronized block riêng. ConcurrentHashMap cho concurrent access. Chỉ 1 thread/auction xử lý bid tại một thời điểm.</td>
+      </tr>
+      <tr>
+        <td>"Làm sao đảm bảo buyer không bid thấp hơn giá hiện tại?"</td>
+        <td>Race condition check</td>
+        <td>Check amount &lt;= currentPrice trong synchronized block → atomic. Nếu 2 bid đến cùng lúc, cái thứ 2 thấy giá đã update của cái thứ 1.</td>
+      </tr>
+      <tr>
+        <td>"Hệ thống có thể bị SQL injection không?"</td>
+        <td>PreparedStatement usage</td>
+        <td>Toàn bộ DAO dùng PreparedStatement với parameter binding. Không có string concatenation trong SQL. Tuy nhiên DatabaseInitializer seed data dùng format string — điểm yếu.</td>
+      </tr>
+      <tr>
+        <td>"Password lưu như thế nào?"</td>
+        <td>Password security</td>
+        <td>PBKDF2WithHmacSHA256, 65536 iterations, 16-byte salt random. Timing-safe comparison qua MessageDigest.isEqual(). Có upgrade path từ plain-text.</td>
+      </tr>
+      <tr>
+        <td>"Nếu server crash giữa chừng bid, dữ liệu có bị mất không?"</td>
+        <td>Transaction atomicity</td>
+        <td>Có rollback in-memory nếu DB fail. Nhưng bidHistoryDAO.save() và persistAuctionState() không trong cùng transaction → có thể inconsistent (đây là điểm yếu thực tế).</td>
+      </tr>
+      <tr>
+        <td>"Anti-sniping hoạt động thế nào?"</td>
+        <td>Business logic</td>
+        <td>Nếu bid trong 30s cuối (ANTI_SNIPE_THRESHOLD_MS = 30000), tự động extend thêm 60s (ANTI_SNIPE_EXTENSION_MS = 60000). Áp dụng cả cho auto-bid chain.</td>
+      </tr>
+      <tr>
+        <td>"Admin approve auction như thế nào? Có bị bypass không?"</td>
+        <td>Authorization</td>
+        <td>APPROVE_AUCTION command check isAdmin(). Tuy nhiên UPDATE_STATUS command KHÔNG check admin → đây là lỗ hổng thực tế trong code.</td>
+      </tr>
+      <tr>
+        <td>"Có design pattern gì trong dự án?"</td>
+        <td>Design patterns knowledge</td>
+        <td>Command Pattern (CommandDispatcher + CommandHandler), Observer/Listener (ServerListener interface), Singleton (DatabaseManager), DAO Pattern, Facade (AuctionService).</td>
+      </tr>
+      <tr>
+        <td>"Tại sao cần auction_runtime_state ngoài auctions table?"</td>
+        <td>Database design</td>
+        <td>auction_runtime_state lưu in-memory state (current price, highest bidder, bid count) cho fast access. auctions là record lịch sử. Tuy nhiên hiện tại có redundancy — điểm yếu có thể nhận xét thẳng.</td>
+      </tr>
+      <tr>
+        <td>"Protocol giao tiếp client-server là gì, có handle lỗi parse không?"</td>
+        <td>Protocol robustness</td>
+        <td>Dual protocol: JSON (primary) và pipe-delimited text (fallback). Parse lỗi có try-catch. Tuy nhiên malformed JSON vẫn fallback sang pipe split — nếu cả hai fail thì command = empty string gây ERROR response.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- REFACTOR -->
+<section>
+  <h2>🔧 Phần Nên Refactor Nếu Có Thêm Thời Gian</h2>
+
+  <div class="refactor-item">
+    <div class="tag">High Value</div>
+    <div><strong>MessageRouter pattern cho SocketClient</strong> — Thay thế single listener bằng pub-sub. Tất cả controller register/unregister handler theo topic prefix. Eliminates toàn bộ "mất message" bugs.</div>
+  </div>
+  <div class="refactor-item">
+    <div class="tag">High Value</div>
+    <div><strong>Dependency Injection trong server</strong> — AuctionService, AuthService nhận DAO qua constructor. Cho phép mock trong unit test. Giảm coupling giữa service và database layer.</div>
+  </div>
+  <div class="refactor-item">
+    <div class="tag">High Value</div>
+    <div><strong>DTO + JSON protocol nhất quán</strong> — Server serialize tất cả response thành JSON với schema cố định. Common module chứa DTO classes dùng chung client/server. Eliminates parse bugs do field count mismatch.</div>
+  </div>
+  <div class="refactor-item">
+    <div class="tag">Medium</div>
+    <div><strong>Tách AuctionService thành BiddingService + AuctionLifecycleService + AutoBidService</strong> — Mỗi service có single responsibility. Dễ test riêng lẻ.</div>
+  </div>
+  <div class="refactor-item">
+    <div class="tag">Medium</div>
+    <div><strong>Session state management cho client</strong> — Thay thế static fields bằng Session singleton với proper typing. <code>Session.getInstance().getUsername()</code> thay vì <code>StoreDataInput.username</code>. Clear session khi logout.</div>
+  </div>
+  <div class="refactor-item">
+    <div class="tag">Medium</div>
+    <div><strong>Database transaction wrapper</strong> — Tạo <code>TransactionManager.executeInTransaction(Runnable)</code> để wrap multi-step DB operations. Đảm bảo atomicity giữa bidHistoryDAO.save() và persistAuctionState().</div>
+  </div>
+  <div class="refactor-item">
+    <div class="tag">Low</div>
+    <div><strong>Config file cho server</strong> — Port, thread pool size, auction duration, anti-sniping thresholds đọc từ <code>config.properties</code>. Không hardcode constants.</div>
+  </div>
+  <div class="refactor-item">
+    <div class="tag">Low</div>
+    <div><strong>Logging framework</strong> — Thay thế <code>System.out.println</code> bằng SLF4J + Logback. Log levels: DEBUG cho request/response, INFO cho business events, ERROR cho exceptions.</div>
+  </div>
+  <div class="refactor-item">
+    <div class="tag">Low</div>
+    <div><strong>Unified error handling</strong> — Tạo custom exceptions hierarchy. CommandHandler wrap tất cả exceptions và return standardized ERROR|code|message. Client parse theo code để hiển thị đúng UI.</div>
+  </div>
+  <div class="refactor-item">
+    <div class="tag">Low</div>
+    <div><strong>Naming convention cleanup</strong> — Method names camelCase, package names lowercase, typo fixes (Houner→Owner, laucher→launcher, Invesment→Investment). Consistent Vietnamese/English trong codebase.</div>
+  </div>
+
+</section>
+
+<div style="border-top:1px solid rgba(255,255,255,.08); padding-top:24px; margin-top:24px; color:var(--muted); font-size:13px; text-align:center;">
+  Code Review Report · Java Auction System · 2026 · Generated by Senior Engineer Analysis
+</div>
+
+</div>
+</body>
+</html>

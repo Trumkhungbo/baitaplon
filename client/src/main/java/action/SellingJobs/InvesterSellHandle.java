@@ -1,7 +1,8 @@
 package action.SellingJobs;
 
+import action.Authentication.StoreDataInput;
 import action.Core.SceneSwitch;
-import action.Core.StartScence;
+import action.SocketClient;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -36,8 +37,6 @@ public class InvesterSellHandle implements Initializable {
     @FXML
     private TextField price;
     @FXML
-    private DatePicker date;
-    @FXML
     private TextField TimeStart;
 
     @FXML
@@ -54,12 +53,17 @@ public class InvesterSellHandle implements Initializable {
             int hours = minutesInput / 60;
             int minutes = minutesInput % 60;
             String timeString = String.format("%02d:%02d:00", hours, minutes);
-
             Time DUration = Time.valueOf(timeString);
             String priced = price.getText();
-            Double priceFunc = Double.parseDouble(priced);
-            ItemsHolder item = new ItemsHolder(itemname.getText(), description.getValue(), description1.getText(),description2.getText(), priceFunc, date.getValue(), StarTime, DUration);
-            ShopDataBase.danhSachSanPham.add(item);
+            Long priceFunc = Long.parseLong(priced);
+            //ItemsHolder item = new ItemsHolder("",itemname.getText(), priceFunc, StarTime, DUration);
+            //ShopDataBase.danhSachSanPham.add(item);
+            // Định dạng chuẩn: ADD_AUCTION|sellerUsername|itemType|itemName|startPrice|param1|param2
+
+            String message = "ADD_AUCTION|"+StoreDataInput.getUsername()+"|"+description.getValue()+"|"+itemname.getText()+"|"+description1.getText()+"|"+description2.getText()+"|" + priceFunc +"|"+StarTime+"|"+DUration;
+            SocketClient.getInstance().requestData(message);
+            System.out.println(message);
+
 
             System.out.println("Đăng bán thành công!");
         }
@@ -98,8 +102,7 @@ public class InvesterSellHandle implements Initializable {
 
     public void setDescription(ChoiceBox<String> description) {
         this.description = description;
-        description.getItems().addAll("","ELECTRONICS","ART","VEHICLE");
+        description.getItems().addAll("Thông Tin","ELECTRONICS","ART","VEHICLE");
         description.setValue(description.getItems().get(0));
     }
 }
-
