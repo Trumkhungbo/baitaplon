@@ -8,6 +8,13 @@ import com.bidding.server.core.AuctionService;
 import com.bidding.server.network.ClientHandler;
 import com.bidding.server.network.service.BroadcastService;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+
+import static com.bidding.server.core.Auction.ZONE_ID;
+
 public class AddAuctionCommand implements CommandHandler {
 
     private final AuctionService auctionService;
@@ -32,10 +39,6 @@ public class AddAuctionCommand implements CommandHandler {
         }
 
         String sellerUsername = parts[1];
-        if (!sellerUsername.equals(client.getCurrentUser())) {
-            client.sendMessage("ERROR|You can only create auctions for your own account");
-            return;
-        }
 
         String type = parts[2].toUpperCase();
 
@@ -63,8 +66,16 @@ public class AddAuctionCommand implements CommandHandler {
             String des1 = parts[4];
             String des2 = parts[5];
             double price = Double.parseDouble(parts[6]);
-            long startTime = Long.parseLong(parts[7]);
-            long durationMinutes = Long.parseLong(parts[8]);
+            LocalTime time = LocalTime.parse(parts[7]);
+            long startTime = time.atDate(LocalDate.now())
+                    .atZone(ZoneId.systemDefault())
+                    .toEpochSecond();
+            System.out.println(startTime);
+            LocalTime time1 = LocalTime.parse(parts[8]);
+            long durationMinutes = time1.atDate(LocalDate.now())
+                    .atZone(ZoneId.systemDefault())
+                    .toEpochSecond();
+            System.out.println(startTime);
 
             if (price <= 0) {
                 client.sendMessage("ERROR|Price must be greater than 0");

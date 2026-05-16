@@ -53,15 +53,16 @@ public class InvesterSellHandle implements Initializable {
             int hours = minutesInput / 60;
             int minutes = minutesInput % 60;
             String timeString = String.format("%02d:%02d:00", hours, minutes);
-
             Time DUration = Time.valueOf(timeString);
             String priced = price.getText();
-            Double priceFunc = Double.parseDouble(priced);
+            Long priceFunc = Long.parseLong(priced);
             //ItemsHolder item = new ItemsHolder("",itemname.getText(), priceFunc, StarTime, DUration);
             //ShopDataBase.danhSachSanPham.add(item);
             // Định dạng chuẩn: ADD_AUCTION|sellerUsername|itemType|itemName|startPrice|param1|param2
 
-            StartScence.client.sendMessage("ADD_AUCTION|"+StoreDataInput.getUsername()+"|"+description.getValue()+"|"+itemname.getText()+"|"+description1.getText()+"|"+description2.getText()+"|" + priceFunc +"|"+StarTime+"|"+DUration);
+            String message = "ADD_AUCTION|"+StoreDataInput.getUsername()+"|"+description.getValue()+"|"+itemname.getText()+"|"+description1.getText()+"|"+description2.getText()+"|" + priceFunc +"|"+StarTime+"|"+DUration;
+            StartScence.client.sendMessage(message);
+            System.out.println(message);
 
 
             System.out.println("Đăng bán thành công!");
