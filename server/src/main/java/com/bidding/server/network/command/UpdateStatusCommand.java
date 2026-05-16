@@ -2,10 +2,7 @@ package com.bidding.server.network.command;
 
 import com.bidding.server.core.AuctionService;
 import com.bidding.common.enums.AuctionStatus;
-import com.bidding.server.core.Auction;
 import com.bidding.server.network.ClientHandler;
-import com.bidding.server.repository.AuctionDAO;
-import com.bidding.server.repository.ItemDAO;
 
 public class UpdateStatusCommand implements CommandHandler {
 
@@ -32,29 +29,14 @@ public class UpdateStatusCommand implements CommandHandler {
         String auctionId = parts[1];
         String statusStr = parts[2];
 
-        Auction auction = auctionService.findAuctionById(auctionId);
-        if (auction == null) {
-            client.sendMessage("ERROR|Auction not found");
-            return;
-        }
-
         try {
             AuctionStatus newStatus = AuctionStatus.valueOf(statusStr.toUpperCase());
-            // Cập nhật trạng thái trên RAM
-            auction.setStatus(newStatus);
-
-            // LƯU Ý: Phải gọi DAO để cập nhật database
-            ItemDAO itemDAO = new ItemDAO();
-            AuctionDAO auctionDAO = new AuctionDAO(itemDAO);
-            // id trong Database là kiểu long
-            com.bidding.common.enums.AuctionStatus newStatusDAO = com.bidding.common.enums.AuctionStatus.valueOf(statusStr.toUpperCase());
-            auctionDAO.updateStatus(Long.parseLong(auctionId),newStatusDAO);
-
-            client.sendMessage("UPDATE_STATUS_SUCCESS|Auction " + auctionId + " is now " + newStatus.name());
+            String response = auctionService.updateStatus(auctionId, newStatus);
+            client.sendMessage(response);
         } catch (IllegalArgumentException e) {
             client.sendMessage("ERROR|Invalid status: " + statusStr);
         } catch (Exception e) {
-            client.sendMessage("ERROR|Database update failed: " + e.getMessage());
+            client.sendMessage("ERROR|Status update failed: " + e.getMessage());
         }
     }
 }

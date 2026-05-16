@@ -1,6 +1,7 @@
 package action.Authentication;
 
 import action.Core.SceneSwitch;
+import action.SocketClient;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -26,6 +27,7 @@ public class AdminLogginHandle {
         }
         else{
             if(currentDate.equals(IndependentDay)){
+                SocketClient.getInstance().requestData("ELEVATE");
                 sceneSwitch.SwitchToAnyWhere(event, "/views/AdminPage.fxml");
             }
             else{

@@ -1,5 +1,6 @@
 package action.MainUI;
 
+import java.io.IOException;
 import java.net.URL;
 import java.sql.Time;
 import java.time.LocalDate;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import action.Core.SceneSwitch;
 import action.SocketClient;
 import action.SocketListener;
 import action.SellingJobs.ItemsHolder;
@@ -80,8 +82,9 @@ public class AdminpageHandle implements Initializable, SocketListener {
     public void Confirm(ActionEvent event) {
         for (ItemsHolder item : ItemsTable.getItems()) {
             if (item.getCheckBox().isSelected()){
-                // Gửi lệnh lên Server để duyệt sản phẩm thành OPEN
                 SocketClient.getInstance().requestData("UPDATE_STATUS|" + item.getItemId()+"|OPEN" );
+            } else {
+                SocketClient.getInstance().requestData("UPDATE_STATUS|" + item.getItemId()+"|CANCELED" );
             }
         }
         SocketClient.getInstance().requestData("LIST_AUCTIONS");
@@ -116,14 +119,17 @@ public class AdminpageHandle implements Initializable, SocketListener {
 
     @Override
     public void onDataReceived(String data) {
+        System.out.println("AdminpageHandle received: " + data); // DEBUG
         if (data != null && data.startsWith("AUCTION_LIST|")) {
             String dataPart = data.substring("AUCTION_LIST|".length());
+            System.out.println("AdminpageHandle dataPart: " + dataPart); // DEBUG
 
             Platform.runLater(() -> {
                 list.clear(); // Xóa cũ đi
                 if (!dataPart.isEmpty()) {
                     String[] items = dataPart.split(";");
                     for (String itemData : items) {
+                        System.out.println("AdminpageHandle itemData: " + itemData); // DEBUG
                         String[] attributes = itemData.split(":");
                         if (attributes.length ==4) {
                             String id = attributes[0];
@@ -138,5 +144,9 @@ public class AdminpageHandle implements Initializable, SocketListener {
                 renderAuctions();
             });
         }
+    }
+    public void LogOut(ActionEvent event) throws IOException {
+        SceneSwitch sceneSwitch = new SceneSwitch();
+        sceneSwitch.SwitchToLogin(event);
     }
 }
