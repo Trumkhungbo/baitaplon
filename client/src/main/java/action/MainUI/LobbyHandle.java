@@ -1,5 +1,7 @@
 package action.MainUI;
 
+import action.SocketClient;
+import action.SocketListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -34,10 +36,18 @@ public class LobbyHandle implements Initializable {
     @FXML
     public BorderPane ShowingStage;
     public void MovingCenter(String URL) throws IOException {
+        // Kiểm tra xem Controller của bảng cũ có implements SocketListener không, nếu có thì gỡ luôn!
+        if (ShowingStage.getCenter() != null) {
+            Object oldController = ShowingStage.getCenter().getUserData();
+            if (oldController instanceof SocketListener) {
+                SocketClient.getInstance().removeListener((SocketListener) oldController);
+            }
+        }
         FXMLLoader loader = new FXMLLoader(getClass().getResource(URL));
         Parent root = loader.load();
-        root.prefHeight(500);
-        root.prefWidth(500);
+
+        // Gắn chính xác Controller hiện tại vào UserData của Node để hàm vòng sau có thể lôi ra xóa
+        root.setUserData(loader.getController());
         ShowingStage.setCenter(root);
     }
     public void ReturnLobby(ActionEvent event) throws IOException {

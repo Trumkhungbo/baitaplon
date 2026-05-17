@@ -4,6 +4,7 @@ import action.Core.SceneSwitch;
 import action.SocketClient;
 import action.SocketListener;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -54,12 +55,15 @@ public class LoginHandle implements SocketListener {
     }
 
     public void Register(ActionEvent clicked) throws IOException {
+        SocketClient.getInstance().removeListener(this);
         sceneSwitch.SwitchToRegister(clicked);
     }
     public void ForgotPassword(ActionEvent clicked) throws IOException {
+        SocketClient.getInstance().removeListener(this);
         sceneSwitch.SwitchToAnyWhere(clicked, "/views/ForgotPassword.fxml");
     }
     public void Adminloggin(ActionEvent clicked) throws IOException {
+        SocketClient.getInstance().removeListener(this);
         sceneSwitch.SwitchToAnyWhere(clicked, "/views/AdminLoggin.fxml");
     }
 
@@ -80,18 +84,29 @@ public class LoginHandle implements SocketListener {
     @Override
     public void onDataReceived(String data) {
         Platform.runLater(() -> {
-            if (data.startsWith("LOGIN_SUCCESS")) {
-                try {
-                    sceneSwitch.SwitchToAnyWhere(new ActionEvent(login.getScene().getWindow(), null), "/views/Lobby.fxml");
-                } catch (IOException e) {
-                    e.printStackTrace();
+            try {
+                JsonObject res = JsonParser.parseString(data).getAsJsonObject();
+                if (res.has("command") && res.get("command").getAsString().equals("LOGIN_RESULT")) {
+                    String status = res.get("status").getAsString();
+
+                    if (status.equals("SUCCESS")) {
+                        SocketClient.getInstance().removeListener(this);
+                        sceneSwitch.SwitchToAnyWhere(new ActionEvent(login.getScene().getWindow(), null), "/views/Lobby.fxml");
+                    } else {
+                        sceneSwitch.SwitchToLockPage(new ActionEvent(login.getScene().getWindow(), null), "/views/FailedLogin.fxml");
+                    }
                 }
-            } else if (data.startsWith("LOGIN_FAILED")) {
-                SceneSwitch sceneSwitch = new SceneSwitch();
-                try {
-                    sceneSwitch.SwitchToLockPage(new ActionEvent(login.getScene().getWindow(), null),"/views/FailedLogin.fxml");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+            } catch (Exception e) {
+                // Hỗ trợ backward compatibility nếu Server chưa sửa kịp phản hồi JSON
+                if (data.startsWith("LOGIN_SUCCESS")) {
+                    SocketClient.getInstance().removeListener(this);
+                    try {
+                        sceneSwitch.SwitchToAnyWhere(new ActionEvent(login.getScene().getWindow(), null), "/views/Lobby.fxml");
+                    } catch (IOException ioException) { ioException.printStackTrace(); }
+                } else if (data.startsWith("LOGIN_FAILED")) {
+                    try {
+                        sceneSwitch.SwitchToLockPage(new ActionEvent(login.getScene().getWindow(), null), "/views/FailedLogin.fxml");
+                    } catch (IOException ioException) { ioException.printStackTrace(); }
                 }
             }
         });

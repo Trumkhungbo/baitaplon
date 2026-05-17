@@ -7,6 +7,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.bidding.common.enums.AuctionStatus;
 
@@ -40,7 +41,7 @@ public class Auction {
         this.startTimeMillis = System.currentTimeMillis();
         this.durationMinutes = 5;
         this.exactEndTimeMillis = null;
-        this.bidHistory = new ArrayList<>();
+        this.bidHistory = new CopyOnWriteArrayList<>();
     }
 
     public String getId() {

@@ -7,9 +7,11 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 import action.Authentication.StoreItemDataInit;
-import action.Core.SceneSwitch;
+import action.MainUI.LobbyHandle;
 import action.SocketClient;
 import action.SocketListener;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -22,44 +24,36 @@ import javafx.scene.image.ImageView;
 
 public class ItemShowingHandle implements Initializable, SocketListener {
 
-    // Nếu bạn có gán ID cho 2 nút này trong Scene Builder thì thêm @FXML vào
-    @FXML
-    private Button buttonLeft;
-    @FXML
-    private Button buttonRight;
+    @FXML private Button buttonLeft;
+    @FXML private Button buttonRight;
+    @FXML private ImageView imageView;
+    @FXML private ImageView image;
 
-    @FXML
-    private ImageView imageView;
-
-    // Khởi tạo list trống để tránh NullPointer
     private List<Image> imageList = new ArrayList<>();
-
-    // Biến lưu giữ vị trí ảnh đang hiển thị
     private int currentIndex = 0;
-    @FXML
-    private Label name;
-    @FXML
-    private Label price;
-    @FXML
-    private Label status;
-    @FXML
-    private Label description;
-    @FXML
-    private Label date;
-    @FXML
-    private Label starTime;
-    @FXML
-    private Label duration;
+
+    @FXML private Label name;
+    @FXML private Label price;
+    @FXML private Label status;
+    @FXML private Label description;
+    @FXML private Label date;
+    @FXML private Label starTime;
+    @FXML private Label duration;
+    @FXML private TextField money;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle){
         SocketClient.getInstance().addListener(this);
         getItem();
     }
+
     public void getItem(){
-        SocketClient.getInstance().requestData("GET_AUCTION_DETAILS|"+ StoreItemDataInit.description);
+        JsonObject req = new JsonObject();
+        req.addProperty("command", "GET_AUCTION_DETAIL");
+        req.addProperty("auctionId", StoreItemDataInit.description);
+        SocketClient.getInstance().requestData(req.toString());
     }
-    @FXML
-    private TextField money;
+
     @FXML
     public void RaiseBind(ActionEvent actionEvent) {
         String auctionId = StoreItemDataInit.description;
@@ -75,35 +69,63 @@ public class ItemShowingHandle implements Initializable, SocketListener {
             return;
         }
 
-        SocketClient.getInstance().requestData("BID|" + auctionId + "|" + amountText);
+        JsonObject req = new JsonObject();
+        req.addProperty("command", "BID");
+        req.addProperty("auctionId", auctionId);
+        req.addProperty("amount", amountText);
+        SocketClient.getInstance().requestData(req.toString());
     }
+
     @FXML
     public void ReturnToInvesment(ActionEvent actionEvent) throws IOException {
-        SceneSwitch sceneSwitch = new SceneSwitch();
-        sceneSwitch.SwitchToAnyWhere(actionEvent,"/views/Lobby.fxml");
+        SocketClient.getInstance().removeListener(this);
+
+        //Sử dụng LobbyHandle để tráo ruột Center, KHÔNG dùng SceneSwitch nữa!
+        if (LobbyHandle.getInstance() != null) {
+            LobbyHandle.getInstance().ReturnInvesmentSite(actionEvent);
+        }
     }
-    @FXML
-    public ImageView image;
 
     @Override
     public void onDataReceived(String data) {
         Platform.runLater(() -> {
-            if (data.startsWith("AUCTION_DETAIL|")) {
-                String dataPart = data.substring("AUCTION_DETAIL|".length());
-                String[] attributes = dataPart.split(":");
-                String id = attributes[0];
-                name.setText(attributes[1]);
-                price.setText(attributes[3]);
-                status.setText(attributes[4]);
-                date.setText(attributes[5]);
-                starTime.setText(attributes[6]);
-                duration.setText(attributes[7]);
-            } else if (data.startsWith("BID_SUCCESS|") || data.startsWith("BID_UPDATE|")) {
-                status.setText("RUNNING");
-                price.setText(money.getText());
-                money.clear();
-            } else if (data.startsWith("ERROR|")) {
-                status.setText(data.substring("ERROR|".length()));
+            try {
+                JsonObject res = JsonParser.parseString(data).getAsJsonObject();
+                String command = res.has("command") ? res.get("command").getAsString() : "";
+
+                if (command.equals("AUCTION_DETAIL_RESULT")) {
+                    if (res.get("status").getAsString().equals("SUCCESS")) {
+                        name.setText(res.has("itemName") ? res.get("itemName").getAsString() : "Đang cập nhật");
+                        price.setText(res.has("currentPrice") ? res.get("currentPrice").getAsString() : "0");
+                        status.setText(res.has("auctionStatus") ? res.get("auctionStatus").getAsString() : "UNKNOWN");
+
+                        // Lắp dữ liệu thời gian
+                        date.setText(res.has("startDate") ? res.get("startDate").getAsString() : "--/--/----");
+                        starTime.setText(res.has("startTime") ? res.get("startTime").getAsString() : "--:--");
+                        duration.setText(res.has("duration") ? res.get("duration").getAsString() + " phút" : "0 phút");
+
+                    } else {
+                        status.setText(res.has("message") ? res.get("message").getAsString() : "Lỗi tải dữ liệu");
+                    }
+                }
+                else if (command.equals("BID_RESULT")) {
+                    if (res.get("status").getAsString().equals("SUCCESS")) {
+                        status.setText("RUNNING");
+                        price.setText(money.getText());
+                        money.clear();
+                    } else {
+                        status.setText(res.get("message").getAsString());
+                    }
+                }
+            } catch (Exception e) {
+                // Tương thích ngược nếu Server chưa bọc JSON kịp
+                if (data.startsWith("ERROR|")) {
+                    status.setText(data.substring("ERROR|".length()));
+                } else if (data.startsWith("BID_SUCCESS|")) {
+                    status.setText("RUNNING");
+                    price.setText(money.getText());
+                    money.clear();
+                }
             }
         });
     }

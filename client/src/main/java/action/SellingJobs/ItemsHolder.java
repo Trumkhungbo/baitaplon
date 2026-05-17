@@ -7,26 +7,23 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 public class ItemsHolder {
-    String itemId;
-    String itemname;
-    String iteminfomation;
-    String iteminformation1;
-    String iteminformation2;
-    Double itemprice;
-    LocalDate itemdate;
-    LocalTime itemtime;
-    Time itemduration;
-    CheckBox checkbox;
-    public ItemsHolder(String id,String name,  Double price, LocalTime time, Time duration) {
+    private String itemId;
+    private String itemname;
+    private Double itemprice;
+    private LocalDate itemdate;
+    private LocalTime itemtime;
+    private Time itemduration;
+    private CheckBox checkbox;
+
+    public ItemsHolder(String id, String name, Double price, LocalTime time, Time duration) {
         this.itemId = id;
         this.itemname = name;
         this.itemprice = price;
         this.itemtime = time;
         this.itemduration = duration;
-        this.checkbox=new CheckBox();
-
-
+        this.checkbox = new CheckBox();
     }
+
     public String getItemname() {
         return itemname;
     }
@@ -42,7 +39,9 @@ public class ItemsHolder {
     public Time getItemduration(){
         return itemduration;
     }
-    public CheckBox getCheckBox(){return checkbox;}
+    public CheckBox getCheckBox(){
+        return checkbox; // Lấy cái hộp tick ra để Admin bấm Confirm
+    }
     public String getItemId() {
         return itemId;
     }

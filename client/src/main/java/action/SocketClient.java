@@ -6,14 +6,17 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SocketClient {
     private Socket socket;
     private BufferedReader serverReader;
     private PrintWriter serverWriter;
-    private List<SocketListener> listeners = new ArrayList<>();
+
+
+    private List<SocketListener> listeners = new CopyOnWriteArrayList<>();
+
     private static SocketClient instance;
 
     private SocketClient() {}
@@ -26,15 +29,13 @@ public class SocketClient {
     }
 
     public void addListener(SocketListener listener) {
-        synchronized (listeners) {
+        if (!listeners.contains(listener)) {
             listeners.add(listener);
         }
     }
 
     public void removeListener(SocketListener listener) {
-        synchronized (listeners) {
-            listeners.remove(listener);
-        }
+        listeners.remove(listener);
     }
 
     public void connect(String host, int port) {
@@ -42,17 +43,15 @@ public class SocketClient {
             socket = new Socket(host, port);
             serverReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             serverWriter = new PrintWriter(new java.io.OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
-            System.out.println("Login to Server!");
+            System.out.println("Connected to Server!");
 
             Thread listenerThread = new Thread(() -> {
                 try {
                     String serverMessage;
                     while ((serverMessage = serverReader.readLine()) != null) {
                         System.out.println("Signal received: " + serverMessage);
-                        synchronized (listeners) {
-                            for (SocketListener listener : listeners) {
-                                listener.onDataReceived(serverMessage);
-                            }
+                        for (SocketListener listener : listeners) {
+                            listener.onDataReceived(serverMessage);
                         }
                     }
                 } catch (IOException e) {
@@ -63,10 +62,9 @@ public class SocketClient {
             listenerThread.start();
 
         } catch (IOException e) {
-            System.err.println("Error: " + e.getMessage());
+            System.err.println("Connection Error: " + e.getMessage());
         }
     }
-
 
     public void requestData(String message) {
         if (serverWriter != null) {

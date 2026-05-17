@@ -13,6 +13,8 @@ import com.bidding.server.repository.AuctionStateDAO;
 import com.bidding.server.repository.AutoBidDAO;
 import com.bidding.server.repository.BidHistoryDAO;
 import com.bidding.server.repository.ItemDAO;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -331,27 +333,28 @@ public class AuctionService {
     }
 
     public String updateStatus(String auctionId, AuctionStatus newStatus) {
-
+        JsonObject response = new JsonObject();
+        response.addProperty("command", "UPDATE_STATUS_RESULT");
         Auction auction = auctions.get(auctionId);
 
         if (auction == null) {
-            return "ERROR|Auction not found";
+            response.addProperty("status", "FAILED");
+            response.addProperty("message", "Auction not found");
+            return response.toString();
         }
-
         if (newStatus == null) {
-            return "ERROR|Invalid status";
+            response.addProperty("status", "FAILED");
+            response.addProperty("message", "Invalid status");
+            return response.toString();
         }
-
         synchronized (auction) {
             syncAuctionFromDatabase(auction);
             auction.setStatus(newStatus);
             persistAuctionState(auction);
         }
-
-        return "UPDATE_STATUS_SUCCESS|Auction "
-                + auctionId
-                + " is now "
-                + newStatus.name();
+        response.addProperty("status", "SUCCESS");
+        response.addProperty("message", "Auction " + auctionId + " is now " + newStatus.name());
+        return response.toString();
     }
 
     public String getWinner(String auctionId) {
@@ -386,14 +389,12 @@ public class AuctionService {
     }
 
     public String getAuctionList(boolean includePending) {
-
-        StringBuilder sb =
-                new StringBuilder("AUCTION_LIST|");
+        JsonObject response = new JsonObject();
+        response.addProperty("command", "AUCTION_LIST_RESULT");
+        JsonArray itemsArray = new JsonArray();
 
         boolean first = true;
-
         for (Auction auction : auctions.values()) {
-
             syncAuctionFromDatabase(auction);
 
             if (!includePending
@@ -402,22 +403,19 @@ public class AuctionService {
                 continue;
             }
 
-            if (!first) {
-                sb.append(";");
-            }
+            // Tạo 1 thẻ JSON cho mỗi sản phẩm
+            JsonObject item = new JsonObject();
+            item.addProperty("id", auction.getId());
+            item.addProperty("itemName", auction.getItemName());
+            item.addProperty("currentPrice", auction.getCurrentPrice());
+            item.addProperty("status", auction.getStatus().name());
 
-            sb.append(auction.getId())
-                    .append(":")
-                    .append(auction.getItemName())
-                    .append(":")
-                    .append((long) auction.getCurrentPrice())
-                    .append(":")
-                    .append(auction.getStatus());
-
-            first = false;
+            // Nhét vào mảng
+            itemsArray.add(item);
         }
 
-        return sb.toString();
+        response.add("items", itemsArray);
+        return response.toString();
     }
 
     public String approveAuction(String auctionId) {
@@ -593,10 +591,15 @@ public class AuctionService {
 
             processAutoBidChain(auction, now);
 
-            return "BID_SUCCESS"
-                    + "|auctionId=" + auctionId
-                    + "|user=" + username
-                    + "|amount=" + (long) amount;
+            JsonObject response = new JsonObject();
+            response.addProperty("command", "BID_RESULT");
+            response.addProperty("status", "SUCCESS");
+            response.addProperty("auctionId", auctionId);
+            response.addProperty("user", username);
+            response.addProperty("amount", (long) amount);
+            response.addProperty("message", "Bid placed successfully");
+
+            return response.toString();
         }
     }
 
@@ -959,36 +962,36 @@ public class AuctionService {
             );
         }
     }
+
     public String getAuctionDetail(String auctionId) {
-
+        JsonObject response = new JsonObject();
+        response.addProperty("command", "AUCTION_DETAIL_RESULT");
         Auction auction = auctions.get(auctionId);
-
         if (auction == null) {
-            return "ERROR|Auction not found";
+            response.addProperty("status", "FAILED");
+            response.addProperty("message", "Auction not found");
+            return response.toString();
         }
 
         syncAuctionFromDatabase(auction);
 
-        String bidder =
-                auction.getHighestBidder() == null
-                        ? "NONE"
-                        : auction.getHighestBidder();
+        String bidder = auction.getHighestBidder() == null ? "NONE" : auction.getHighestBidder();
+        response.addProperty("status", "SUCCESS");
+        response.addProperty("id", auction.getId());
+        response.addProperty("seller", auction.getSellerUsername());
+        response.addProperty("itemName", auction.getItemName());
+        response.addProperty("startPrice", (long) auction.getStartPrice());
+        response.addProperty("currentPrice", (long) auction.getCurrentPrice());
+        response.addProperty("highestBidder", bidder);
+        response.addProperty("auctionStatus", auction.getStatus().name());
 
-        return "AUCTION_DETAIL"
-                + "|id=" + auction.getId()
-                + "|seller=" + auction.getSellerUsername()
-                + "|itemName=" + auction.getItemName()
-                + "|startPrice=" + (long) auction.getStartPrice()
-                + "|currentPrice=" + (long) auction.getCurrentPrice()
-                + "|highestBidder=" + bidder
-                + "|status=" + auction.getStatus()
-                + "|startDate=" + auction.getStartDate()
-                + "|startTime=" + auction.getStartClockTime()
-                + "|duration=" + auction.getDurationMinutes()
-                + "|bidCount="
-                + bidHistoryDAO.countByAuctionId(
-                auctionId
-        );
+        // Thời gian
+        response.addProperty("startDate", String.valueOf(auction.getStartDate()));
+        response.addProperty("startTime", String.valueOf(auction.getStartClockTime()));
+        response.addProperty("duration", auction.getDurationMinutes());
+        response.addProperty("bidCount", bidHistoryDAO.countByAuctionId(auctionId));
+
+        return response.toString();
     }
 
     public String getProductInfo(String auctionId) {

@@ -42,11 +42,15 @@ public class ResetPasswordHandle implements SocketListener {
     }
 
     // 2. Lắng nghe phản hồi từ Server
-    String req = "RESET_PASSWORD|" + StoreDataInput.username + "|" + pass;
-    SocketClient.getInstance().requestData(req);
+    JsonObject req = new JsonObject();
+    req.addProperty("command", "RESET_PASSWORD");
+    req.addProperty("username", StoreDataInput.username);
+    req.addProperty("newPassword", pass);
+    SocketClient.getInstance().requestData(req.toString());
   }
 
   public void Cancel(ActionEvent event) throws IOException {
+    SocketClient.getInstance().removeListener(this);
     sceneSwitch.SwitchToLogin(event);
   }
 
@@ -71,6 +75,7 @@ public class ResetPasswordHandle implements SocketListener {
             ActionEvent dummyEvent = new ActionEvent(newPassword, null);
 
             // 1. Hiện PopUp báo Reset thành công (Màn hình này sẽ khóa giao diện cho đến khi user tắt đi)
+            SocketClient.getInstance().removeListener(this);
             sceneSwitch.SwitchToLockPage(dummyEvent, "/views/ResetPasswordPopUp.fxml");
 
             // 2. Sau khi user tắt PopUp, tự động chuyển họ về màn hình đăng nhập

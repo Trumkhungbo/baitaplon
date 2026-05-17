@@ -2,6 +2,7 @@ package action.Authentication;
 
 import action.Core.SceneSwitch;
 import action.SocketClient;
+import com.google.gson.JsonObject;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -27,15 +28,15 @@ public class AdminLogginHandle {
         }
         else{
             if(currentDate.equals(IndependentDay)){
-                SocketClient.getInstance().requestData("ELEVATE");
+                JsonObject req = new JsonObject();
+                req.addProperty("command", "ELEVATE");
+
+                SocketClient.getInstance().requestData(req.toString());
                 sceneSwitch.SwitchToAnyWhere(event, "/views/AdminPage.fxml");
             }
             else{
-                label.setText(currentDate.getDayOfMonth()+"/"+currentDate.getMonthValue()+"/"+currentDate.getYear());
-                label.setText("");
                 label.setText("WRONG!!!!");
             }
-
         }
 
 

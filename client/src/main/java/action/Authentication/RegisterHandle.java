@@ -4,6 +4,8 @@ import action.Core.SceneSwitch;
 import action.SocketClient;
 import action.SocketListener;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -49,6 +51,7 @@ public class RegisterHandle implements SocketListener {
         }
         else if(!password.equals(confirmPassword)) {
             System.out.println("Passwords do not match");
+            sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
         }
         else if (!email.matches("^[a-zA-Z0-9._%+-]+@gmail\\.com$")) {
             sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
@@ -56,7 +59,7 @@ public class RegisterHandle implements SocketListener {
         else if (!phoneNumber.matches("^[0-9]{10}$")) {
             sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
         }
-        else if (!personalID.matches("[0-9]{12}$"))
+        else if (!personalID.matches("^[0-9]{12}$"))
         {
             sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
         }
@@ -73,28 +76,38 @@ public class RegisterHandle implements SocketListener {
     }
 
     public void Login(ActionEvent event) throws IOException {
+        SocketClient.getInstance().removeListener(this);
         sceneswitch.SwitchToLogin(event);
     }
 
     @Override
     public void onDataReceived(String data) {
-        javafx.application.Platform.runLater(() -> {
-            if (data.startsWith("REGISTER_SUCCESS")) {
-                try {
-                    SceneSwitch sceneswitch = new SceneSwitch();
-                    sceneswitch.SwitchToLogin(new ActionEvent(Name.getScene().getWindow(), null));
-                    sceneswitch.SwitchToLockPage(new ActionEvent(Name.getScene().getWindow(), null), "/views/RegisterPopUp.fxml");
-                } catch (IOException e) {
-                    e.printStackTrace();
+        Platform.runLater(() -> {
+            try {
+                // 1. Dịch chuỗi nhận được thành JSON
+                JsonObject res = JsonParser.parseString(data).getAsJsonObject();
+
+                // 2. Kiểm tra xem có đúng là gói tin phản hồi Đăng ký không
+                if (res.has("command") && res.get("command").getAsString().equals("REGISTER_RESULT")) {
+                    String status = res.get("status").getAsString();
+
+                    if (status.equals("SUCCESS")) {
+                        // Đăng ký thành công -> Gỡ tai nghe -> Bật Pop-up -> Chuyển về Login
+                        SocketClient.getInstance().removeListener(this);
+                        try {
+                            sceneswitch.SwitchToLogin(new ActionEvent(Name.getScene().getWindow(), null));
+                            sceneswitch.SwitchToLockPage(new ActionEvent(Name.getScene().getWindow(), null), "/views/RegisterPopUp.fxml");
+                        } catch (IOException e) { e.printStackTrace(); }
+
+                    } else {
+                        // Đăng ký thất bại (Trùng tài khoản) -> Bật Pop-up báo lỗi
+                        try {
+                            sceneswitch.SwitchToLockPage(new ActionEvent(Name.getScene().getWindow(), null), "/views/UsedAccount.fxml");
+                        } catch (IOException e) { e.printStackTrace(); }
+                    }
                 }
-            } else if (data.startsWith("REGISTER_FAILED")) {
-                try {
-                    // Tài khoản đã tồn tại hoặc lỗi
-                    SceneSwitch sceneswitch = new SceneSwitch();
-                    sceneswitch.SwitchToLockPage(new ActionEvent(Name.getScene().getWindow(), null), "/views/UsedAccount.fxml");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
     }

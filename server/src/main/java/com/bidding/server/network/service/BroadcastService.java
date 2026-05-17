@@ -2,6 +2,8 @@ package com.bidding.server.network.service;
 
 import com.bidding.server.core.AuctionService;
 import com.bidding.server.network.AuctionServer;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class BroadcastService {
 
@@ -19,15 +21,16 @@ public class BroadcastService {
             return;
         }
 
-        server.broadcastToAuctionRoom(
-                "BID_UPDATE|auctionId=" + auctionId
-                        + "|highestBid=" + (long) auction.getCurrentPrice()
-                        + "|bidder=" + auction.getHighestBidder()
-                        + "|startDate=" + auction.getStartDate()
-                        + "|startTime=" + auction.getStartClockTime()
-                        + "|duration=" + auction.getDurationMinutes(),
-                auctionId
-        );
+        JsonObject response = new JsonObject();
+        response.addProperty("command", "BID_UPDATE");
+        response.addProperty("auctionId", auctionId);
+        response.addProperty("highestBid", (long) auction.getCurrentPrice());
+        response.addProperty("bidder", auction.getHighestBidder() != null ? auction.getHighestBidder() : "NONE");
+        response.addProperty("startDate", auction.getStartDate());
+        response.addProperty("startTime", auction.getStartClockTime());
+        response.addProperty("duration", auction.getDurationMinutes());
+
+        server.broadcastToAuctionRoom(response.toString(), auctionId);
     }
 
     public void broadcastAuctionClosed(String auctionId) {
@@ -36,12 +39,13 @@ public class BroadcastService {
             return;
         }
 
-        server.broadcastToAuctionRoom(
-                "AUCTION_CLOSED|auctionId=" + auctionId
-                        + "|winner=" + auction.getHighestBidder()
-                        + "|finalPrice=" + (long) auction.getCurrentPrice(),
-                auctionId
-        );
+        JsonObject response = new JsonObject();
+        response.addProperty("command", "AUCTION_CLOSED");
+        response.addProperty("auctionId", auctionId);
+        response.addProperty("winner", auction.getHighestBidder() != null ? auction.getHighestBidder() : "NONE");
+        response.addProperty("finalPrice", (long) auction.getCurrentPrice());
+
+        server.broadcastToAuctionRoom(response.toString(), auctionId);
     }
 
     public void broadcastAuctionClosedMessage(String message) {
@@ -58,8 +62,18 @@ public class BroadcastService {
     }
 
     private String extractAuctionId(String message) {
-        String[] parts = message.split("\\|");
+        // Cố gắng đọc định dạng JSON trước
+        try {
+            if (message.trim().startsWith("{")) {
+                JsonObject json = JsonParser.parseString(message).getAsJsonObject();
+                if (json.has("auctionId")) {
+                    return json.get("auctionId").getAsString();
+                }
+            }
+        } catch (Exception e) {}
 
+        // Tương thích ngược (Fallback)
+        String[] parts = message.split("\\|");
         for (String part : parts) {
             if (part.startsWith("auctionId=")) {
                 return part.substring("auctionId=".length());

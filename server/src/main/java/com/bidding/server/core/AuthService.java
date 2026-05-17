@@ -16,8 +16,13 @@ public class AuthService {
     }
 
     public String login(String username, String password) {
+        JsonObject response = new JsonObject();
+        response.addProperty("command", "LOGIN_RESULT");
+
         if (username == null || password == null) {
-            return "LOGIN_FAILED|Back to refill username or password";
+            response.addProperty("status", "FAILED");
+            response.addProperty("message", "Back to refill username or password");
+            return response.toString();
         }
 
         User foundUser = userDAO.findByUsername(username);
@@ -25,10 +30,15 @@ public class AuthService {
             if (PasswordHasher.needsUpgrade(foundUser.getPasswordHash())) {
                 userDAO.updatePasswordHash(username, PasswordHasher.hash(password));
             }
-            // Tra ve role de client luu vao session, tranh check admin bang username
-            return "LOGIN_SUCCESS|" + foundUser.getRole().name() + "|Welcome " + username;
+            response.addProperty("status", "SUCCESS");
+            response.addProperty("role", foundUser.getRole().name());
+            response.addProperty("message", "Welcome " + username);
+            return response.toString();
         }
-        return "LOGIN_FAILED|Invalid username or password";
+
+        response.addProperty("status", "FAILED");
+        response.addProperty("message", "Invalid username or password");
+        return response.toString();
     }
 
     public UserRole getUserRole(String username) {
@@ -37,11 +47,18 @@ public class AuthService {
     }
 
     public String register(String username, String password,String phoneNumber,String email,String personalID) {
+        JsonObject response = new JsonObject();
+        response.addProperty("command", "REGISTER_RESULT");
+
         if (username == null || username.trim().isEmpty()) {
-            return "REGISTER_FAILED|Empty username";
+            response.addProperty("status", "FAILED");
+            response.addProperty("message", "Empty username");
+            return response.toString();
         }
         if (userDAO.existsByUsername(username)) {
-            return "REGISTER_FAILED|Unable to add Username";
+            response.addProperty("status", "FAILED");
+            response.addProperty("message", "Unable to add Username");
+            return response.toString();
         }
         String normalizedEmail = (email == null || email.trim().isEmpty())
                 ? username.trim() + "@local.auction"
@@ -59,16 +76,23 @@ public class AuthService {
 
         try {
             userDAO.save(newUser);
-            return "REGISTER_SUCCESS|Register Success";
+            response.addProperty("status", "SUCCESS");
+            response.addProperty("message", "Register Success");
         } catch (RuntimeException e) {
-            return "REGISTER_FAILED|Unable to add Username";
+            response.addProperty("status", "FAILED");
+            response.addProperty("message", "Unable to add Username");
         }
+        return response.toString();
     }
 
     public String accountInformation(String username) {
         User user = userDAO.findByUsername(username);
+
         if (user == null) {
-            return "ERROR|User not found";
+            JsonObject err = new JsonObject();
+            err.addProperty("command", "ERROR");
+            err.addProperty("message", "User not found");
+            return err.toString();
         }
 
         JsonObject response = new JsonObject();
@@ -127,28 +151,36 @@ public class AuthService {
     }
 
     public String addMoney(String username, String money) {
+        JsonObject response = new JsonObject();
+
         try {
             String cleanUsername = username.trim();
             double amountToAdd = Double.parseDouble(money.trim());
 
             User user = userDAO.findByUsername(cleanUsername);
             if (user == null) {
-                return "{\"command\":\"ERROR\", \"message\":\"User not found\"}";
+                response.addProperty("command", "ERROR");
+                response.addProperty("message", "User not found");
+                return response.toString();
             }
 
             if (user instanceof Bidder bidder) {
                 double newTotal = bidder.getBalance() + amountToAdd;
                 userDAO.updateBalance(cleanUsername, newTotal);
 
-                JsonObject response = new JsonObject();
                 response.addProperty("command", "MONEY_UPDATE");
                 response.addProperty("balance", String.format("%.2f", newTotal));
                 return response.toString();
             }
 
-            return "{\"command\":\"ERROR\", \"message\":\"Only bidders can add money\"}";
+            response.addProperty("command", "ERROR");
+            response.addProperty("message", "Only bidders can add money");
+            return response.toString();
+
         } catch (NumberFormatException e) {
-            return "{\"command\":\"ERROR\", \"message\":\"Invalid money format\"}";
+            response.addProperty("command", "ERROR");
+            response.addProperty("message", "Invalid money format");
+            return response.toString();
         }
     }
 }

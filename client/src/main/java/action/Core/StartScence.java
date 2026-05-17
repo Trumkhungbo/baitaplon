@@ -13,14 +13,13 @@ public class StartScence extends Application {
         SocketClient.getInstance().connect("127.0.0.1", 888);
         FXMLLoader fxmloader = new FXMLLoader(StartScence.class.getResource("/views/login.fxml"));
         Scene scene = new Scene(fxmloader.load());
-        Stage stage = new Stage();
-        stage.setScene(scene);
-        scene.getStylesheets().add(getClass().getResource("/views/global.css").toExternalForm());
-        stage.show();
-        Image icon = new Image(StartScence.class.getResourceAsStream("/assets/Icon.png"));
-        stage.getIcons().add(icon);
-    }
+        primaryStage.setScene(scene);
 
+        scene.getStylesheets().add(getClass().getResource("/views/global.css").toExternalForm());
+        primaryStage.show();
+        Image icon = new Image(StartScence.class.getResourceAsStream("/assets/Icon.png"));
+        primaryStage.getIcons().add(icon);
+    }
     @Override
     public void stop() throws Exception {
         System.exit(0);

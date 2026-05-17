@@ -1,21 +1,15 @@
 package action.Authentication;
 
+import action.Core.SceneSwitch;
 import action.SocketClient;
 import action.SocketListener;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import javafx.application.Platform;
-import javafx.scene.control.Alert;
-import action.Core.SceneSwitch;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.MediaView;
-import javafx.stage.Stage;
-import java.io.File;
+
 import java.io.IOException;
 
 public class ForgotPasswordHandle implements SocketListener {
@@ -59,6 +53,7 @@ public class ForgotPasswordHandle implements SocketListener {
 
     }
     public void BackToLogin(ActionEvent event) throws IOException {
+        SocketClient.getInstance().removeListener(this);
         sceneswitch.SwitchToLogin(event);
     }
 
@@ -70,17 +65,16 @@ public class ForgotPasswordHandle implements SocketListener {
 
                 if (res.has("command") && res.get("command").getAsString().equals("FORGOT_PASSWORD_RESULT")) {
                     if (res.get("status").getAsString().equals("SUCCESS")) {
-                        Platform.runLater(() -> {
                             try {
                                 // 1. Lưu tạm username vào biến static
                                 StoreDataInput.username = username.getText();
                                 // 2. Chuyển sang màn hình FXML mới
+                                SocketClient.getInstance().removeListener(this);
                                 SceneSwitch sceneSwitch = new SceneSwitch();
                                 sceneSwitch.SwitchToAnyWhere(new ActionEvent(username.getScene().getWindow(), null), "/views/ResetPassword.fxml");
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
-                        });
 
                     } else {
                         // Sai thông tin -> Hiện màn hình lỗi

@@ -39,8 +39,10 @@ public class ClientHandler implements Runnable {
         try {
             initStreams();
 
-            sendMessage("CONNECTED|Welcome to the Auction Server");
-            sendMessage("INFO|Supported commands: PING, LOGIN|user|pass, LIST_AUCTIONS, GET_AUCTION_DETAIL|auctionId, ADD_AUCTION|seller|itemName|startPrice, WATCH|auctionId, BID|auctionId|amount, QUIT");
+            JsonObject greeting = new JsonObject();
+            greeting.addProperty("command", "INFO");
+            greeting.addProperty("message", "Welcome to the Auction Server. JSON API is Ready!");
+            sendMessage(greeting.toString());
 
             String clientMessage;
             while (connected && (clientMessage = reader.readLine()) != null) {
