@@ -139,6 +139,15 @@ public class ClientHandler implements Runnable {
                     getJsonString(json, "status")
             };
             case "ADD_AUCTION" -> buildJsonAddAuctionParts(json);
+            case "UPLOAD_IMAGE" -> new String[]{
+                    "UPLOAD_IMAGE",
+                    getJsonString(json, "extension"),
+                    getJsonString(json, "data")
+            };
+            case "GET_IMAGE" -> new String[]{
+                    "GET_IMAGE",
+                    getJsonString(json, "filename")
+            };
             default -> new String[]{command};
         };
     }
@@ -153,7 +162,8 @@ public class ClientHandler implements Runnable {
                 firstJsonString(json, "des2", "param2", "warrantyMonths", "mileage", "creationYear"),
                 firstJsonString(json, "price", "startPrice", "startingPrice"),
                 getJsonString(json, "startTime"),
-                getJsonString(json, "durationMinutes")
+                getJsonString(json, "durationMinutes"),
+                getJsonString(json, "imageUrl")
         };
     }
 

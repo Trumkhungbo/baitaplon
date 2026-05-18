@@ -6,7 +6,6 @@ import com.bidding.common.model.Entity;
 public abstract class Item extends Entity {
 
     private String name;
-    private String description;
     private double startingPrice;
     private ItemType itemType;
     private String imageUrl;
@@ -17,7 +16,6 @@ public abstract class Item extends Entity {
 
     public Item(
             String name,
-            String description,
             double startingPrice,
             ItemType itemType,
             String imageUrl
@@ -25,7 +23,6 @@ public abstract class Item extends Entity {
         super();
 
         this.name = name;
-        this.description = description;
         this.startingPrice = startingPrice;
         this.itemType = itemType;
         this.imageUrl = imageUrl;
@@ -42,19 +39,6 @@ public abstract class Item extends Entity {
         }
 
         this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-
-        if (description == null) {
-            description = "";
-        }
-
-        this.description = description;
     }
 
     public double getStartingPrice() {
@@ -97,7 +81,6 @@ public abstract class Item extends Entity {
         return "Item{" +
                 "id=" + getId() +
                 ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
                 ", startingPrice=" + startingPrice +
                 ", itemType=" + itemType +
                 ", imageUrl='" + imageUrl + '\'' +

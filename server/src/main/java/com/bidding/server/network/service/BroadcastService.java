@@ -2,8 +2,6 @@ package com.bidding.server.network.service;
 
 import com.bidding.server.core.AuctionService;
 import com.bidding.server.network.AuctionServer;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 public class BroadcastService {
 
@@ -21,16 +19,17 @@ public class BroadcastService {
             return;
         }
 
-        JsonObject response = new JsonObject();
-        response.addProperty("command", "BID_UPDATE");
-        response.addProperty("auctionId", auctionId);
-        response.addProperty("highestBid", (long) auction.getCurrentPrice());
-        response.addProperty("bidder", auction.getHighestBidder() != null ? auction.getHighestBidder() : "NONE");
-        response.addProperty("startDate", auction.getStartDate());
-        response.addProperty("startTime", auction.getStartClockTime());
-        response.addProperty("duration", auction.getDurationMinutes());
+        // Khắc phục lỗi in chữ "null" ra màn hình người dùng
+        String bidder = auction.getHighestBidder() != null ? auction.getHighestBidder() : "NONE";
 
-        server.broadcastToAuctionRoom(response.toString(), auctionId);
+        server.broadcastToAuctionRoom(
+                "BID_UPDATE|auctionId=" + auctionId
+                        + "|highestBid=" + (long) auction.getCurrentPrice()
+                        + "|bidder=" + bidder
+                        + "|duration=" + auction.getDurationMinutes()
+                        + "|endTime=" + auction.getEndTime(),
+                auctionId
+        );
     }
 
     public void broadcastAuctionClosed(String auctionId) {
@@ -39,18 +38,23 @@ public class BroadcastService {
             return;
         }
 
-        JsonObject response = new JsonObject();
-        response.addProperty("command", "AUCTION_CLOSED");
-        response.addProperty("auctionId", auctionId);
-        response.addProperty("winner", auction.getHighestBidder() != null ? auction.getHighestBidder() : "NONE");
-        response.addProperty("finalPrice", (long) auction.getCurrentPrice());
+        // Khắc phục lỗi in chữ "null" khi cuộc đấu giá không có người mua
+        String winner = auction.getHighestBidder() != null ? auction.getHighestBidder() : "NONE";
 
-        server.broadcastToAuctionRoom(response.toString(), auctionId);
+        server.broadcastToAuctionRoom(
+                "AUCTION_CLOSED|auctionId=" + auctionId
+                        + "|winner=" + winner
+                        + "|finalPrice=" + (long) auction.getCurrentPrice(),
+                auctionId
+        );
     }
 
     public void broadcastAuctionClosedMessage(String message) {
         String auctionId = extractAuctionId(message);
-        server.broadcastToAuctionRoom(message, auctionId);
+        // Kiểm tra an toàn để bảo vệ Server không bị crash do NullPointerException
+        if (auctionId != null) {
+            server.broadcastToAuctionRoom(message, auctionId);
+        }
     }
 
     public void broadcastLobbyUpdate(String message) {
@@ -62,17 +66,10 @@ public class BroadcastService {
     }
 
     private String extractAuctionId(String message) {
-        // Cố gắng đọc định dạng JSON trước
-        try {
-            if (message.trim().startsWith("{")) {
-                JsonObject json = JsonParser.parseString(message).getAsJsonObject();
-                if (json.has("auctionId")) {
-                    return json.get("auctionId").getAsString();
-                }
-            }
-        } catch (Exception e) {}
+        if (message == null || message.isEmpty()) {
+            return null;
+        }
 
-        // Tương thích ngược (Fallback)
         String[] parts = message.split("\\|");
         for (String part : parts) {
             if (part.startsWith("auctionId=")) {

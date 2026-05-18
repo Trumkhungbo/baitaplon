@@ -2,16 +2,19 @@ package action.SellingJobs;
 
 import java.io.IOException;
 import java.net.URL;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 import action.Authentication.StoreItemDataInit;
-import action.MainUI.LobbyHandle;
+import action.Core.SceneSwitch;
 import action.SocketClient;
 import action.SocketListener;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -24,10 +27,12 @@ import javafx.scene.image.ImageView;
 
 public class ItemShowingHandle implements Initializable, SocketListener {
 
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+
     @FXML private Button buttonLeft;
     @FXML private Button buttonRight;
     @FXML private ImageView imageView;
-    @FXML private ImageView image;
+    @FXML private ImageView image; // Để tương thích với FXML cũ nếu có
 
     private List<Image> imageList = new ArrayList<>();
     private int currentIndex = 0;
@@ -48,10 +53,8 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     }
 
     public void getItem(){
-        JsonObject req = new JsonObject();
-        req.addProperty("command", "GET_AUCTION_DETAIL");
-        req.addProperty("auctionId", StoreItemDataInit.description);
-        SocketClient.getInstance().requestData(req.toString());
+        // Đồng bộ lệnh gửi dạng số ít, có tham số cấu trúc key=value rõ ràng
+        SocketClient.getInstance().requestData("GET_AUCTION_DETAIL|auctionId=" + StoreItemDataInit.description);
     }
 
     @FXML
@@ -69,63 +72,81 @@ public class ItemShowingHandle implements Initializable, SocketListener {
             return;
         }
 
-        JsonObject req = new JsonObject();
-        req.addProperty("command", "BID");
-        req.addProperty("auctionId", auctionId);
-        req.addProperty("amount", amountText);
-        SocketClient.getInstance().requestData(req.toString());
+        SocketClient.getInstance().requestData("BID|auctionId=" + auctionId + "|amount=" + amountText);
     }
 
     @FXML
     public void ReturnToInvesment(ActionEvent actionEvent) throws IOException {
         SocketClient.getInstance().removeListener(this);
-
-        //Sử dụng LobbyHandle để tráo ruột Center, KHÔNG dùng SceneSwitch nữa!
-        if (LobbyHandle.getInstance() != null) {
-            LobbyHandle.getInstance().ReturnInvesmentSite(actionEvent);
-        }
+        SceneSwitch sceneSwitch = new SceneSwitch();
+        sceneSwitch.SwitchToAnyWhere(actionEvent, "/views/Lobby.fxml");
     }
 
     @Override
     public void onDataReceived(String data) {
         Platform.runLater(() -> {
-            try {
-                JsonObject res = JsonParser.parseString(data).getAsJsonObject();
-                String command = res.has("command") ? res.get("command").getAsString() : "";
+            if (data == null || data.isEmpty()) return;
 
-                if (command.equals("AUCTION_DETAIL_RESULT")) {
-                    if (res.get("status").getAsString().equals("SUCCESS")) {
-                        name.setText(res.has("itemName") ? res.get("itemName").getAsString() : "Đang cập nhật");
-                        price.setText(res.has("currentPrice") ? res.get("currentPrice").getAsString() : "0");
-                        status.setText(res.has("auctionStatus") ? res.get("auctionStatus").getAsString() : "UNKNOWN");
+            String[] parts = data.split("\\|");
+            String command = parts[0];
 
-                        // Lắp dữ liệu thời gian
-                        date.setText(res.has("startDate") ? res.get("startDate").getAsString() : "--/--/----");
-                        starTime.setText(res.has("startTime") ? res.get("startTime").getAsString() : "--:--");
-                        duration.setText(res.has("duration") ? res.get("duration").getAsString() + " phút" : "0 phút");
+            // Tự động đưa toàn bộ tham số nhận được vào Map để đọc theo tên khóa (Key) an toàn
+            Map<String, String> params = new HashMap<>();
+            for (int i = 1; i < parts.length; i++) {
+                String part = parts[i];
+                if (part.contains("=")) {
+                    String[] keyValue = part.split("=", 2);
+                    params.put(keyValue[0].trim(), keyValue[1].trim());
+                }
+            }
 
-                    } else {
-                        status.setText(res.has("message") ? res.get("message").getAsString() : "Lỗi tải dữ liệu");
+            if (command.equals("AUCTION_DETAIL")) {
+                name.setText(params.getOrDefault("itemName", "Đang cập nhật"));
+                price.setText(params.getOrDefault("currentPrice", "0"));
+                status.setText(params.getOrDefault("status", "UNKNOWN"));
+                date.setText(params.getOrDefault("startDate", "--/--/----"));
+
+                if (params.containsKey("startTime")) {
+                    try {
+                        long startTimeMillis = Long.parseLong(params.get("startTime"));
+                        String formattedTime = Instant.ofEpochMilli(startTimeMillis)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalTime()
+                                .format(TIME_FORMATTER);
+                        starTime.setText(formattedTime);
+                    } catch (NumberFormatException e) {
+                        starTime.setText(params.get("startTime"));
                     }
                 }
-                else if (command.equals("BID_RESULT")) {
-                    if (res.get("status").getAsString().equals("SUCCESS")) {
-                        status.setText("RUNNING");
-                        price.setText(money.getText());
-                        money.clear();
-                    } else {
-                        status.setText(res.get("message").getAsString());
-                    }
+
+                String durationVal = params.containsKey("duration") ? params.get("duration") : params.getOrDefault("durationMinutes", "0");
+                duration.setText(durationVal + " phút");
+
+                // Cập nhật ảnh sản phẩm lên ImageView nếu có link từ Server
+                String imageUrl = params.getOrDefault("imageUrl", "");
+                if (!imageUrl.isEmpty() && imageView != null) {
+                    try {
+                        imageView.setImage(new Image(imageUrl));
+                    } catch (Exception ignored) {}
                 }
-            } catch (Exception e) {
-                // Tương thích ngược nếu Server chưa bọc JSON kịp
-                if (data.startsWith("ERROR|")) {
-                    status.setText(data.substring("ERROR|".length()));
-                } else if (data.startsWith("BID_SUCCESS|")) {
+            }
+            else if (command.equals("BID_UPDATE") || command.equals("BID_RESULT") || command.equals("BID_SUCCESS")) {
+                String resStatus = params.getOrDefault("status", "SUCCESS");
+                if (resStatus.equals("SUCCESS")) {
                     status.setText("RUNNING");
-                    price.setText(money.getText());
+                    // Cập nhật giá cao nhất chính xác trả về từ Server
+                    if (params.containsKey("highestBid")) {
+                        price.setText(params.get("highestBid"));
+                    } else if (params.containsKey("amount")) {
+                        price.setText(params.get("amount"));
+                    }
                     money.clear();
+                } else {
+                    status.setText(params.getOrDefault("message", "Lỗi đặt cược"));
                 }
+            }
+            else if (command.equals("ERROR")) {
+                status.setText(params.getOrDefault("message", "Đã xảy ra lỗi!"));
             }
         });
     }

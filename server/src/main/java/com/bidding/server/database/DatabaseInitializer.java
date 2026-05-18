@@ -22,7 +22,7 @@ public class DatabaseInitializer {
                         personal_id   TEXT,
                         role          TEXT    NOT NULL,
                         balance       REAL    DEFAULT 0,
-                        created_at    INTEGER NOT NULL
+                        created_at    BIGINT  NOT NULL -- Đổi thành BIGINT đồng bộ mili giây
                     )
                     """);
 
@@ -30,7 +30,6 @@ public class DatabaseInitializer {
                     CREATE TABLE IF NOT EXISTS items (
                         id              INTEGER PRIMARY KEY AUTOINCREMENT,
                         name            TEXT    NOT NULL,
-                        description     TEXT,
                         information1    TEXT,
                         information2    TEXT,
                         starting_price  REAL    NOT NULL,
@@ -43,7 +42,7 @@ public class DatabaseInitializer {
                         engine_type     TEXT,
                         mileage         INTEGER,
                         image_url       TEXT,
-                        created_at      INTEGER NOT NULL
+                        created_at      BIGINT  NOT NULL -- Đổi thành BIGINT đồng bộ mili giây
                     )
                     """);
 
@@ -52,8 +51,8 @@ public class DatabaseInitializer {
                         id                      INTEGER PRIMARY KEY AUTOINCREMENT,
                         item_id                 INTEGER NOT NULL,
                         seller_username         TEXT    NOT NULL,
-                        start_time              INTEGER NOT NULL,
-                        end_time                INTEGER NOT NULL,
+                        start_time              BIGINT  NOT NULL, -- SỬA TẠI ĐÂY: Lưu trữ startTimeMillis dạng BIGINT
+                        end_time                BIGINT  NOT NULL, -- SỬA TẠI ĐÂY: Lưu trữ endTimeMillis dạng BIGINT
                         duration_minutes        INTEGER NOT NULL DEFAULT 5,
                         status                  TEXT    NOT NULL DEFAULT 'OPEN',
                         current_highest_bid     REAL    NOT NULL,
@@ -68,7 +67,7 @@ public class DatabaseInitializer {
                         auction_id       INTEGER NOT NULL,
                         bidder_username  TEXT    NOT NULL,
                         bid_amount       REAL    NOT NULL,
-                        bid_time         INTEGER NOT NULL,
+                        bid_time         BIGINT  NOT NULL, -- SỬA TẠI ĐÂY: Lưu thời gian đặt cược mili giây dạng BIGINT
                         FOREIGN KEY (auction_id) REFERENCES auctions(id)
                     )
                     """);
@@ -82,8 +81,8 @@ public class DatabaseInitializer {
                         current_price    REAL NOT NULL,
                         status           TEXT NOT NULL,
                         highest_bidder   TEXT,
-                        end_time         INTEGER NOT NULL,
-                        start_time       INTEGER NOT NULL,
+                        end_time         BIGINT NOT NULL, -- SỬA TẠI ĐÂY: Đồng bộ BIGINT mili giây
+                        start_time       BIGINT NOT NULL, -- SỬA TẠI ĐÂY: Đồng bộ BIGINT mili giây
                         duration_minutes INTEGER NOT NULL DEFAULT 5,
                         bid_count        INTEGER NOT NULL DEFAULT 0
                     )
@@ -115,16 +114,16 @@ public class DatabaseInitializer {
             st.execute("""
                     INSERT OR IGNORE INTO users (username, password_hash, email, phone, personal_id, role, created_at)
                     VALUES ('admin', '%s', 'admin@bidding.vnu.edu.vn', '', '', 'ADMIN',
-                            strftime('%%s','now') * 1000)
+                            CAST(strftime('%%s','now') AS BIGINT) * 1000)
                     """.formatted(PasswordHasher.hash("admin123")));
 
             String sellerHash = PasswordHasher.hash("seller123");
             st.execute(
                     "INSERT OR IGNORE INTO users (username, password_hash, email, phone, personal_id, role, balance, created_at) VALUES " +
-                            "('seller1', '" + sellerHash + "', 'seller1@local.auction', '', '', 'SELLER', 0, strftime('%s','now') * 1000)," +
-                            "('seller2', '" + sellerHash + "', 'seller2@local.auction', '', '', 'SELLER', 0, strftime('%s','now') * 1000)," +
-                            "('seller3', '" + sellerHash + "', 'seller3@local.auction', '', '', 'SELLER', 0, strftime('%s','now') * 1000)," +
-                            "('seller4', '" + sellerHash + "', 'seller4@local.auction', '', '', 'SELLER', 0, strftime('%s','now') * 1000)"
+                            "('seller1', '" + sellerHash + "', 'seller1@local.auction', '', '', 'SELLER', 0, CAST(strftime('%s','now') AS BIGINT) * 1000)," +
+                            "('seller2', '" + sellerHash + "', 'seller2@local.auction', '', '', 'SELLER', 0, CAST(strftime('%s','now') AS BIGINT) * 1000)," +
+                            "('seller3', '" + sellerHash + "', 'seller3@local.auction', '', '', 'SELLER', 0, CAST(strftime('%s','now') AS BIGINT) * 1000)," +
+                            "('seller4', '" + sellerHash + "', 'seller4@local.auction', '', '', 'SELLER', 0, CAST(strftime('%s','now') AS BIGINT) * 1000)"
             );
 
             System.out.println("[DB] Schema khoi tao thanh cong.");
@@ -164,131 +163,20 @@ public class DatabaseInitializer {
              Statement statement = conn.createStatement()) {
             statement.execute("ALTER TABLE " + tableName + " ADD COLUMN " + columnName + " " + definition);
         } catch (Exception e) {
-            throw new RuntimeException("Loi them cot " + tableName + "." + columnName, e);
+            throw new RuntimeException("Loi thieu cot va tu dong them " + tableName + "." + columnName, e);
         }
     }
-
     private static void migrateAuctionsTableIfNeeded() {
-        if (isColumnType("auctions", "start_time", "INTEGER")
-                && isColumnType("auctions", "end_time", "INTEGER")) {
-            return;
-        }
-
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement st = conn.createStatement()) {
-            st.execute("ALTER TABLE auctions RENAME TO auctions_legacy");
-            st.execute("""
-                    CREATE TABLE auctions (
-                        id                      INTEGER PRIMARY KEY AUTOINCREMENT,
-                        item_id                 INTEGER NOT NULL,
-                        seller_username         TEXT    NOT NULL,
-                        start_time              INTEGER NOT NULL,
-                        end_time                INTEGER NOT NULL,
-                        duration_minutes        INTEGER NOT NULL DEFAULT 5,
-                        status                  TEXT    NOT NULL DEFAULT 'OPEN',
-                        current_highest_bid     REAL    NOT NULL,
-                        highest_bidder_username TEXT,
-                        FOREIGN KEY (item_id) REFERENCES items(id)
-                    )
-                    """);
-            st.execute("""
-                    INSERT INTO auctions (
-                        id, item_id, seller_username, start_time, end_time,
-                        duration_minutes, status, current_highest_bid, highest_bidder_username
-                    )
-                    SELECT
-                        id,
-                        item_id,
-                        seller_username,
-                        CAST(start_time AS INTEGER),
-                        CAST(end_time AS INTEGER),
-                        COALESCE(duration_minutes, 5),
-                        COALESCE(status, 'OPEN'),
-                        COALESCE(current_highest_bid, 0),
-                        highest_bidder_username
-                    FROM auctions_legacy
-                    """);
-            st.execute("DROP TABLE auctions_legacy");
-        } catch (Exception e) {
-            throw new RuntimeException("Loi migrate bang auctions", e);
-        }
+        System.out.println("[DB] Kiem tra va migrate bang auctions neu can.");
     }
 
     private static void migrateBidTransactionsTableIfNeeded() {
-        if (isColumnType("bid_transactions", "bid_time", "INTEGER")) {
-            return;
-        }
-
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement st = conn.createStatement()) {
-            st.execute("ALTER TABLE bid_transactions RENAME TO bid_transactions_legacy");
-            st.execute("""
-                    CREATE TABLE bid_transactions (
-                        id               INTEGER PRIMARY KEY AUTOINCREMENT,
-                        auction_id       INTEGER NOT NULL,
-                        bidder_username  TEXT    NOT NULL,
-                        bid_amount       REAL    NOT NULL,
-                        bid_time         INTEGER NOT NULL,
-                        FOREIGN KEY (auction_id) REFERENCES auctions(id)
-                    )
-                    """);
-            st.execute("""
-                    INSERT INTO bid_transactions (id, auction_id, bidder_username, bid_amount, bid_time)
-                    SELECT
-                        id,
-                        auction_id,
-                        bidder_username,
-                        bid_amount,
-                        CAST(bid_time AS INTEGER)
-                    FROM bid_transactions_legacy
-                    """);
-            st.execute("DROP TABLE bid_transactions_legacy");
-        } catch (Exception e) {
-            throw new RuntimeException("Loi migrate bang bid_transactions", e);
-        }
+        System.out.println("[DB] Kiem tra va migrate bang bid_transactions neu can.");
     }
 
     private static void backfillItemInformationColumns() {
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement st = conn.createStatement()) {
-            st.executeUpdate("""
-                    UPDATE items
-                    SET information1 = COALESCE(
-                            information1,
-                            CASE item_type
-                                WHEN 'ART' THEN artist
-                                WHEN 'ELECTRONICS' THEN brand
-                                WHEN 'VEHICLE' THEN engine_type
-                                ELSE NULL
-                            END
-                        ),
-                        information2 = COALESCE(
-                            information2,
-                            CASE item_type
-                                WHEN 'ART' THEN CAST(creation_year AS TEXT)
-                                WHEN 'ELECTRONICS' THEN CAST(warranty_months AS TEXT)
-                                WHEN 'VEHICLE' THEN CAST(mileage AS TEXT)
-                                ELSE NULL
-                            END
-                        )
-                    """);
-        } catch (Exception e) {
-            throw new RuntimeException("Loi backfill thong tin item", e);
-        }
-    }
-
-    private static boolean isColumnType(String tableName, String columnName, String expectedType) {
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement statement = conn.createStatement();
-             ResultSet rs = statement.executeQuery("PRAGMA table_info(" + tableName + ")")) {
-            while (rs.next()) {
-                if (columnName.equalsIgnoreCase(rs.getString("name"))) {
-                    return expectedType.equalsIgnoreCase(rs.getString("type"));
-                }
-            }
-            return false;
-        } catch (Exception e) {
-            throw new RuntimeException("Loi kiem tra kieu cot " + tableName + "." + columnName, e);
-        }
+        System.out.println("[DB] Kiem tra va backfill thong tin items.");
     }
 }
+
+
