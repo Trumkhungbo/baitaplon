@@ -13,10 +13,7 @@ import action.Core.SceneSwitch;
 import action.SocketClient;
 import action.SocketListener;
 import action.SellingJobs.ItemsHolder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -73,12 +70,12 @@ public class AdminpageHandle implements Initializable, SocketListener {
     public void Confirm(ActionEvent event) {
         for (ItemsHolder item : ItemsTable.getItems()) {
             JsonObject req = new JsonObject();
-            req.addProperty("command", "UPDATE_STATUS");
             req.addProperty("auctionId", item.getItemId());
 
             if (item.getCheckBox().isSelected()){
-                req.addProperty("status", "OPEN");
+                req.addProperty("command", "APPROVE_AUCTION");
             } else {
+                req.addProperty("command", "UPDATE_STATUS");
                 req.addProperty("status", "CANCELED");
             }
             SocketClient.getInstance().requestData(req.toString());
@@ -111,24 +108,21 @@ public class AdminpageHandle implements Initializable, SocketListener {
     @Override
     public void onDataReceived(String data) {
         Platform.runLater(() -> {
-            try {
-                JsonObject res = JsonParser.parseString(data).getAsJsonObject();
-                if (res.has("command") && res.get("command").getAsString().equals("AUCTION_LIST_RESULT")) {
-                    list.clear();
-                    JsonArray items = res.getAsJsonArray("items");
+            if (data == null || !data.startsWith("AUCTION_LIST|")) {
+                return;
+            }
 
-                    for (JsonElement elem : items) {
-                        JsonObject itemObj = elem.getAsJsonObject();
-                        String id = itemObj.get("id").getAsString();
-                        String itemName = itemObj.get("itemName").getAsString();
-                        Double currentPrice = itemObj.get("currentPrice").getAsDouble();
-                        String status = itemObj.get("status").getAsString();
-
-                        list.add(List.of(itemName, id, currentPrice, status));
+            list.clear();
+            String dataPart = data.substring("AUCTION_LIST|".length());
+            if (!dataPart.isBlank()) {
+                for (String itemData : dataPart.split(";")) {
+                    String[] attr = itemData.split(":");
+                    if (attr.length >= 4) {
+                        list.add(List.of(attr[1], attr[0], Double.parseDouble(attr[2]), attr[3]));
                     }
-                    renderAuctions();
                 }
-            } catch (Exception e) {}
+            }
+            renderAuctions();
         });
     }
 

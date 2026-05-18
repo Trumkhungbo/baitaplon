@@ -2,9 +2,6 @@ package action.SellingJobs;
 
 import java.io.IOException;
 import java.net.URL;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,8 +23,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 public class ItemShowingHandle implements Initializable, SocketListener {
-
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     @FXML private Button buttonLeft;
     @FXML private Button buttonRight;
@@ -107,16 +102,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
                 date.setText(params.getOrDefault("startDate", "--/--/----"));
 
                 if (params.containsKey("startTime")) {
-                    try {
-                        long startTimeMillis = Long.parseLong(params.get("startTime"));
-                        String formattedTime = Instant.ofEpochMilli(startTimeMillis)
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalTime()
-                                .format(TIME_FORMATTER);
-                        starTime.setText(formattedTime);
-                    } catch (NumberFormatException e) {
-                        starTime.setText(params.get("startTime"));
-                    }
+                    starTime.setText(params.get("startTime"));
                 }
 
                 String durationVal = params.containsKey("duration") ? params.get("duration") : params.getOrDefault("durationMinutes", "0");

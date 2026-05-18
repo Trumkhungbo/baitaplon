@@ -4,6 +4,8 @@ import action.Authentication.StoreDataInput;
 import action.Core.SceneSwitch;
 import action.SocketClient;
 import action.SocketListener;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -41,7 +43,7 @@ public class InvesterSellHandle implements Initializable, SocketListener {
     private File selectedImageFile;
     private String pendingMessage;
 
-    SceneSwitch sceneSwitch = new SceneSwitch();
+    private final SceneSwitch sceneSwitch = new SceneSwitch();
 
     @Override
     public void initialize(URL location, ResourceBundle resource) {
@@ -52,32 +54,39 @@ public class InvesterSellHandle implements Initializable, SocketListener {
     @FXML
     public void Clicked(ActionEvent actionEvent) throws IOException {
         try {
-            LocalTime t = LocalTime.parse(TimeStart.getText());
-            long startEpochMillis = t.atDate(LocalDate.now())
+            LocalDate date = LocalDate.now();
+            LocalTime time = LocalTime.parse(TimeStart.getText());
+            if (time.isBefore(LocalTime.now())) {
+                date = date.plusDays(1);
+            }
+
+            long startEpochMillis = date.atTime(time)
                     .atZone(ZoneId.systemDefault())
                     .toInstant()
                     .toEpochMilli();
             long durationMins = Long.parseLong(duration.getText());
-            long priceFunc = Long.parseLong(price.getText());
+            long priceValue = Long.parseLong(price.getText());
 
-            // FIX LỖI 1: Chuẩn hóa chuỗi gửi lên Server theo đúng định dạng khóa=giá_trị
-            pendingMessage = "ADD_AUCTION"
-                    + "|seller=" + StoreDataInput.getUsername()
-                    + "|itemType=" + description.getValue()
-                    + "|itemName=" + itemname.getText()
-                    + "|des1=" + description1.getText()
-                    + "|des2=" + description2.getText()
-                    + "|price=" + priceFunc
-                    + "|startTime=" + startEpochMillis
-                    + "|durationMinutes=" + durationMins;
+            JsonObject req = new JsonObject();
+            req.addProperty("command", "ADD_AUCTION");
+            req.addProperty("seller", StoreDataInput.getUsername());
+            req.addProperty("itemType", description.getValue());
+            req.addProperty("itemName", itemname.getText());
+            req.addProperty("des1", description1.getText());
+            req.addProperty("des2", description2.getText());
+            req.addProperty("price", String.valueOf(priceValue));
+            req.addProperty("startTime", String.valueOf(startEpochMillis));
+            req.addProperty("durationMinutes", String.valueOf(durationMins));
+            pendingMessage = req.toString();
 
             if (selectedImageFile != null) {
                 uploadImage(selectedImageFile);
-                setStatus("Đang upload ảnh...");
+                setStatus("Dang upload anh...");
             } else {
-                // FIX LỖI 2: Thêm trường imageUrl trống thay vì để dấu '|' dư thừa ở cuối
-                SocketClient.getInstance().requestData(pendingMessage + "|imageUrl=");
-                setStatus("Đang đăng bán...");
+                JsonObject payload = JsonParser.parseString(pendingMessage).getAsJsonObject();
+                payload.addProperty("imageUrl", "");
+                SocketClient.getInstance().requestData(payload.toString());
+                setStatus("Dang dang ban...");
                 pendingMessage = null;
             }
 
@@ -92,7 +101,7 @@ public class InvesterSellHandle implements Initializable, SocketListener {
         Stage currentStage = (Stage) ((javafx.scene.Node) actionEvent.getSource()).getScene().getWindow();
 
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Chọn ảnh sản phẩm");
+        fileChooser.setTitle("Chon anh san pham");
         fileChooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp")
         );
@@ -101,7 +110,7 @@ public class InvesterSellHandle implements Initializable, SocketListener {
         if (file != null) {
             selectedImageFile = file;
             imageset.setImage(new Image(file.toURI().toString()));
-            setStatus("Ảnh đã chọn: " + file.getName());
+            setStatus("Anh da chon: " + file.getName());
         }
     }
 
@@ -121,25 +130,27 @@ public class InvesterSellHandle implements Initializable, SocketListener {
             if (data.startsWith("UPLOAD_IMAGE_SUCCESS|") && pendingMessage != null) {
                 String filename = data.substring("UPLOAD_IMAGE_SUCCESS|".length()).trim();
 
-                // Gửi kèm tham số imageUrl=tên_file chuẩn định dạng cấu trúc hệ thống
-                SocketClient.getInstance().requestData(pendingMessage + "|imageUrl=" + filename);
+                JsonObject payload = JsonParser.parseString(pendingMessage).getAsJsonObject();
+                payload.addProperty("imageUrl", filename);
+                SocketClient.getInstance().requestData(payload.toString());
                 System.out.println("[SELL] Sent ADD_AUCTION with image: " + filename);
 
                 pendingMessage = null;
-                setStatus("Đang đăng bán..."); // FIX LỖI 3: Chờ Server xác nhận thành công thực sự
+                setStatus("Dang dang ban...");
 
-            } else if (data.startsWith("ADD_AUCTION_SUCCESS") || data.startsWith("CREATE_AUCTION_SUCCESS") || data.startsWith("ADD_AUCTION_PENDING")) {
-                setStatus("Đăng bán thành công!");
-                clearForm(); // FIX LỖI 4: Xóa sạch form sau khi đăng bán thành công
+            } else if (data.startsWith("ADD_AUCTION_SUCCESS")
+                    || data.startsWith("CREATE_AUCTION_SUCCESS")
+                    || data.startsWith("ADD_AUCTION_PENDING")) {
+                setStatus("Dang ban thanh cong!");
+                clearForm();
 
             } else if (data.startsWith("ERROR|")) {
-                setStatus("Lỗi: " + data.substring("ERROR|".length()));
-                pendingMessage = null; // Giải phóng bộ nhớ nếu có lỗi xảy ra giữa chừng
+                setStatus("Loi: " + data.substring("ERROR|".length()));
+                pendingMessage = null;
             }
         });
     }
 
-    // Hàm bổ sung giúp dọn dẹp giao diện sau khi hoàn tất
     private void clearForm() {
         itemname.clear();
         price.clear();
@@ -152,12 +163,14 @@ public class InvesterSellHandle implements Initializable, SocketListener {
     }
 
     private void setStatus(String msg) {
-        if (statusLabel != null) statusLabel.setText(msg);
+        if (statusLabel != null) {
+            statusLabel.setText(msg);
+        }
         System.out.println("[SELL] " + msg);
     }
 
     public void setDescription() {
-        description.getItems().addAll("Thông Tin", "ELECTRONICS", "ART", "VEHICLE");
+        description.getItems().addAll("ELECTRONICS", "ART", "VEHICLE");
         description.setValue(description.getItems().get(0));
     }
 }
