@@ -80,6 +80,7 @@ public class InvesterSellHandle implements Initializable, SocketListener {
     public void AddImage(ActionEvent actionEvent) {
         Stage currentStage = (Stage) ((javafx.scene.Node) actionEvent.getSource()).getScene().getWindow();
         FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Chọn ảnh của bạn");
         fileChooser.setTitle("Chọn ảnh sản phẩm");
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")

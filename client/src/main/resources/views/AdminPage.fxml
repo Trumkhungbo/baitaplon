@@ -13,7 +13,7 @@
             <children>
                 <Label style="-fx-text-fill: #FACC15; -fx-font-size: 24px; -fx-font-weight: bold;" text="Quản lý &amp; Duyệt sản phẩm" />
                 <Region HBox.hgrow="ALWAYS" />
-            <Button mnemonicParsing="false" text="Đăng xuất" onAction="#LogOut" />
+            <Button mnemonicParsing="false" text="Đăng xuất" onAction="#LogOut" styleClass="btn-gold" />
             </children>
         </HBox>
 
