@@ -93,7 +93,6 @@ public class AuctionService {
         auction.setDurationMinutes(DEFAULT_DURATION_MINUTES);
         Item item = new Art(
                 itemName,
-                "",
                 startPrice,
                 "",
                 "Unknown",
@@ -230,11 +229,9 @@ public class AuctionService {
         if (item.getStartingPrice() <= 0) {
             return "ERROR|Invalid start price";
         }
-
-        if (startTime <= 0) {
-            return "ERROR|Invalid start time";
+        if (startTime < System.currentTimeMillis()) {
+            return "ERROR|Start time cannot be in the past";
         }
-
         if (durationMinutes <= 0) {
             return "ERROR|Invalid duration";
         }
@@ -283,7 +280,6 @@ public class AuctionService {
 
         Item item = new Art(
                 itemName,
-                "No description",
                 startPrice,
                 "",
                 "Unknown",
@@ -364,10 +360,6 @@ public class AuctionService {
 
         syncAuctionFromDatabase(auction);
 
-        if (isActiveAuction(auction)) {
-            return "ERROR|Auction is still running";
-        }
-
         String winner =
                 auction.getHighestBidder() == null
                         ? "NONE"
@@ -398,7 +390,8 @@ public class AuctionService {
 
             if (!includePending
                     && auction.getStatus() != AuctionStatus.OPEN
-                    && auction.getStatus() != AuctionStatus.RUNNING) {
+                    && auction.getStatus() != AuctionStatus.RUNNING
+                    && auction.getStatus() != AuctionStatus.FINISHED) {
                 continue;
             }
 
@@ -439,6 +432,7 @@ public class AuctionService {
             }
 
             auction.setStatus(AuctionStatus.OPEN);
+            persistAuctionState(auction, bidHistoryDAO.countByAuctionId(auctionId));
         }
 
         return "APPROVE_AUCTION_SUCCESS|auctionId=" + auctionId;
@@ -665,9 +659,12 @@ public class AuctionService {
 
                 long localEndTime = auction.getEndTime();
                 syncAuctionFromDatabase(auction);
-                if (localEndTime < auction.getEndTime()) {
+                if (localEndTime > auction.getEndTime()) {
                     auction.setEndTime(localEndTime);
+                    persistAuctionState(auction, 0);
                 }
+
+
 
                 if (isActiveAuction(auction)
                         && now >= auction.getEndTime()) {
@@ -740,29 +737,14 @@ public class AuctionService {
             return null;
         }
 
-        auction.setCurrentPrice(
-                state.currentPrice()
-        );
-
-        auction.setStatus(
-                state.status()
-        );
-
-        auction.setHighestBidder(
-                state.highestBidder()
-        );
-
-        auction.setStartTimeMillis(
-                state.startTimeMillis()
-        );
-
-        auction.setDurationMinutes(
-                state.durationMinutes()
-        );
-
-        auction.setEndTime(
-                state.endTimeMillis()
-        );
+        auction.setCurrentPrice(state.currentPrice());
+        auction.setStatus(state.status());
+        auction.setHighestBidder(state.highestBidder());
+        auction.setStartTimeMillis(state.startTimeMillis());
+        auction.setDurationMinutes(state.durationMinutes());
+        if (state.endTimeMillis() > auction.getEndTime()) {
+            auction.setEndTime(state.endTimeMillis());
+        }
 
         return state;
     }
@@ -955,8 +937,8 @@ public class AuctionService {
                             + " extended from "
                             + oldEndTime
                             + " to "
-                            + auction.getEndTime()
-            );
+                            + auction.getEndTime());
+            persistAuctionState(auction, 0);
         }
     }
     public String getAuctionDetail(String auctionId) {
@@ -973,6 +955,27 @@ public class AuctionService {
                 auction.getHighestBidder() == null
                         ? "NONE"
                         : auction.getHighestBidder();
+        String imageUrl = "";
+        String information1 = "";
+        String information2 = "";
+        String itemType = "";
+        try {
+            com.bidding.common.model.item.Item item = itemDAO.findById(auction.getItemId());
+            if (item != null) {
+                if (item.getImageUrl() != null) imageUrl = item.getImageUrl();
+                if (item.getItemType() != null) itemType = item.getItemType().name();
+                String i1 = itemDAO.resolveInformation1(item);
+                String i2 = itemDAO.resolveInformation2(item);
+                if (i1 != null) information1 = i1;
+                if (i2 != null) information2 = i2;
+            }
+        } catch (Exception ignored) {}
+        try {
+            com.bidding.common.model.item.Item item = itemDAO.findById(auction.getItemId());
+            if (item != null && item.getImageUrl() != null) {
+                imageUrl = item.getImageUrl();
+            }
+        } catch (Exception ignored) {}
 
         return "AUCTION_DETAIL"
                 + "|id=" + auction.getId()
@@ -985,10 +988,13 @@ public class AuctionService {
                 + "|startDate=" + auction.getStartDate()
                 + "|startTime=" + auction.getStartClockTime()
                 + "|duration=" + auction.getDurationMinutes()
-                + "|bidCount="
-                + bidHistoryDAO.countByAuctionId(
-                auctionId
-        );
+                + "|bidCount=" + bidHistoryDAO.countByAuctionId(auctionId)
+                + "|imageUrl=" + imageUrl
+                + "|information1=" + information1
+                + "|information2=" + information2
+                + "|itemType=" + itemType
+                + "|endTime=" + auction.getEndTime()
+                + "|serverTime=" + System.currentTimeMillis();
     }
 
     public String getProductInfo(String auctionId) {

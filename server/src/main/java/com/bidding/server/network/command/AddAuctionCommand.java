@@ -8,13 +8,6 @@ import com.bidding.server.core.AuctionService;
 import com.bidding.server.network.ClientHandler;
 import com.bidding.server.network.service.BroadcastService;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-
-import static com.bidding.server.core.Auction.ZONE_ID;
-
 public class AddAuctionCommand implements CommandHandler {
 
     private final AuctionService auctionService;
@@ -39,7 +32,6 @@ public class AddAuctionCommand implements CommandHandler {
         }
 
         String sellerUsername = parts[1];
-
         String type = parts[2].toUpperCase();
 
         try {
@@ -58,7 +50,7 @@ public class AddAuctionCommand implements CommandHandler {
             }
 
             if (parts.length < 9) {
-                client.sendMessage("ERROR|Invalid syntax. Use: ADD_AUCTION|sellerUsername|type|name|des1|des2|price|startTime|durationMinutes");
+                client.sendMessage("ERROR|Invalid syntax. Use: ADD_AUCTION|sellerUsername|type|name|des1|des2|price|startTime|durationMinutes|imageUrl");
                 return;
             }
 
@@ -66,16 +58,11 @@ public class AddAuctionCommand implements CommandHandler {
             String des1 = parts[4];
             String des2 = parts[5];
             double price = Double.parseDouble(parts[6]);
-            LocalTime time = LocalTime.parse(parts[7]);
-            long startTime = time.atDate(LocalDate.now())
-                    .atZone(ZoneId.systemDefault())
-                    .toEpochSecond();
+            long startTime = Long.parseLong(parts[7]);
             System.out.println(startTime);
-            LocalTime time1 = LocalTime.parse(parts[8]);
-            long durationMinutes = time1.atDate(LocalDate.now())
-                    .atZone(ZoneId.systemDefault())
-                    .toEpochSecond();
-            System.out.println(startTime);
+            long durationMinutes = Long.parseLong(parts[8]);
+            System.out.println(durationMinutes);
+            String imageUrl = (parts.length > 9) ? parts[9] : "";
 
             if (price <= 0) {
                 client.sendMessage("ERROR|Price must be greater than 0");
@@ -87,21 +74,27 @@ public class AddAuctionCommand implements CommandHandler {
                 return;
             }
 
-            if (durationMinutes <= 0) {
-                client.sendMessage("ERROR|Duration must be greater than 0");
+            // SỬA TẠI ĐÂY: Validation khoảng duration hợp lệ (Tối đa 7 ngày = 10080 phút)
+            if (durationMinutes <= 0 || durationMinutes > 10080) {
+                client.sendMessage("ERROR|Duration must be 1-10080 minutes");
                 return;
             }
 
             Item item = switch (type) {
-                case "ELECTRONICS" -> new Electronics(name, "", price, "", des1, Integer.parseInt(des2));
-                case "ART" -> new Art(name, "", price, "", des1, Integer.parseInt(des2));
-                case "VEHICLE" -> new Vehicle(name, "", price, "", des1, Integer.parseInt(des2));
+                case "ELECTRONICS" -> new Electronics(name, price, "", des1, Integer.parseInt(des2));
+                case "ART" -> new Art(name, price, "", des1, Integer.parseInt(des2));
+                case "VEHICLE" -> new Vehicle(name, price, "", des1, Integer.parseInt(des2));
                 default -> null;
             };
 
             if (item == null) {
                 client.sendMessage("ERROR|Invalid item type. Supported types: ELECTRONICS, ART, VEHICLE");
                 return;
+            }
+
+            // Gắn imageUrl nếu có
+            if (!imageUrl.isBlank()) {
+                item.setImageUrl(imageUrl);
             }
 
             client.sendMessage(auctionService.createPendingAuction(

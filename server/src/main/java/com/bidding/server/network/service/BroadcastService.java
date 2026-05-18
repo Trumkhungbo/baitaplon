@@ -23,11 +23,11 @@ public class BroadcastService {
                 "BID_UPDATE|auctionId=" + auctionId
                         + "|highestBid=" + (long) auction.getCurrentPrice()
                         + "|bidder=" + auction.getHighestBidder()
-                        + "|startDate=" + auction.getStartDate()
-                        + "|startTime=" + auction.getStartClockTime()
-                        + "|duration=" + auction.getDurationMinutes(),
+                        + "|duration=" + auction.getDurationMinutes()
+                        + "|endTime=" + auction.getEndTime(),
                 auctionId
         );
+
     }
 
     public void broadcastAuctionClosed(String auctionId) {

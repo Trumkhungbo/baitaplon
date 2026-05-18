@@ -26,7 +26,7 @@ public class Auction {
     private String highestBidder;
     private long startTimeMillis;
     private int durationMinutes;
-    private Long exactEndTimeMillis;
+    private long endTimeMillis; // Đổi từ Long object sang long primitive cho đồng bộ
     private final List<BidRecord> bidHistory;
 
     public Auction(String id, String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
@@ -39,7 +39,7 @@ public class Auction {
         this.highestBidder = null;
         this.startTimeMillis = System.currentTimeMillis();
         this.durationMinutes = 5;
-        this.exactEndTimeMillis = null;
+        this.endTimeMillis = this.startTimeMillis + (5 * 60_000L);
         this.bidHistory = new ArrayList<>();
     }
 
@@ -86,12 +86,12 @@ public class Auction {
     public long getStartTimeMillis() {
         return startTimeMillis;
     }
-
     public void setStartTimeMillis(long startTimeMillis) {
         this.startTimeMillis = startTimeMillis;
-        this.exactEndTimeMillis = null;
+        this.endTimeMillis = startTimeMillis + (this.durationMinutes * 60_000L);
     }
-    public long getItemId() {return itemId;}
+
+    public long getItemId() { return itemId; }
 
     public void setItemId(long itemId) {
         this.itemId = itemId;
@@ -100,10 +100,9 @@ public class Auction {
     public int getDurationMinutes() {
         return durationMinutes;
     }
-
     public void setDurationMinutes(int durationMinutes) {
         this.durationMinutes = Math.max(durationMinutes, 0);
-        this.exactEndTimeMillis = null;
+        this.endTimeMillis = this.startTimeMillis + (this.durationMinutes * 60_000L);
     }
 
     public String getStartDate() {
@@ -121,15 +120,12 @@ public class Auction {
     }
 
     public long getEndTime() {
-        return exactEndTimeMillis != null
-                ? exactEndTimeMillis
-                : startTimeMillis + durationMinutes * 60_000L;
+        return this.endTimeMillis;
     }
-
     public void setEndTime(long endTime) {
-        long delta = Math.max(0L, endTime - startTimeMillis);
-        this.durationMinutes = (int) Math.ceil(delta / 60_000.0);
-        this.exactEndTimeMillis = endTime;
+        this.endTimeMillis = endTime;
+        long delta = Math.max(0L, endTime - this.startTimeMillis);
+        this.durationMinutes = (int) (delta / 60_000L);
     }
 
     public void extendEndTime(long extraTime) {
@@ -140,7 +136,7 @@ public class Auction {
     public void setSchedule(LocalDate startDate, LocalTime startTime, int durationMinutes) {
         this.startTimeMillis = startDate.atTime(startTime).atZone(ZONE_ID).toInstant().toEpochMilli();
         this.durationMinutes = Math.max(durationMinutes, 0);
-        this.exactEndTimeMillis = null;
+        this.endTimeMillis = this.startTimeMillis + (this.durationMinutes * 60_000L);
     }
 
     public void addBidRecord(BidRecord bidRecord) {

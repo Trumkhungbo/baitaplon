@@ -268,7 +268,6 @@ public class AuctionDAO extends BaseDAO {
         };
         item.setId(rs.getLong("i_id"));
         item.setName(rs.getString("i_name"));
-        item.setDescription(rs.getString("i_description"));
         item.setStartingPrice(rs.getDouble("i_starting_price"));
         item.setItemType(itemType);
         item.setImageUrl(rs.getString("i_image_url")); // cần thêm field + cột DB

@@ -2,6 +2,9 @@ package action.SellingJobs;
 
 import java.io.IOException;
 import java.net.URL;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -22,7 +25,8 @@ import javafx.scene.image.ImageView;
 
 public class ItemShowingHandle implements Initializable, SocketListener {
 
-    // Nếu bạn có gán ID cho 2 nút này trong Scene Builder thì thêm @FXML vào
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+
     @FXML
     private Button buttonLeft;
     @FXML
@@ -31,35 +35,30 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     @FXML
     private ImageView imageView;
 
-    // Khởi tạo list trống để tránh NullPointer
     private List<Image> imageList = new ArrayList<>();
-
-    // Biến lưu giữ vị trí ảnh đang hiển thị
     private int currentIndex = 0;
-    @FXML
-    private Label name;
-    @FXML
-    private Label price;
-    @FXML
-    private Label status;
-    @FXML
-    private Label description;
-    @FXML
-    private Label date;
-    @FXML
-    private Label starTime;
-    @FXML
-    private Label duration;
+
+    @FXML private Label name;
+    @FXML private Label price;
+    @FXML private Label status;
+    @FXML private Label description;
+    @FXML private Label date;
+    @FXML private Label starTime;
+    @FXML private Label duration;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle){
         SocketClient.getInstance().addListener(this);
         getItem();
     }
+
     public void getItem(){
         SocketClient.getInstance().requestData("GET_AUCTION_DETAILS|"+ StoreItemDataInit.description);
     }
+
     @FXML
     private TextField money;
+
     @FXML
     public void RaiseBind(ActionEvent actionEvent) {
         String auctionId = StoreItemDataInit.description;
@@ -77,11 +76,13 @@ public class ItemShowingHandle implements Initializable, SocketListener {
 
         SocketClient.getInstance().requestData("BID|" + auctionId + "|" + amountText);
     }
+
     @FXML
     public void ReturnToInvesment(ActionEvent actionEvent) throws IOException {
         SceneSwitch sceneSwitch = new SceneSwitch();
         sceneSwitch.SwitchToAnyWhere(actionEvent,"/views/Lobby.fxml");
     }
+
     @FXML
     public ImageView image;
 
@@ -96,7 +97,18 @@ public class ItemShowingHandle implements Initializable, SocketListener {
                 price.setText(attributes[3]);
                 status.setText(attributes[4]);
                 date.setText(attributes[5]);
-                starTime.setText(attributes[6]);
+
+                try {
+                    long startTimeMillis = Long.parseLong(attributes[6]);
+                    String formattedTime = Instant.ofEpochMilli(startTimeMillis)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalTime()
+                            .format(TIME_FORMATTER);
+                    starTime.setText(formattedTime);
+                } catch (NumberFormatException e) {
+                    starTime.setText(attributes[6]);
+                }
+
                 duration.setText(attributes[7]);
             } else if (data.startsWith("BID_SUCCESS|") || data.startsWith("BID_UPDATE|")) {
                 status.setText("RUNNING");

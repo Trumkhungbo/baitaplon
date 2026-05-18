@@ -3,11 +3,13 @@ package action.SellingJobs;
 import action.Authentication.StoreDataInput;
 import action.Core.SceneSwitch;
 import action.SocketClient;
+import action.SocketListener;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -17,92 +19,125 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Time;
+import java.nio.file.Files;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.Base64;
 import java.util.ResourceBundle;
 
-public class InvesterSellHandle implements Initializable {
-    @Override
-    public void initialize(URL location, ResourceBundle resource){
-        setDescription(description);
-    }
-    @FXML
-    private TextField itemname;
-    @FXML
-    private ChoiceBox<String> description;
-    @FXML
-    private TextField description1;
-    @FXML
-    private TextField description2;
-    @FXML
-    private TextField price;
-    @FXML
-    private TextField TimeStart;
+public class InvesterSellHandle implements Initializable, SocketListener {
 
-    @FXML
-    private TextField duration;
+    @FXML private TextField itemname;
+    @FXML private ChoiceBox<String> description;
+    @FXML private TextField description1;
+    @FXML private TextField description2;
+    @FXML private TextField price;
+    @FXML private TextField TimeStart;
+    @FXML private TextField duration;
+    @FXML private ImageView imageset;
+    @FXML private Label statusLabel;
 
-    @FXML
-    private ImageView imageset;
+    private File selectedImageFile;
+    private String pendingMessage;
+
     SceneSwitch sceneSwitch = new SceneSwitch();
+
+    @Override
+    public void initialize(URL location, ResourceBundle resource) {
+        setDescription();
+        SocketClient.getInstance().addListener(this);
+    }
+
     @FXML
     public void Clicked(ActionEvent actionEvent) throws IOException {
         try {
-            LocalTime StarTime = LocalTime.parse(TimeStart.getText());
-            int minutesInput = Integer.parseInt(duration.getText());
-            int hours = minutesInput / 60;
-            int minutes = minutesInput % 60;
-            String timeString = String.format("%02d:%02d:00", hours, minutes);
-            Time DUration = Time.valueOf(timeString);
-            String priced = price.getText();
-            Long priceFunc = Long.parseLong(priced);
-            //ItemsHolder item = new ItemsHolder("",itemname.getText(), priceFunc, StarTime, DUration);
-            //ShopDataBase.danhSachSanPham.add(item);
-            // Định dạng chuẩn: ADD_AUCTION|sellerUsername|itemType|itemName|startPrice|param1|param2
+            LocalTime t = LocalTime.parse(TimeStart.getText());
+            long startEpochMillis = t.atDate(LocalDate.now())
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli();
+            long durationMins = Long.parseLong(duration.getText());
+            long priceFunc = Long.parseLong(price.getText());
+            pendingMessage = "ADD_AUCTION|" + StoreDataInput.getUsername()
+                    + "|" + description.getValue()
+                    + "|" + itemname.getText()
+                    + "|" + description1.getText()
+                    + "|" + description2.getText()
+                    + "|" + priceFunc
+                    + "|" + startEpochMillis
+                    + "|" + durationMins;
 
-            String message = "ADD_AUCTION|"+StoreDataInput.getUsername()+"|"+description.getValue()+"|"+itemname.getText()+"|"+description1.getText()+"|"+description2.getText()+"|" + priceFunc +"|"+StarTime+"|"+DUration;
-            SocketClient.getInstance().requestData(message);
-            System.out.println(message);
+            if (selectedImageFile != null) {
+                uploadImage(selectedImageFile);
+                setStatus("Đang upload ảnh...");
+            } else {
+                SocketClient.getInstance().requestData(pendingMessage + "|");
+                setStatus("Đang đăng bán...");
+                pendingMessage = null;
+            }
 
-
-            System.out.println("Đăng bán thành công!");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             sceneSwitch.SwitchToLockPage(actionEvent, "/views/WrongInputShow.fxml");
             e.printStackTrace();
         }
     }
+
     @FXML
     public void AddImage(ActionEvent actionEvent) {
-        // 1. Lấy Stage (cửa sổ hiện tại) từ chính sự kiện click nút bấm
-        // Phải import javafx.scene.Node nếu hệ thống báo đỏ nhé
         Stage currentStage = (Stage) ((javafx.scene.Node) actionEvent.getSource()).getScene().getWindow();
 
-        // 2. Tạo hộp thoại chọn file
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Chọn ảnh của bạn");
-
-        // Lọc chỉ cho phép chọn các định dạng ảnh thông dụng
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp")
         );
 
-        // 3. Hiển thị hộp thoại và truyền currentStage vào thay cho primaryStage
-        File selectedFile = fileChooser.showOpenDialog(currentStage);
-
-        // 4. Nếu người dùng có chọn file (không bấm Cancel)
-        if (selectedFile != null) {
-            // Biến đổi đường dẫn file thành URI và load vào đối tượng Image
-            Image image = new Image(selectedFile.toURI().toString());
-
-            // Set ảnh vào ImageView (imageset) để hiện lên màn hình FXML
-            imageset.setImage(image);
+        File file = fileChooser.showOpenDialog(currentStage);
+        if (file != null) {
+            selectedImageFile = file;
+            imageset.setImage(new Image(file.toURI().toString()));
+            setStatus("Ảnh đã chọn: " + file.getName());
         }
     }
 
-    public void setDescription(ChoiceBox<String> description) {
-        this.description = description;
-        description.getItems().addAll("Thông Tin","ELECTRONICS","ART","VEHICLE");
+    private void uploadImage(File imageFile) throws IOException {
+        byte[] bytes = Files.readAllBytes(imageFile.toPath());
+        String base64 = Base64.getEncoder().encodeToString(bytes);
+        String filename = imageFile.getName();
+        String ext = filename.contains(".")
+                ? filename.substring(filename.lastIndexOf('.') + 1).toLowerCase()
+                : "jpg";
+        SocketClient.getInstance().requestData("UPLOAD_IMAGE|" + ext + "|" + base64);
+    }
+
+    @Override
+    public void onDataReceived(String data) {
+        Platform.runLater(() -> {
+            if (data.startsWith("UPLOAD_IMAGE_SUCCESS|") && pendingMessage != null) {
+                // Server trả về filename đã lưu → gắn vào ADD_AUCTION rồi gửi
+                String filename = data.substring("UPLOAD_IMAGE_SUCCESS|".length()).trim();
+                SocketClient.getInstance().requestData(pendingMessage + "|" + filename);
+                System.out.println("[SELL] Sent ADD_AUCTION with image: " + filename);
+                pendingMessage = null;
+                setStatus("Đăng bán thành công!");
+
+            } else if (data.startsWith("ADD_AUCTION_SUCCESS") || data.startsWith("CREATE_AUCTION_SUCCESS")) {
+                setStatus("Đăng bán thành công!");
+
+            } else if (data.startsWith("ERROR|") && pendingMessage == null) {
+                setStatus("Lỗi: " + data.substring("ERROR|".length()));
+            }
+        });
+    }
+
+    private void setStatus(String msg) {
+        if (statusLabel != null) statusLabel.setText(msg);
+        System.out.println("[SELL] " + msg);
+    }
+
+    public void setDescription() {
+        description.getItems().addAll("Thông Tin", "ELECTRONICS", "ART", "VEHICLE");
         description.setValue(description.getItems().get(0));
     }
 }
