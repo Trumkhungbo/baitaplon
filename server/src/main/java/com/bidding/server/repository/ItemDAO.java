@@ -22,6 +22,7 @@ public class ItemDAO extends BaseDAO {
         String sql = """
             INSERT INTO items (
                 name,
+                description,
                 information1,
                 information2,
                 starting_price,
@@ -36,7 +37,7 @@ public class ItemDAO extends BaseDAO {
                 mileage,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         try (Connection conn = getConn();
@@ -46,15 +47,16 @@ public class ItemDAO extends BaseDAO {
              )) {
 
             ps.setString(1, item.getName());
-            ps.setString(2, getInformation1(item));
-            ps.setString(3, getInformation2(item));
-            ps.setDouble(4, item.getStartingPrice());
-            ps.setString(5, item.getItemType().name());
-            ps.setString(6, sellerUsername);
-            ps.setString(7, item.getImageUrl());
+            ps.setString(2, item.getDescription());
+            ps.setString(3, getInformation1(item));
+            ps.setString(4, getInformation2(item));
+            ps.setDouble(5, item.getStartingPrice());
+            ps.setString(6, item.getItemType().name());
+            ps.setString(7, sellerUsername);
+            ps.setString(8, item.getImageUrl());
 
             setTypeSpecificFields(ps, item);
-            ps.setLong(14, item.getCreatedAt());
+            ps.setLong(15, item.getCreatedAt());
 
             ps.executeUpdate();
 
@@ -198,32 +200,32 @@ public class ItemDAO extends BaseDAO {
 
         if (item instanceof Art a) {
 
-            ps.setString(8, a.getArtist());
-            ps.setInt(9, a.getCreationYear());
+            ps.setString(9, a.getArtist());
+            ps.setInt(10, a.getCreationYear());
 
         } else if (item instanceof Electronics e) {
 
-            ps.setString(10, e.getBrand());
-            ps.setInt(11, e.getWarrantyMonths());
+            ps.setString(11, e.getBrand());
+            ps.setInt(12, e.getWarrantyMonths());
 
         } else if (item instanceof Vehicle v) {
 
-            ps.setString(12, v.getEngineType());
-            ps.setInt(13, v.getMileage());
+            ps.setString(13, v.getEngineType());
+            ps.setInt(14, v.getMileage());
         }
     }
 
     private void clearTypeFields(PreparedStatement ps)
             throws SQLException {
 
-        ps.setNull(8, Types.VARCHAR);
-        ps.setNull(9, Types.INTEGER);
+        ps.setNull(9, Types.VARCHAR);
+        ps.setNull(10, Types.INTEGER);
 
-        ps.setNull(10, Types.VARCHAR);
-        ps.setNull(11, Types.INTEGER);
+        ps.setNull(11, Types.VARCHAR);
+        ps.setNull(12, Types.INTEGER);
 
-        ps.setNull(12, Types.VARCHAR);
-        ps.setNull(13, Types.INTEGER);
+        ps.setNull(13, Types.VARCHAR);
+        ps.setNull(14, Types.INTEGER);
     }
 
     private Item map(ResultSet rs) throws SQLException {
@@ -309,6 +311,7 @@ public class ItemDAO extends BaseDAO {
 
         item.setId(rs.getLong("id"));
         item.setName(rs.getString("name"));
+        item.setDescription(rs.getString("description"));
         item.setStartingPrice(rs.getDouble("starting_price"));
         item.setItemType(type);
         item.setImageUrl(rs.getString("image_url"));

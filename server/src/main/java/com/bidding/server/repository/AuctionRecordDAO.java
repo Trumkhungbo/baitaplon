@@ -36,6 +36,20 @@ public class AuctionRecordDAO extends BaseDAO {
         }
     }
 
+    public long findItemIdByAuctionId(String auctionId) {
+        String sql = "SELECT item_id FROM auctions WHERE id = ?";
+
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, Long.parseLong(auctionId));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong("item_id") : 0L;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find item id by auction id", e);
+        }
+    }
+
     public void save(String auctionId, long itemId, String sellerUsername, double startPrice, long startTimeMillis, long endTimeMillis, int durationMinutes, AuctionStatus status) {
         String sql = """
                 INSERT INTO auctions (

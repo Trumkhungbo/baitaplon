@@ -45,7 +45,8 @@ public class InvesmentWaitHandle implements Initializable, SocketListener {
                             (String) item.get(0),
                             (String) item.get(1),
                             (Double) item.get(2),
-                            status
+                            status,
+                            item.size() > 4 ? (String) item.get(4) : ""
                     );
                     if (flowPane != null) {
                         flowPane.getChildren().add(cardItem);
@@ -58,23 +59,50 @@ public class InvesmentWaitHandle implements Initializable, SocketListener {
     @Override
     public void onDataReceived(String data) {
         Platform.runLater(() -> {
-            try {
-                JsonObject res = JsonParser.parseString(data).getAsJsonObject();
+            if (data == null || data.isBlank()) {
+                return;
+            }
+            if (!data.startsWith("AUCTION_LIST|") && !data.contains("\"AUCTION_LIST_RESULT\"")) {
+                return;
+            }
 
-                if (res.has("command") && res.get("command").getAsString().equals("AUCTION_LIST_RESULT")) {
-                    list.clear();
-                    JsonArray items = res.getAsJsonArray("items");
-                    for (JsonElement elem : items) {
-                        JsonObject itemObj = elem.getAsJsonObject();
-                        String id = itemObj.get("id").getAsString();
-                        String itemName = itemObj.get("itemName").getAsString();
-                        Double currentPrice = itemObj.get("currentPrice").getAsDouble();
-                        String status = itemObj.get("status").getAsString();
-                        list.add(List.of(itemName, id, currentPrice, status));
+            list.clear();
+            try {
+                if (data.startsWith("AUCTION_LIST|")) {
+                    String dataPart = data.substring("AUCTION_LIST|".length());
+                    if (!dataPart.isBlank()) {
+                        for (String itemData : dataPart.split(";")) {
+                            String[] attr = itemData.split(":");
+                            if (attr.length >= 4) {
+                                String id = attr[0];
+                                String itemName = attr[1];
+                                Double currentPrice = Double.parseDouble(attr[2]);
+                                String status = attr[3];
+                                String imageUrl = attr.length >= 5 ? attr[4] : "";
+                                list.add(List.of(itemName, id, currentPrice, status, imageUrl));
+                            }
+                        }
                     }
-                    fetchAuctionsFromServer();
+                } else {
+                    JsonObject res = JsonParser.parseString(data).getAsJsonObject();
+                    if (res.has("command") && res.get("command").getAsString().equals("AUCTION_LIST_RESULT")) {
+                        JsonArray items = res.getAsJsonArray("items");
+                        for (JsonElement elem : items) {
+                            JsonObject itemObj = elem.getAsJsonObject();
+                            String id = itemObj.get("id").getAsString();
+                            String itemName = itemObj.get("itemName").getAsString();
+                            Double currentPrice = itemObj.get("currentPrice").getAsDouble();
+                            String status = itemObj.get("status").getAsString();
+                            String imageUrl = itemObj.has("imageUrl") ? itemObj.get("imageUrl").getAsString() : "";
+                            list.add(List.of(itemName, id, currentPrice, status, imageUrl));
+                        }
+                    }
                 }
-            } catch (Exception e) {}
+                fetchAuctionsFromServer();
+            } catch (Exception e) {
+                System.err.println("[InvesmentWait] Failed to parse auction list: " + data);
+                e.printStackTrace();
+            }
         });
     }
 }

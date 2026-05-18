@@ -11,6 +11,12 @@ public class WatchAuctionCommand implements CommandHandler {
             return;
         }
 
+        if (parts[1] == null || parts[1].isBlank()) {
+            client.setWatchingAuctionId(null);
+            client.sendMessage("WATCHING|Lobby");
+            return;
+        }
+
         client.setWatchingAuctionId(parts[1]);
         client.sendMessage("WATCHING|You are now watching auction " + client.getWatchingAuctionId());
     }

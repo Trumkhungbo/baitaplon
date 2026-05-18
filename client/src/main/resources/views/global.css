@@ -33,6 +33,31 @@
     -fx-padding: 10px;
 }
 
+.text-area.input-field {
+    -fx-background-color: #262626;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8px;
+    -fx-border-color: #333333;
+    -fx-border-radius: 8px;
+    -fx-text-fill: #FFFFFF;
+    -fx-prompt-text-fill: #8A8A8A;
+    -fx-highlight-fill: rgba(250, 204, 21, 0.35);
+    -fx-highlight-text-fill: #FFFFFF;
+}
+
+.text-area.input-field .content {
+    -fx-background-color: #262626;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8px;
+    -fx-text-fill: #FFFFFF;
+}
+
+.text-area.input-field:focused,
+.text-area.input-field .content:focused {
+    -fx-background-color: #2B2B2B;
+    -fx-border-color: #FACC15;
+}
+
 /* Thẻ Card (cho sản phẩm, thông tin người dùng) */
 .card {
     -fx-background-color: #1A1A1A;
@@ -197,11 +222,40 @@
 .custom-choice-box {
     -fx-background-color: #262626;
     -fx-mark-color: #FACC15; /* Đổi màu cái mũi tên tam giác thành vàng Gold */
-    -fx-text-fill: white;
+    -fx-text-fill: #F8FAFC;
     -fx-background-radius: 8px;
     -fx-border-color: #333333;
     -fx-border-radius: 8px;
     -fx-padding: 5px;
+}
+
+.custom-choice-box .label {
+    -fx-text-fill: #F8FAFC;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-opacity: 1;
+}
+
+.custom-choice-box > .open-button {
+    -fx-background-color: transparent;
+}
+
+.custom-choice-box > .open-button > .arrow {
+    -fx-background-color: #FACC15;
+}
+
+.custom-choice-box:hover {
+    -fx-border-color: #FACC15;
+}
+
+.custom-choice-box:showing {
+    -fx-border-color: #FACC15;
+    -fx-background-color: #2B2B2B;
+}
+
+.custom-choice-box:focused {
+    -fx-border-color: #FACC15;
+    -fx-effect: dropshadow(three-pass-box, rgba(250, 204, 21, 0.18), 8, 0, 0, 0);
 }
 
 /* Khi bấm vào xổ danh sách xuống */

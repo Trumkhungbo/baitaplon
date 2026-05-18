@@ -30,6 +30,7 @@ public class DatabaseInitializer {
                     CREATE TABLE IF NOT EXISTS items (
                         id              INTEGER PRIMARY KEY AUTOINCREMENT,
                         name            TEXT    NOT NULL,
+                        description     TEXT,
                         information1    TEXT,
                         information2    TEXT,
                         starting_price  REAL    NOT NULL,
@@ -102,6 +103,7 @@ public class DatabaseInitializer {
 
             ensureColumnExists("items", "information1", "TEXT");
             ensureColumnExists("items", "information2", "TEXT");
+            ensureColumnExists("items", "description", "TEXT");
 
             migrateAuctionsTableIfNeeded();
             migrateBidTransactionsTableIfNeeded();

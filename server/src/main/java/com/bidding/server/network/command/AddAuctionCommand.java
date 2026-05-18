@@ -26,8 +26,8 @@ public class AddAuctionCommand implements CommandHandler {
             return;
         }
 
-        if (parts.length < 2) {
-            client.sendMessage("ERROR|Invalid syntax. Use: ADD_AUCTION|sellerUsername|type|name|des1|des2|price|startTime|durationMinutes");
+        if (parts.length < 3) {
+            client.sendMessage("ERROR|Invalid syntax. Use: ADD_AUCTION|sellerUsername|type|name|des1|des2|price|startTime|durationMinutes|description|imageUrl");
             return;
         }
 
@@ -35,6 +35,11 @@ public class AddAuctionCommand implements CommandHandler {
         String type = parts[2].toUpperCase();
 
         try {
+            if (!sellerUsername.equals(client.getCurrentUser())) {
+                client.sendMessage("ERROR|Seller username does not match current user");
+                return;
+            }
+
             if (parts.length == 4) {
                 double price = Double.parseDouble(parts[3]);
                 if (price <= 0) {
@@ -50,7 +55,7 @@ public class AddAuctionCommand implements CommandHandler {
             }
 
             if (parts.length < 9) {
-                client.sendMessage("ERROR|Invalid syntax. Use: ADD_AUCTION|sellerUsername|type|name|des1|des2|price|startTime|durationMinutes|imageUrl");
+                client.sendMessage("ERROR|Invalid syntax. Use: ADD_AUCTION|sellerUsername|type|name|des1|des2|price|startTime|durationMinutes|description|imageUrl");
                 return;
             }
 
@@ -62,7 +67,8 @@ public class AddAuctionCommand implements CommandHandler {
             System.out.println(startTime);
             long durationMinutes = Long.parseLong(parts[8]);
             System.out.println(durationMinutes);
-            String imageUrl = (parts.length > 9) ? parts[9] : "";
+            String description = (parts.length > 9) ? parts[9] : "";
+            String imageUrl = (parts.length > 10) ? parts[10] : "";
 
             if (price <= 0) {
                 client.sendMessage("ERROR|Price must be greater than 0");
@@ -93,6 +99,8 @@ public class AddAuctionCommand implements CommandHandler {
             }
 
             // Gắn imageUrl nếu có
+            item.setDescription(description);
+
             if (!imageUrl.isBlank()) {
                 item.setImageUrl(imageUrl);
             }

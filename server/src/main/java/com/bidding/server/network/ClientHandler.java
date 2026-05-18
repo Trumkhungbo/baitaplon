@@ -158,11 +158,12 @@ public class ClientHandler implements Runnable {
                 firstJsonString(json, "sellerUsername", "seller", "username"),
                 getJsonString(json, "itemType"),
                 firstJsonString(json, "itemName", "name"),
-                firstJsonString(json, "des1", "param1", "brand", "engineType", "artist"),
-                firstJsonString(json, "des2", "param2", "warrantyMonths", "mileage", "creationYear"),
+                firstJsonString(json, "des1", "information1", "param1", "brand", "engineType", "artist"),
+                firstJsonString(json, "des2", "information2", "param2", "warrantyMonths", "mileage", "creationYear"),
                 firstJsonString(json, "price", "startPrice", "startingPrice"),
                 getJsonString(json, "startTime"),
                 getJsonString(json, "durationMinutes"),
+                firstJsonString(json, "description", "productDescription"),
                 getJsonString(json, "imageUrl")
         };
     }

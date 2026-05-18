@@ -11,7 +11,9 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -31,11 +33,13 @@ import java.util.ResourceBundle;
 public class InvesterSellHandle implements Initializable, SocketListener {
 
     @FXML private TextField itemname;
+    @FXML private TextArea productDescription;
     @FXML private ChoiceBox<String> description;
     @FXML private TextField description1;
     @FXML private TextField description2;
     @FXML private TextField price;
     @FXML private TextField TimeStart;
+    @FXML private DatePicker auctionDate;
     @FXML private TextField duration;
     @FXML private ImageView imageset;
     @FXML private Label statusLabel;
@@ -54,9 +58,11 @@ public class InvesterSellHandle implements Initializable, SocketListener {
     @FXML
     public void Clicked(ActionEvent actionEvent) throws IOException {
         try {
-            LocalDate date = LocalDate.now();
+            LocalDate date = auctionDate != null && auctionDate.getValue() != null
+                    ? auctionDate.getValue()
+                    : LocalDate.now();
             LocalTime time = LocalTime.parse(TimeStart.getText());
-            if (time.isBefore(LocalTime.now())) {
+            if ((auctionDate == null || auctionDate.getValue() == null) && time.isBefore(LocalTime.now())) {
                 date = date.plusDays(1);
             }
 
@@ -77,6 +83,7 @@ public class InvesterSellHandle implements Initializable, SocketListener {
             req.addProperty("price", String.valueOf(priceValue));
             req.addProperty("startTime", String.valueOf(startEpochMillis));
             req.addProperty("durationMinutes", String.valueOf(durationMins));
+            req.addProperty("description", productDescription == null ? "" : productDescription.getText());
             pendingMessage = req.toString();
 
             if (selectedImageFile != null) {
@@ -153,11 +160,17 @@ public class InvesterSellHandle implements Initializable, SocketListener {
 
     private void clearForm() {
         itemname.clear();
+        if (productDescription != null) {
+            productDescription.clear();
+        }
         price.clear();
         description1.clear();
         description2.clear();
         TimeStart.clear();
         duration.clear();
+        if (auctionDate != null) {
+            auctionDate.setValue(LocalDate.now());
+        }
         imageset.setImage(null);
         selectedImageFile = null;
     }
@@ -172,5 +185,8 @@ public class InvesterSellHandle implements Initializable, SocketListener {
     public void setDescription() {
         description.getItems().addAll("ELECTRONICS", "ART", "VEHICLE");
         description.setValue(description.getItems().get(0));
+        if (auctionDate != null) {
+            auctionDate.setValue(LocalDate.now());
+        }
     }
 }

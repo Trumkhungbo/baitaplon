@@ -145,6 +145,10 @@ public class AuctionService {
                     snapshot.endTimeMillis()
             );
 
+            auction.setItemId(
+                    auctionRecordDAO.findItemIdByAuctionId(snapshot.auctionId())
+            );
+
             auctions.put(
                     snapshot.auctionId(),
                     auction
@@ -408,6 +412,15 @@ public class AuctionService {
             String id = auction.getId() == null ? "" : auction.getId();
             String itemName = auction.getItemName() == null ? "Unknown Item" : auction.getItemName();
             String status = auction.getStatus() == null ? "UNKNOWN" : auction.getStatus().name();
+            String imageUrl = "";
+            try {
+                com.bidding.common.model.item.Item item = itemDAO.findById(auction.getItemId());
+                if (item != null && item.getImageUrl() != null) {
+                    imageUrl = item.getImageUrl();
+                }
+            } catch (RuntimeException e) {
+                System.err.println("[AUCTION_LIST] Cannot load image for auction " + id + ": " + e.getMessage());
+            }
 
             // Tiến hành nối chuỗi theo cấu trúc id:itemName:currentPrice:status
             sb.append(id)
@@ -416,7 +429,9 @@ public class AuctionService {
                     .append(":")
                     .append((long) auction.getCurrentPrice())
                     .append(":")
-                    .append(status);
+                    .append(status)
+                    .append(":")
+                    .append(imageUrl);
 
             first = false;
         }
@@ -975,11 +990,15 @@ public class AuctionService {
             if (item != null) {
                 if (item.getImageUrl() != null) imageUrl = item.getImageUrl();
                 if (item.getItemType() != null) itemType = item.getItemType().name();
+                String description = item.getDescription();
 
                 String i1 = itemDAO.resolveInformation1(item);
                 String i2 = itemDAO.resolveInformation2(item);
                 if (i1 != null) information1 = i1;
                 if (i2 != null) information2 = i2;
+                if (description != null) {
+                    information2 = information2 == null ? "" : information2;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -1001,9 +1020,26 @@ public class AuctionService {
                 + "|imageUrl=" + imageUrl
                 + "|information1=" + information1
                 + "|information2=" + information2
+                + "|description=" + sanitizeMessageValue(getItemDescription(auction.getItemId()))
                 + "|itemType=" + itemType
                 + "|endTime=" + auction.getEndTime()
                 + "|serverTime=" + System.currentTimeMillis();
+    }
+
+    private String getItemDescription(long itemId) {
+        try {
+            com.bidding.common.model.item.Item item = itemDAO.findById(itemId);
+            return item == null ? "" : item.getDescription();
+        } catch (RuntimeException e) {
+            return "";
+        }
+    }
+
+    private String sanitizeMessageValue(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("|", " ").replace("\r", " ").replace("\n", " ").trim();
     }
 
 
