@@ -77,7 +77,6 @@
 .switch-btn:selected:focused {
     -fx-background-color: #2D2D2D;
 }
-/* ===== BẢNG DỮ LIỆU CHUYÊN NGHIỆP (TABLE VIEW) ===== */
 .custom-table {
     -fx-background-color: transparent;
     -fx-control-inner-background: #1A1A1A; /* Màu nền trong bảng */
@@ -229,4 +228,9 @@
 }
 .btn-red {
     -fx-text-fill: #FF0000;
+}
+.custom-itemBuy-table {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: #1A1A1A; /* Màu nền trong bảng */
+    -fx-padding: 0;
 }
