@@ -14,7 +14,6 @@ public class Electronics extends Item {
 
     public Electronics(
             String name,
-            String description,
             double startingPrice,
             String imageUrl,
             String brand,
@@ -23,7 +22,6 @@ public class Electronics extends Item {
 
         super(
                 name,
-                description,
                 startingPrice,
                 ItemType.ELECTRONICS,
                 imageUrl

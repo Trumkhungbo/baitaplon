@@ -14,7 +14,6 @@ public class Art extends Item {
 
     public Art(
             String name,
-            String description,
             double startingPrice,
             String imageUrl,
             String artist,
@@ -23,7 +22,6 @@ public class Art extends Item {
 
         super(
                 name,
-                description,
                 startingPrice,
                 ItemType.ART,
                 imageUrl

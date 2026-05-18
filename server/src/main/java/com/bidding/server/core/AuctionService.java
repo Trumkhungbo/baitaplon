@@ -13,8 +13,6 @@ import com.bidding.server.repository.AuctionStateDAO;
 import com.bidding.server.repository.AutoBidDAO;
 import com.bidding.server.repository.BidHistoryDAO;
 import com.bidding.server.repository.ItemDAO;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -95,7 +93,6 @@ public class AuctionService {
         auction.setDurationMinutes(DEFAULT_DURATION_MINUTES);
         Item item = new Art(
                 itemName,
-                "",
                 startPrice,
                 "",
                 "Unknown",
@@ -232,11 +229,9 @@ public class AuctionService {
         if (item.getStartingPrice() <= 0) {
             return "ERROR|Invalid start price";
         }
-
-        if (startTime <= 0) {
-            return "ERROR|Invalid start time";
+        if (startTime < System.currentTimeMillis()) {
+            return "ERROR|Start time cannot be in the past";
         }
-
         if (durationMinutes <= 0) {
             return "ERROR|Invalid duration";
         }
@@ -285,7 +280,6 @@ public class AuctionService {
 
         Item item = new Art(
                 itemName,
-                "No description",
                 startPrice,
                 "",
                 "Unknown",
@@ -333,28 +327,30 @@ public class AuctionService {
     }
 
     public String updateStatus(String auctionId, AuctionStatus newStatus) {
-        JsonObject response = new JsonObject();
-        response.addProperty("command", "UPDATE_STATUS_RESULT");
+
         Auction auction = auctions.get(auctionId);
 
+        // Chuẩn hóa chuỗi lỗi theo cấu trúc: TÊN_LỆNH|status=FAILED|message=Nội_dung
         if (auction == null) {
-            response.addProperty("status", "FAILED");
-            response.addProperty("message", "Auction not found");
-            return response.toString();
+            return "UPDATE_STATUS_RESULT|status=FAILED|message=Auction not found";
         }
+
         if (newStatus == null) {
-            response.addProperty("status", "FAILED");
-            response.addProperty("message", "Invalid status");
-            return response.toString();
+            return "UPDATE_STATUS_RESULT|status=FAILED|message=Invalid status";
         }
+
         synchronized (auction) {
             syncAuctionFromDatabase(auction);
             auction.setStatus(newStatus);
             persistAuctionState(auction);
         }
-        response.addProperty("status", "SUCCESS");
-        response.addProperty("message", "Auction " + auctionId + " is now " + newStatus.name());
-        return response.toString();
+
+        // Chuẩn hóa chuỗi thành công theo cấu trúc cặp key=value rõ ràng
+        return "UPDATE_STATUS_RESULT"
+                + "|status=SUCCESS"
+                + "|auctionId=" + auctionId
+                + "|newStatus=" + newStatus.name()
+                + "|message=Auction " + auctionId + " is now " + newStatus.name();
     }
 
     public String getWinner(String auctionId) {
@@ -389,33 +385,43 @@ public class AuctionService {
     }
 
     public String getAuctionList(boolean includePending) {
-        JsonObject response = new JsonObject();
-        response.addProperty("command", "AUCTION_LIST_RESULT");
-        JsonArray itemsArray = new JsonArray();
-
+        // Khởi tạo chuỗi kết quả ban đầu
+        StringBuilder sb = new StringBuilder("AUCTION_LIST|");
         boolean first = true;
-        for (Auction auction : auctions.values()) {
-            syncAuctionFromDatabase(auction);
 
+        for (Auction auction : auctions.values()) {
+            // ĐÃ XÓA dòng syncAuctionFromDatabase(auction) tại đây để bảo vệ hệ thống khỏi lỗi N+1 Query
+
+            // Bộ lọc trạng thái (Đã bao gồm FINISHED)
             if (!includePending
                     && auction.getStatus() != AuctionStatus.OPEN
-                    && auction.getStatus() != AuctionStatus.RUNNING) {
+                    && auction.getStatus() != AuctionStatus.RUNNING
+                    && auction.getStatus() != AuctionStatus.FINISHED) {
                 continue;
             }
 
-            // Tạo 1 thẻ JSON cho mỗi sản phẩm
-            JsonObject item = new JsonObject();
-            item.addProperty("id", auction.getId());
-            item.addProperty("itemName", auction.getItemName());
-            item.addProperty("currentPrice", auction.getCurrentPrice());
-            item.addProperty("status", auction.getStatus().name());
+            if (!first) {
+                sb.append(";");
+            }
 
-            // Nhét vào mảng
-            itemsArray.add(item);
+            // Kiểm tra an toàn để tránh nối chữ "null" nếu dữ liệu trống
+            String id = auction.getId() == null ? "" : auction.getId();
+            String itemName = auction.getItemName() == null ? "Unknown Item" : auction.getItemName();
+            String status = auction.getStatus() == null ? "UNKNOWN" : auction.getStatus().name();
+
+            // Tiến hành nối chuỗi theo cấu trúc id:itemName:currentPrice:status
+            sb.append(id)
+                    .append(":")
+                    .append(itemName)
+                    .append(":")
+                    .append((long) auction.getCurrentPrice())
+                    .append(":")
+                    .append(status);
+
+            first = false;
         }
 
-        response.add("items", itemsArray);
-        return response.toString();
+        return sb.toString();
     }
 
     public String approveAuction(String auctionId) {
@@ -437,6 +443,7 @@ public class AuctionService {
             }
 
             auction.setStatus(AuctionStatus.OPEN);
+            persistAuctionState(auction, bidHistoryDAO.countByAuctionId(auctionId));
         }
 
         return "APPROVE_AUCTION_SUCCESS|auctionId=" + auctionId;
@@ -591,15 +598,12 @@ public class AuctionService {
 
             processAutoBidChain(auction, now);
 
-            JsonObject response = new JsonObject();
-            response.addProperty("command", "BID_RESULT");
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("auctionId", auctionId);
-            response.addProperty("user", username);
-            response.addProperty("amount", (long) amount);
-            response.addProperty("message", "Bid placed successfully");
-
-            return response.toString();
+            return "BID_RESULT"
+                    + "|status=SUCCESS"
+                    + "|auctionId=" + auctionId
+                    + "|user=" + username
+                    + "|amount=" + (long) amount
+                    + "|message=Bid placed successfully";
         }
     }
 
@@ -668,9 +672,12 @@ public class AuctionService {
 
                 long localEndTime = auction.getEndTime();
                 syncAuctionFromDatabase(auction);
-                if (localEndTime < auction.getEndTime()) {
+                if (localEndTime > auction.getEndTime()) {
                     auction.setEndTime(localEndTime);
+                    persistAuctionState(auction, 0);
                 }
+
+
 
                 if (isActiveAuction(auction)
                         && now >= auction.getEndTime()) {
@@ -743,29 +750,14 @@ public class AuctionService {
             return null;
         }
 
-        auction.setCurrentPrice(
-                state.currentPrice()
-        );
-
-        auction.setStatus(
-                state.status()
-        );
-
-        auction.setHighestBidder(
-                state.highestBidder()
-        );
-
-        auction.setStartTimeMillis(
-                state.startTimeMillis()
-        );
-
-        auction.setDurationMinutes(
-                state.durationMinutes()
-        );
-
-        auction.setEndTime(
-                state.endTimeMillis()
-        );
+        auction.setCurrentPrice(state.currentPrice());
+        auction.setStatus(state.status());
+        auction.setHighestBidder(state.highestBidder());
+        auction.setStartTimeMillis(state.startTimeMillis());
+        auction.setDurationMinutes(state.durationMinutes());
+        if (state.endTimeMillis() > auction.getEndTime()) {
+            auction.setEndTime(state.endTimeMillis());
+        }
 
         return state;
     }
@@ -958,41 +950,62 @@ public class AuctionService {
                             + " extended from "
                             + oldEndTime
                             + " to "
-                            + auction.getEndTime()
-            );
+                            + auction.getEndTime());
+            persistAuctionState(auction, 0);
         }
     }
-
     public String getAuctionDetail(String auctionId) {
-        JsonObject response = new JsonObject();
-        response.addProperty("command", "AUCTION_DETAIL_RESULT");
         Auction auction = auctions.get(auctionId);
+
         if (auction == null) {
-            response.addProperty("status", "FAILED");
-            response.addProperty("message", "Auction not found");
-            return response.toString();
+            return "ERROR|Auction not found";
         }
 
         syncAuctionFromDatabase(auction);
 
         String bidder = auction.getHighestBidder() == null ? "NONE" : auction.getHighestBidder();
-        response.addProperty("status", "SUCCESS");
-        response.addProperty("id", auction.getId());
-        response.addProperty("seller", auction.getSellerUsername());
-        response.addProperty("itemName", auction.getItemName());
-        response.addProperty("startPrice", (long) auction.getStartPrice());
-        response.addProperty("currentPrice", (long) auction.getCurrentPrice());
-        response.addProperty("highestBidder", bidder);
-        response.addProperty("auctionStatus", auction.getStatus().name());
 
-        // Thời gian
-        response.addProperty("startDate", String.valueOf(auction.getStartDate()));
-        response.addProperty("startTime", String.valueOf(auction.getStartClockTime()));
-        response.addProperty("duration", auction.getDurationMinutes());
-        response.addProperty("bidCount", bidHistoryDAO.countByAuctionId(auctionId));
+        String imageUrl = "";
+        String information1 = "";
+        String information2 = "";
+        String itemType = "";
 
-        return response.toString();
+        try {
+            com.bidding.common.model.item.Item item = itemDAO.findById(auction.getItemId());
+            if (item != null) {
+                if (item.getImageUrl() != null) imageUrl = item.getImageUrl();
+                if (item.getItemType() != null) itemType = item.getItemType().name();
+
+                String i1 = itemDAO.resolveInformation1(item);
+                String i2 = itemDAO.resolveInformation2(item);
+                if (i1 != null) information1 = i1;
+                if (i2 != null) information2 = i2;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        String statusStr = auction.getStatus() == null ? "UNKNOWN" : auction.getStatus().name();
+
+        return "AUCTION_DETAIL"
+                + "|id=" + auction.getId()
+                + "|seller=" + auction.getSellerUsername()
+                + "|itemName=" + auction.getItemName()
+                + "|startPrice=" + (long) auction.getStartPrice()
+                + "|currentPrice=" + (long) auction.getCurrentPrice()
+                + "|highestBidder=" + bidder
+                + "|status=" + statusStr
+                + "|startDate=" + auction.getStartDate()
+                + "|startTime=" + auction.getStartClockTime()
+                + "|duration=" + auction.getDurationMinutes()
+                + "|bidCount=" + bidHistoryDAO.countByAuctionId(auctionId)
+                + "|imageUrl=" + imageUrl
+                + "|information1=" + information1
+                + "|information2=" + information2
+                + "|itemType=" + itemType
+                + "|endTime=" + auction.getEndTime()
+                + "|serverTime=" + System.currentTimeMillis();
     }
+
 
     public String getProductInfo(String auctionId) {
 

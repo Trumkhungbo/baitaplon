@@ -35,6 +35,8 @@ public class CommandDispatcher {
         register("RESET_PASSWORD", new ResetPasswordCommand(authService));
         register("UPDATE_STATUS", new UpdateStatusCommand(auctionService));
         register("ELEVATE", new ElevateCommand());
+        register("UPLOAD_IMAGE", new UploadImageCommand());
+        register("GET_IMAGE", new GetImageCommand());
     }
 
     public void dispatch(String command, String[] parts, ClientHandler client) {
