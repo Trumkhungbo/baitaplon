@@ -253,6 +253,51 @@
     -fx-background-color: #2B2B2B;
 }
 
+.auction-card-image-box {
+    -fx-background-color: #262626;
+    -fx-background-radius: 12px;
+    -fx-alignment: center;
+    -fx-padding: 8px;
+}
+
+.auction-card-id {
+    -fx-text-fill: #777777;
+    -fx-font-size: 11px;
+}
+
+.auction-card-muted {
+    -fx-text-fill: #9A9AA3;
+    -fx-font-size: 12px;
+}
+
+.auction-type-badge {
+    -fx-background-color: rgba(250, 204, 21, 0.10);
+    -fx-border-color: rgba(250, 204, 21, 0.35);
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-text-fill: #FACC15;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 8px;
+}
+
+.auction-timer-label {
+    -fx-text-fill: #FF6666;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.auction-finished-button {
+    -fx-background-color: transparent;
+    -fx-border-color: #FF4444;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-text-fill: #FF6666;
+    -fx-font-weight: bold;
+    -fx-padding: 10px;
+    -fx-cursor: hand;
+}
+
 .custom-choice-box:focused {
     -fx-border-color: #FACC15;
     -fx-effect: dropshadow(three-pass-box, rgba(250, 204, 21, 0.18), 8, 0, 0, 0);

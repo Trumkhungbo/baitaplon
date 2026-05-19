@@ -10,6 +10,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 
@@ -21,7 +22,13 @@ import java.util.ResourceBundle;
 
 public class InvesmentSiteHandle implements Initializable, SocketListener {
     @FXML private FlowPane flowPane;
-    private List<List<Object>> list = new ArrayList<>();
+    @FXML private Button filterAllButton;
+    @FXML private Button filterElectronicsButton;
+    @FXML private Button filterArtButton;
+    @FXML private Button filterVehiclesButton;
+
+    private final List<AuctionSummary> list = new ArrayList<>();
+    private String currentFilter = "ALL";
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -29,50 +36,83 @@ public class InvesmentSiteHandle implements Initializable, SocketListener {
             flowPane.getChildren().clear();
         }
         SocketClient.getInstance().addListener(this);
+        requestAuctionList();
+        updateFilterStyles();
+    }
+
+    @FXML
+    public void showAll() {
+        currentFilter = "ALL";
+        refreshCards();
+    }
+
+    @FXML
+    public void showElectronics() {
+        currentFilter = "ELECTRONICS";
+        refreshCards();
+    }
+
+    @FXML
+    public void showArt() {
+        currentFilter = "ART";
+        refreshCards();
+    }
+
+    @FXML
+    public void showVehicles() {
+        currentFilter = "VEHICLE";
+        refreshCards();
+    }
+
+    private void requestAuctionList() {
         JsonObject req = new JsonObject();
         req.addProperty("command", "LIST_AUCTIONS");
         SocketClient.getInstance().requestData(req.toString());
     }
 
-    public void fetchAuctionsFromServer() {
+    private void refreshCards() {
+        updateFilterStyles();
         if (flowPane != null) {
             flowPane.getChildren().clear();
         }
-        list.sort(Comparator.comparingInt(item -> statusPriority((String) item.get(3))));
+
+        List<AuctionSummary> filtered = list.stream()
+                .filter(this::matchesFilter)
+                .sorted(Comparator.comparingInt(item -> statusPriority(item.status())))
+                .toList();
 
         String currentGroup = null;
-        int renderedCount = 0;
-        for (List item : list) {
-            if (!item.isEmpty()) {
-                String status = (String) item.get(3);
-                if (!"RUNNING".equals(status) && !"OPEN".equals(status) && !"FINISHED".equals(status)) {
-                    continue;
-                }
-
-                if (!status.equals(currentGroup) && flowPane != null) {
-                    flowPane.getChildren().add(createGroupLabel(status));
-                    currentGroup = status;
-                }
-
-                AuctionCardItem cardItem = new AuctionCardItem(
-                        (String) item.get(0),
-                        (String) item.get(1),
-                        (Double) item.get(2),
-                        status,
-                        item.size() > 4 ? (String) item.get(4) : ""
-                );
-                if (flowPane != null) {
-                    flowPane.getChildren().add(cardItem);
-                    renderedCount++;
-                }
+        for (AuctionSummary item : filtered) {
+            if (!item.status().equals(currentGroup) && flowPane != null) {
+                flowPane.getChildren().add(createGroupLabel(item.status()));
+                currentGroup = item.status();
             }
+
+            AuctionCardItem card = new AuctionCardItem(
+                    item.itemName(),
+                    item.id(),
+                    item.currentPrice(),
+                    item.status(),
+                    item.imageUrl(),
+                    item.itemType(),
+                    item.startTime(),
+                    item.endTimeMillis(),
+                    item.serverTimeMillis()
+            );
+            flowPane.getChildren().add(card);
         }
-        System.out.println("[InvesmentSite] Rendered auction cards: " + renderedCount);
+    }
+
+    private boolean matchesFilter(AuctionSummary item) {
+        if ("ALL".equals(currentFilter)) {
+            return true;
+        }
+        return currentFilter.equalsIgnoreCase(item.itemType());
     }
 
     private Node createGroupLabel(String status) {
         Label label = new Label(mapStatusTitle(status));
-        label.setStyle("-fx-text-fill: #FACC15; -fx-font-size: 20px; -fx-font-weight: bold; -fx-padding: 4 0 2 4;");
+        label.setStyle("-fx-text-fill: #FACC15; -fx-font-size: 20px; -fx-font-weight: bold; -fx-padding: 6 0 4 4;");
         label.setPrefWidth(1200);
         return label;
     }
@@ -95,6 +135,22 @@ public class InvesmentSiteHandle implements Initializable, SocketListener {
         };
     }
 
+    private void updateFilterStyles() {
+        updateFilterButton(filterAllButton, "ALL".equals(currentFilter));
+        updateFilterButton(filterElectronicsButton, "ELECTRONICS".equals(currentFilter));
+        updateFilterButton(filterArtButton, "ART".equals(currentFilter));
+        updateFilterButton(filterVehiclesButton, "VEHICLE".equals(currentFilter));
+    }
+
+    private void updateFilterButton(Button button, boolean active) {
+        if (button == null) {
+            return;
+        }
+        button.setStyle(active
+                ? "-fx-background-color: rgba(250, 204, 21, 0.18); -fx-border-color: #FACC15; -fx-border-radius: 18; -fx-background-radius: 18; -fx-text-fill: #FACC15; -fx-font-weight: bold;"
+                : "-fx-background-color: rgba(255,255,255,0.04); -fx-border-color: #333333; -fx-border-radius: 18; -fx-background-radius: 18; -fx-text-fill: #D4D4D8;");
+    }
+
     @Override
     public void onDataReceived(String data) {
         Platform.runLater(() -> {
@@ -107,20 +163,23 @@ public class InvesmentSiteHandle implements Initializable, SocketListener {
 
             list.clear();
             try {
-                System.out.println("[InvesmentSite] Received: " + data);
                 if (data.startsWith("AUCTION_LIST|")) {
                     String dataPart = data.substring("AUCTION_LIST|".length());
                     if (!dataPart.isBlank()) {
                         for (String itemData : dataPart.split(";")) {
                             String[] attr = itemData.split(":");
-                            if (attr.length >= 4) {
-                                String id = attr[0];
-                                String itemName = attr[1];
-                                Double currentPrice = Double.parseDouble(attr[2]);
-                                String status = attr[3];
-                                String imageUrl = attr.length >= 5 ? attr[4] : "";
-                                list.add(List.of(itemName, id, currentPrice, status, imageUrl));
-                                System.out.println("[InvesmentSite] Parsed auction: " + id + " " + itemName + " " + status);
+                            if (attr.length >= 14) {
+                                list.add(new AuctionSummary(
+                                        attr[0],
+                                        attr[1],
+                                        Double.parseDouble(attr[2]),
+                                        attr[3],
+                                        attr[4],
+                                        attr[11],
+                                        attr[9],
+                                        Long.parseLong(attr[12]),
+                                        Long.parseLong(attr[13])
+                                ));
                             }
                         }
                     }
@@ -130,20 +189,38 @@ public class InvesmentSiteHandle implements Initializable, SocketListener {
                         JsonArray items = res.getAsJsonArray("items");
                         for (JsonElement elem : items) {
                             JsonObject itemObj = elem.getAsJsonObject();
-                            String id = itemObj.get("id").getAsString();
-                            String itemName = itemObj.get("itemName").getAsString();
-                            Double currentPrice = itemObj.get("currentPrice").getAsDouble();
-                            String status = itemObj.get("status").getAsString();
-                            String imageUrl = itemObj.has("imageUrl") ? itemObj.get("imageUrl").getAsString() : "";
-                            list.add(List.of(itemName, id, currentPrice, status, imageUrl));
+                            list.add(new AuctionSummary(
+                                    itemObj.get("id").getAsString(),
+                                    itemObj.get("itemName").getAsString(),
+                                    itemObj.get("currentPrice").getAsDouble(),
+                                    itemObj.get("status").getAsString(),
+                                    itemObj.has("imageUrl") ? itemObj.get("imageUrl").getAsString() : "",
+                                    itemObj.has("itemType") ? itemObj.get("itemType").getAsString() : "",
+                                    itemObj.has("startTime") ? itemObj.get("startTime").getAsString() : "--:--",
+                                    itemObj.has("endTime") ? itemObj.get("endTime").getAsLong() : 0L,
+                                    itemObj.has("serverTime") ? itemObj.get("serverTime").getAsLong() : System.currentTimeMillis()
+                            ));
                         }
                     }
                 }
-                fetchAuctionsFromServer();
+                refreshCards();
             } catch (Exception e) {
                 System.err.println("[InvesmentSite] Failed to parse auction list: " + data);
                 e.printStackTrace();
             }
         });
+    }
+
+    private record AuctionSummary(
+            String id,
+            String itemName,
+            Double currentPrice,
+            String status,
+            String imageUrl,
+            String itemType,
+            String startTime,
+            long endTimeMillis,
+            long serverTimeMillis
+    ) {
     }
 }

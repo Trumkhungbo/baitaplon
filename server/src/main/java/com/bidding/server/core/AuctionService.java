@@ -416,12 +416,16 @@ public class AuctionService {
             String description = "";
             String information1 = "";
             String information2 = "";
+            String itemType = "";
             String startDate = sanitizeListValue(auction.getStartDate());
             String startTime = sanitizeListValue(auction.getStartClockTime());
             String duration = String.valueOf(auction.getDurationMinutes());
             try {
                 com.bidding.common.model.item.Item item = itemDAO.findById(auction.getItemId());
                 if (item != null) {
+                    if (item.getItemType() != null) {
+                        itemType = sanitizeListValue(item.getItemType().name());
+                    }
                     if (item.getImageUrl() != null) {
                         imageUrl = sanitizeListValue(item.getImageUrl());
                     }
@@ -462,7 +466,13 @@ public class AuctionService {
                     .append(":")
                     .append(startTime)
                     .append(":")
-                    .append(duration);
+                    .append(duration)
+                    .append(":")
+                    .append(itemType)
+                    .append(":")
+                    .append(auction.getEndTime())
+                    .append(":")
+                    .append(System.currentTimeMillis());
 
             first = false;
         }
