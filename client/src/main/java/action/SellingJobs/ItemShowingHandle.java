@@ -2,7 +2,7 @@ package action.SellingJobs;
 
 import action.Authentication.StoreDataInput;
 import action.Authentication.StoreItemDataInit;
-import action.Core.SceneSwitch;
+import action.MainUI.LobbyHandle;
 import action.SocketClient;
 import action.SocketListener;
 import com.google.gson.JsonObject;
@@ -16,6 +16,8 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -24,6 +26,10 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
 import java.io.ByteArrayInputStream;
@@ -39,11 +45,7 @@ import java.util.ResourceBundle;
 
 public class ItemShowingHandle implements Initializable, SocketListener {
 
-    @FXML private Button buttonLeft;
-    @FXML private Button buttonRight;
-    @FXML private ImageView imageView;
     @FXML private ImageView image;
-
     @FXML private Label name;
     @FXML private Label price;
     @FXML private Label status;
@@ -58,6 +60,21 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     @FXML private Label avatarLabel;
     @FXML private Label bidHistoryHint;
     @FXML private Label autoBidStatus;
+    @FXML private Label heroStatusChip;
+    @FXML private Label modeLabel;
+    @FXML private Label statusSubLabel;
+    @FXML private Label auctionCodeLabel;
+    @FXML private Label scheduleLabel;
+    @FXML private Label historyTitleLabel;
+    @FXML private Label historyModeLabel;
+    @FXML private Label winnerAvatarLabel;
+    @FXML private Label winnerNameLabel;
+    @FXML private Label winnerPriceLabel;
+    @FXML private Label startPriceLabel;
+    @FXML private Label finalPriceStatLabel;
+    @FXML private Label bidCountLabel;
+    @FXML private Label finishedAtLabel;
+    @FXML private Label resultHintLabel;
     @FXML private TextField money;
     @FXML private TextField autoBidMax;
     @FXML private TextField autoBidIncrement;
@@ -66,15 +83,24 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     @FXML private TableColumn<BidHistoryRow, String> bidUserColumn;
     @FXML private TableColumn<BidHistoryRow, String> bidAmountColumn;
     @FXML private TableColumn<BidHistoryRow, String> bidTimeColumn;
+    @FXML private VBox activeBidCard;
+    @FXML private VBox finishedResultCard;
+    @FXML private VBox autoBidCard;
+    @FXML private VBox topWinnersBox;
+    @FXML private Button raiseBidButton;
+    @FXML private Button autoBidButton;
 
     private final ObservableList<BidHistoryRow> bidHistoryRows = FXCollections.observableArrayList();
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy")
+            .withZone(ZoneId.systemDefault());
+    private final DateTimeFormatter endTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
             .withZone(ZoneId.systemDefault());
 
     private Timeline countdownTimeline;
     private long endTimeMillis;
     private long serverClockOffsetMillis;
     private long durationMinutes;
+    private String currentAuctionStatus = "UNKNOWN";
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -85,6 +111,14 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         getItem();
         getBidHistory();
         getAccountBalance();
+        applyStatusState("UNKNOWN");
+    }
+
+    private void setupBidHistoryTable() {
+        bidUserColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().username()));
+        bidAmountColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().amount()));
+        bidTimeColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().time()));
+        bidHistoryTable.setItems(bidHistoryRows);
     }
 
     private void watchAuction() {
@@ -105,6 +139,13 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         }
     }
 
+    private void getWinnerInfo() {
+        String auctionId = StoreItemDataInit.description;
+        if (auctionId != null && !auctionId.isBlank()) {
+            SocketClient.getInstance().requestData("GET_WINNER|" + auctionId);
+        }
+    }
+
     private void getAccountBalance() {
         String username = StoreDataInput.getUsername();
         if (username == null || username.isBlank()) {
@@ -116,17 +157,6 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         req.addProperty("command", "GET_ACCOUNTINFORMATION");
         req.addProperty("username", username);
         SocketClient.getInstance().requestData(req.toString());
-    }
-
-    private void setupBidHistoryTable() {
-        if (bidHistoryTable == null) {
-            return;
-        }
-
-        bidUserColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().username()));
-        bidAmountColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().amount()));
-        bidTimeColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().time()));
-        bidHistoryTable.setItems(bidHistoryRows);
     }
 
     private void updateAvatar() {
@@ -144,12 +174,12 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         String amountText = cleanNumber(money.getText());
 
         if (auctionId == null || auctionId.isBlank()) {
-            setLabelText(status, "Thiếu mã phiên đấu giá");
+            setLabelText(statusSubLabel, "Thiếu mã phiên đấu giá");
             return;
         }
 
         if (amountText == null || !amountText.matches("\\d+(\\.\\d+)?")) {
-            setLabelText(status, "Số tiền đặt giá không hợp lệ");
+            setLabelText(statusSubLabel, "Số tiền đặt giá không hợp lệ");
             return;
         }
 
@@ -184,8 +214,9 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         }
         SocketClient.getInstance().requestData("WATCH|");
         SocketClient.getInstance().removeListener(this);
-        SceneSwitch sceneSwitch = new SceneSwitch();
-        sceneSwitch.SwitchToAnyWhere(actionEvent, "/views/Lobby.fxml");
+        if (LobbyHandle.getInstance() != null) {
+            LobbyHandle.getInstance().MovingCenter("/views/InvesmentSite.fxml");
+        }
     }
 
     @Override
@@ -209,21 +240,29 @@ public class ItemShowingHandle implements Initializable, SocketListener {
                     getAccountBalance();
                 }
                 case "AUCTION_STARTED" -> {
-                    setLabelText(status, "RUNNING");
+                    applyStatusState("RUNNING");
                     getItem();
                 }
                 case "AUCTION_CLOSED" -> {
-                    setLabelText(status, "FINISHED");
+                    applyStatusState("FINISHED");
+                    if (params.containsKey("winner")) {
+                        updateWinnerCard(params.get("winner"));
+                    }
+                    if (params.containsKey("finalPrice")) {
+                        String finalPriceText = formatMoney(params.get("finalPrice")) + " VNĐ";
+                        setLabelText(price, finalPriceText);
+                        setLabelText(winnerPriceLabel, finalPriceText);
+                        setLabelText(finalPriceStatLabel, finalPriceText);
+                    }
                     setLabelText(starTime, "00:00:00");
                     if (timeProgress != null) {
                         timeProgress.setProgress(0);
                     }
-                    if (params.containsKey("finalPrice")) {
-                        setLabelText(price, formatMoney(params.get("finalPrice")) + " VNĐ");
-                    }
                     getBidHistory();
+                    getWinnerInfo();
                     getItem();
                 }
+                case "WINNER_INFO" -> renderWinnerInfo(params);
                 case "ERROR" -> renderError(parts, params);
                 case "IMAGE_DATA" -> renderImage(parts);
                 default -> renderAccountInfo(data);
@@ -244,20 +283,34 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     }
 
     private void renderAuctionDetail(Map<String, String> params) {
-        setLabelText(name, params.getOrDefault("itemName", "Dang cap nhat"));
+        setLabelText(name, params.getOrDefault("itemName", "Đang cập nhật"));
         setLabelText(price, formatMoney(params.getOrDefault("currentPrice", "0")) + " VNĐ");
-        setLabelText(status, params.getOrDefault("status", "UNKNOWN"));
+        applyStatusState(params.getOrDefault("status", "UNKNOWN"));
         setLabelText(date, params.getOrDefault("startDate", "--/--/----"));
-        setLabelText(Type, params.getOrDefault("itemType", "Chua co du lieu"));
-        setLabelText(information1, params.getOrDefault("information1", "Chua co du lieu"));
-        setLabelText(information2, params.getOrDefault("information2", "Chua co du lieu"));
-        setLabelText(description, params.getOrDefault("description", "Chua co mo ta chi tiet."));
+        setLabelText(Type, params.getOrDefault("itemType", "Chưa có dữ liệu"));
+        setLabelText(information1, params.getOrDefault("information1", "Chưa có dữ liệu"));
+        setLabelText(information2, params.getOrDefault("information2", "Chưa có dữ liệu"));
+        setLabelText(description, params.getOrDefault("description", "Chưa có mô tả chi tiết."));
+        setLabelText(auctionCodeLabel, "#" + params.getOrDefault("auctionId", StoreItemDataInit.description));
+        setLabelText(scheduleLabel, "Theo giờ bắt đầu");
 
-        String durationVal = params.containsKey("duration")
+        String durationValue = params.containsKey("duration")
                 ? params.get("duration")
                 : params.getOrDefault("durationMinutes", "0");
-        setLabelText(duration, durationVal + " phut");
-        updateCountdownConfig(params, durationVal);
+        setLabelText(duration, durationValue + " phút");
+        updateCountdownConfig(params, durationValue);
+
+        setLabelText(startPriceLabel, formatMoney(params.getOrDefault("startPrice", "0")) + " VNĐ");
+        setLabelText(finalPriceStatLabel, formatMoney(params.getOrDefault("currentPrice", "0")) + " VNĐ");
+        setLabelText(winnerPriceLabel, formatMoney(params.getOrDefault("currentPrice", "0")) + " VNĐ");
+        setLabelText(bidCountLabel, parseLong(params.getOrDefault("bidCount", "0")) + " lượt");
+        if (params.containsKey("endTime")) {
+            setLabelText(finishedAtLabel, endTimeFormatter.format(Instant.ofEpochMilli(parseLong(params.get("endTime")))));
+        }
+
+        if ("FINISHED".equalsIgnoreCase(currentAuctionStatus)) {
+            getWinnerInfo();
+        }
 
         String imageUrl = params.getOrDefault("imageUrl", "");
         StoreItemDataInit.image = imageUrl;
@@ -267,14 +320,16 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     }
 
     private void renderBidUpdate(Map<String, String> params) {
-        String resStatus = params.getOrDefault("status", "SUCCESS");
-        if ("SUCCESS".equals(resStatus)) {
-            setLabelText(status, "RUNNING");
-            if (params.containsKey("highestBid")) {
-                setLabelText(price, formatMoney(params.get("highestBid")) + " VNĐ");
-            } else if (params.containsKey("amount")) {
-                setLabelText(price, formatMoney(params.get("amount")) + " VNĐ");
-            }
+        String resultStatus = params.getOrDefault("status", "SUCCESS");
+        if ("SUCCESS".equalsIgnoreCase(resultStatus)) {
+            applyStatusState("RUNNING");
+            String amount = params.containsKey("highestBid")
+                    ? params.get("highestBid")
+                    : params.getOrDefault("amount", "0");
+            String amountText = formatMoney(amount) + " VNĐ";
+            setLabelText(price, amountText);
+            setLabelText(finalPriceStatLabel, amountText);
+            setLabelText(winnerPriceLabel, amountText);
             updateCountdownConfig(params, params.getOrDefault("duration", String.valueOf(durationMinutes)));
             if (money != null) {
                 money.clear();
@@ -284,14 +339,15 @@ public class ItemShowingHandle implements Initializable, SocketListener {
             return;
         }
 
-        setLabelText(status, params.getOrDefault("message", "Loi dat gia"));
+        setLabelText(statusSubLabel, params.getOrDefault("message", "Lỗi đặt giá"));
     }
 
     private void renderBidHistory(String entries) {
         bidHistoryRows.clear();
 
         if (entries == null || entries.isBlank()) {
-            setLabelText(bidHistoryHint, "Chua co luot dat gia nao.");
+            setLabelText(bidHistoryHint, "Chưa có lượt đặt giá nào.");
+            renderTopWinners();
             return;
         }
 
@@ -304,19 +360,80 @@ public class ItemShowingHandle implements Initializable, SocketListener {
             bidHistoryRows.add(new BidHistoryRow(
                     fields[0],
                     formatMoney(fields[1]) + " VNĐ",
-                    formatTimestamp(fields[2])
+                    formatTimestamp(fields[2]),
+                    parseDouble(fields[1]),
+                    parseLong(fields[2])
             ));
         }
 
         setLabelText(bidHistoryHint, bidHistoryRows.isEmpty()
-                ? "Chua co luot dat gia nao."
-                : "Da tai " + bidHistoryRows.size() + " luot dat gia.");
+                ? "Chưa có lượt đặt giá nào."
+                : "Đã tải " + bidHistoryRows.size() + " lượt đặt giá.");
+        setLabelText(bidCountLabel, bidHistoryRows.size() + " lượt");
+        renderTopWinners();
+    }
+
+    private void renderWinnerInfo(Map<String, String> params) {
+        updateWinnerCard(params.getOrDefault("winner", "NONE"));
+        String finalPriceText = formatMoney(params.getOrDefault("finalPrice", "0")) + " VNĐ";
+        setLabelText(winnerPriceLabel, finalPriceText);
+        setLabelText(finalPriceStatLabel, finalPriceText);
+        setLabelText(resultHintLabel, "Kết quả cuối cùng đã được xác nhận từ server.");
+    }
+
+    private void renderError(String[] parts, Map<String, String> params) {
+        String message = params.get("message");
+        if ((message == null || message.isBlank()) && parts.length > 1) {
+            message = parts[1];
+        }
+
+        String safeMessage = message == null || message.isBlank() ? "Đã xảy ra lỗi" : message;
+        if ("Auction is not available".equalsIgnoreCase(safeMessage)) {
+            applyStatusState("FINISHED");
+            setLabelText(starTime, "00:00:00");
+            if (timeProgress != null) {
+                timeProgress.setProgress(0);
+            }
+            getBidHistory();
+            getWinnerInfo();
+            getItem();
+            return;
+        }
+
+        setLabelText(statusSubLabel, safeMessage);
+        setAutoBidStatus(safeMessage);
+    }
+
+    private void renderImage(String[] parts) {
+        if (parts.length < 4 || StoreItemDataInit.image == null || !StoreItemDataInit.image.equals(parts[1])) {
+            return;
+        }
+
+        try {
+            byte[] bytes = Base64.getDecoder().decode(parts[3]);
+            image.setImage(new Image(new ByteArrayInputStream(bytes)));
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+
+    private void renderAccountInfo(String data) {
+        try {
+            JsonObject json = JsonParser.parseString(data).getAsJsonObject();
+            if (!json.has("command") || !"ACCOUNT_INFO".equals(json.get("command").getAsString())) {
+                return;
+            }
+
+            String balance = json.has("balance") ? json.get("balance").getAsString() : "0";
+            setLabelText(balanceValue, formatMoney(balance) + " VNĐ");
+        } catch (Exception ignored) {
+        }
     }
 
     private void updateCountdownConfig(Map<String, String> params, String durationValue) {
         try {
             if (params.containsKey("endTime")) {
                 endTimeMillis = Long.parseLong(params.get("endTime"));
+                setLabelText(finishedAtLabel, endTimeFormatter.format(Instant.ofEpochMilli(endTimeMillis)));
             }
             if (params.containsKey("serverTime")) {
                 serverClockOffsetMillis = Long.parseLong(params.get("serverTime")) - System.currentTimeMillis();
@@ -354,10 +471,146 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         setLabelText(starTime, formatRemainingTime(remainingMillis));
 
         if (remainingMillis == 0) {
-            setLabelText(status, "FINISHED");
+            applyStatusState("FINISHED");
             if (countdownTimeline != null) {
                 countdownTimeline.stop();
             }
+        }
+    }
+
+    private void applyStatusState(String statusValue) {
+        currentAuctionStatus = statusValue == null || statusValue.isBlank() ? "UNKNOWN" : statusValue.toUpperCase();
+        setLabelText(status, currentAuctionStatus);
+        configureStatusChip(status, currentAuctionStatus);
+        configureStatusChip(heroStatusChip, currentAuctionStatus);
+
+        boolean isFinished = "FINISHED".equals(currentAuctionStatus);
+        boolean isRunning = "RUNNING".equals(currentAuctionStatus);
+        boolean isOpen = "OPEN".equals(currentAuctionStatus);
+
+        modeLabel.setText(isFinished ? "Kết quả phiên đấu giá" : "Phiên đấu giá trực tuyến");
+        statusSubLabel.setText(
+                isFinished ? "Phiên đấu giá đã kết thúc"
+                        : isRunning ? "Cập nhật theo thời gian thực"
+                        : isOpen ? "Đang chờ đến giờ bắt đầu"
+                        : "Đang đồng bộ trạng thái");
+
+        heroStatusChip.setText(
+                isFinished ? "ĐÃ KẾT THÚC"
+                        : isRunning ? "SẢN PHẨM ĐANG ĐẤU GIÁ"
+                        : isOpen ? "SẮP MỞ PHIÊN"
+                        : "ĐANG CẬP NHẬT");
+
+        setVisibleManaged(activeBidCard, !isFinished);
+        setVisibleManaged(autoBidCard, !isFinished);
+        setVisibleManaged(finishedResultCard, isFinished);
+        setVisibleManaged(topWinnersBox, isFinished && !topWinnersBox.getChildren().isEmpty());
+
+        if (raiseBidButton != null) {
+            raiseBidButton.setDisable(!isRunning);
+        }
+        if (money != null) {
+            money.setDisable(!isRunning);
+        }
+        if (autoBidButton != null) {
+            autoBidButton.setDisable(isFinished);
+        }
+        if (autoBidMax != null) {
+            autoBidMax.setDisable(isFinished);
+        }
+        if (autoBidIncrement != null) {
+            autoBidIncrement.setDisable(isFinished);
+        }
+
+        historyTitleLabel.setText(isFinished ? "Danh sách giá thắng" : "Lịch sử đặt giá");
+        historyModeLabel.setText(isFinished ? "xếp hạng cuối phiên" : "theo server");
+    }
+
+    private void configureStatusChip(Label label, String statusValue) {
+        if (label == null) {
+            return;
+        }
+        label.getStyleClass().removeAll("status-running-chip", "status-open-chip", "status-finished-chip");
+        if ("FINISHED".equalsIgnoreCase(statusValue)) {
+            label.getStyleClass().add("status-finished-chip");
+        } else if ("OPEN".equalsIgnoreCase(statusValue)) {
+            label.getStyleClass().add("status-open-chip");
+        } else {
+            label.getStyleClass().add("status-running-chip");
+        }
+    }
+
+    private void updateWinnerCard(String winner) {
+        boolean noWinner = winner == null || winner.isBlank() || "NONE".equalsIgnoreCase(winner);
+        String displayWinner = noWinner ? "Chưa có người thắng" : winner;
+        setLabelText(winnerNameLabel, displayWinner);
+        setLabelText(winnerAvatarLabel, noWinner ? "?" : displayWinner.substring(0, 1).toUpperCase());
+        setLabelText(resultHintLabel, noWinner
+                ? "Phiên đã kết thúc nhưng chưa có người đặt giá hợp lệ."
+                : "Người dẫn đầu cuối cùng đã trở thành người chiến thắng.");
+    }
+
+    private void renderTopWinners() {
+        topWinnersBox.getChildren().clear();
+
+        if (!"FINISHED".equalsIgnoreCase(currentAuctionStatus) || bidHistoryRows.isEmpty()) {
+            setVisibleManaged(topWinnersBox, false);
+            return;
+        }
+
+        bidHistoryRows.stream()
+                .sorted((left, right) -> {
+                    int amountCompare = Double.compare(right.amountValue(), left.amountValue());
+                    if (amountCompare != 0) {
+                        return amountCompare;
+                    }
+                    return Long.compare(right.epochMillis(), left.epochMillis());
+                })
+                .limit(3)
+                .forEachOrdered(row -> topWinnersBox.getChildren().add(createWinnerRow(topWinnersBox.getChildren().size() + 1, row)));
+
+        setVisibleManaged(topWinnersBox, !topWinnersBox.getChildren().isEmpty());
+    }
+
+    private HBox createWinnerRow(int rank, BidHistoryRow row) {
+        Label rankBadge = new Label(String.valueOf(rank));
+        rankBadge.getStyleClass().add("history-rank-badge");
+        rankBadge.getStyleClass().add(switch (rank) {
+            case 1 -> "rank-gold";
+            case 2 -> "rank-silver";
+            default -> "rank-bronze";
+        });
+
+        Label avatar = new Label(row.username().substring(0, 1).toUpperCase());
+        avatar.getStyleClass().add("small-avatar");
+        if (rank == 1) {
+            avatar.getStyleClass().add("gold-avatar");
+        }
+
+        Label user = new Label(row.username());
+        user.getStyleClass().add("history-user");
+
+        Label time = new Label(row.time());
+        time.getStyleClass().add("muted-label");
+
+        VBox userBox = new VBox(2.0, user, time);
+        Label amount = new Label(row.amount());
+        amount.getStyleClass().add("history-price");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox rowBox = new HBox(10.0, rankBadge, avatar, userBox, spacer, amount);
+        rowBox.setAlignment(Pos.CENTER_LEFT);
+        rowBox.setPadding(new Insets(10.0, 12.0, 10.0, 12.0));
+        rowBox.getStyleClass().add("history-rank-row");
+        return rowBox;
+    }
+
+    private void setVisibleManaged(VBox node, boolean visible) {
+        if (node != null) {
+            node.setVisible(visible);
+            node.setManaged(visible);
         }
     }
 
@@ -367,53 +620,6 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         long minutes = (totalSeconds % 3600) / 60;
         long seconds = totalSeconds % 60;
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
-    }
-
-    private void renderError(String[] parts, Map<String, String> params) {
-        String message = params.get("message");
-        if ((message == null || message.isBlank()) && parts.length > 1) {
-            message = parts[1];
-        }
-
-        String safeMessage = message == null || message.isBlank() ? "Da xay ra loi!" : message;
-        if ("Auction is not available".equalsIgnoreCase(safeMessage)) {
-            setLabelText(status, "FINISHED");
-            setLabelText(starTime, "00:00:00");
-            if (timeProgress != null) {
-                timeProgress.setProgress(0);
-            }
-            getItem();
-            getBidHistory();
-            return;
-        }
-
-        setLabelText(status, safeMessage);
-        setAutoBidStatus(safeMessage);
-    }
-
-    private void renderImage(String[] parts) {
-        if (parts.length < 4 || StoreItemDataInit.image == null || !StoreItemDataInit.image.equals(parts[1])) {
-            return;
-        }
-
-        try {
-            byte[] bytes = Base64.getDecoder().decode(parts[3]);
-            getProductImageView().setImage(new Image(new ByteArrayInputStream(bytes)));
-        } catch (IllegalArgumentException ignored) {
-        }
-    }
-
-    private void renderAccountInfo(String data) {
-        try {
-            JsonObject json = JsonParser.parseString(data).getAsJsonObject();
-            if (!json.has("command") || !"ACCOUNT_INFO".equals(json.get("command").getAsString())) {
-                return;
-            }
-
-            String balance = json.has("balance") ? json.get("balance").getAsString() : "0";
-            setLabelText(balanceValue, formatMoney(balance) + " VNĐ");
-        } catch (Exception ignored) {
-        }
     }
 
     private String formatTimestamp(String raw) {
@@ -437,9 +643,25 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         return value == null ? null : value.trim().replace(",", "").replace(" ", "");
     }
 
+    private long parseLong(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (Exception ignored) {
+            return 0L;
+        }
+    }
+
+    private double parseDouble(String value) {
+        try {
+            return Double.parseDouble(value);
+        } catch (Exception ignored) {
+            return 0.0;
+        }
+    }
+
     private void setLabelText(Label label, String value) {
         if (label != null) {
-            label.setText(value == null || value.isBlank() ? "Chua co du lieu" : value);
+            label.setText(value == null || value.isBlank() ? "Chưa có dữ liệu" : value);
         }
     }
 
@@ -447,10 +669,6 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         setLabelText(autoBidStatus, value);
     }
 
-    private ImageView getProductImageView() {
-        return imageView != null ? imageView : image;
-    }
-
-    public record BidHistoryRow(String username, String amount, String time) {
+    public record BidHistoryRow(String username, String amount, String time, double amountValue, long epochMillis) {
     }
 }
