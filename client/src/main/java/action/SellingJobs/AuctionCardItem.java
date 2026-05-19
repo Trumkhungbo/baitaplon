@@ -12,7 +12,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.io.ByteArrayInputStream;
@@ -38,53 +37,54 @@ public class AuctionCardItem extends VBox implements SocketListener {
         this.name = name;
         this.id = id;
         this.currentPrice = currentPrice;
-        this.status = status;
+        this.status = status == null ? "UNKNOWN" : status;
         this.imageUrl = imageUrl == null ? "" : imageUrl;
 
-        this.setSpacing(15);
-        this.getStyleClass().add("auction-card");
-        this.setPrefWidth(280);
-        this.setPadding(new Insets(20));
-        this.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> openDetail());
+        setSpacing(15);
+        getStyleClass().add("auction-card");
+        setPrefWidth(280);
+        setPadding(new Insets(20));
+        addEventHandler(MouseEvent.MOUSE_CLICKED, event -> openDetail());
 
         productImage.setFitWidth(240);
         productImage.setFitHeight(150);
         productImage.setPreserveRatio(true);
         productImage.setSmooth(true);
 
-        Region imagePlaceholder = new Region();
-        imagePlaceholder.setPrefSize(240, 150);
-        imagePlaceholder.setStyle("-fx-background-color: #262626; -fx-background-radius: 10;");
         VBox imageBox = new VBox(productImage);
         imageBox.setMinHeight(150);
         imageBox.setStyle("-fx-background-color: #262626; -fx-background-radius: 10; -fx-alignment: center;");
 
-        Label lblTitle = new Label(name);
-        lblTitle.getStyleClass().add("card-title");
+        Label titleLabel = new Label(name);
+        titleLabel.getStyleClass().add("card-title");
 
         HBox infoBox = new HBox(10);
-        Label lblId = new Label("#" + id);
-        lblId.setStyle("-fx-text-fill: #666666; -fx-font-size: 11px;");
-        Label lblStatus = new Label(status.toUpperCase());
-        lblStatus.getStyleClass().add(status.equalsIgnoreCase("FINISHED") ? "status-finished" : "status-active");
-        infoBox.getChildren().addAll(lblId, lblStatus);
+        Label idLabel = new Label("#" + id);
+        idLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 11px;");
+        Label statusLabel = new Label(this.status.toUpperCase());
+        statusLabel.getStyleClass().add(this.status.equalsIgnoreCase("FINISHED") ? "status-finished" : "status-active");
+        infoBox.getChildren().addAll(idLabel, statusLabel);
 
-        Label lblPriceTag = new Label("Giá hiện tại:");
-        lblPriceTag.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
+        Label priceTag = new Label("Giá hiện tại:");
+        priceTag.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
 
-        Label lblPrice = new Label(formatter.format(currentPrice) + " VNĐ");
-        lblPrice.getStyleClass().add("card-price");
+        Label priceLabel = new Label(formatter.format(currentPrice) + " VNĐ");
+        priceLabel.getStyleClass().add("card-price");
 
-        Button actionBtn = new Button("Tham gia đấu giá");
-        actionBtn.setMaxWidth(Double.MAX_VALUE);
-        actionBtn.getStyleClass().add("btn-gold-sm");
-        actionBtn.setOnAction(e -> {
-            e.consume();
+        Button actionButton = new Button(this.status.equalsIgnoreCase("FINISHED") ? "Xem kết quả" : "Tham gia đấu giá");
+        actionButton.setMaxWidth(Double.MAX_VALUE);
+        if (this.status.equalsIgnoreCase("FINISHED")) {
+            actionButton.setStyle("-fx-background-color: transparent; -fx-border-color: #FF4444; -fx-border-radius: 8; -fx-text-fill: #FF6666; -fx-font-weight: bold; -fx-padding: 10;");
+        } else {
+            actionButton.getStyleClass().add("btn-gold-sm");
+        }
+        actionButton.setOnAction(event -> {
+            event.consume();
             openDetail();
         });
 
-        VBox priceContainer = new VBox(2, lblPriceTag, lblPrice);
-        this.getChildren().addAll(imageBox, lblTitle, infoBox, priceContainer, actionBtn);
+        VBox priceBox = new VBox(2, priceTag, priceLabel);
+        getChildren().addAll(imageBox, titleLabel, infoBox, priceBox, actionButton);
 
         loadImage();
     }

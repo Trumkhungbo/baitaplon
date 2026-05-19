@@ -1,19 +1,11 @@
 package action.MainUI;
 
-import java.io.IOException;
-import java.net.URL;
-import java.sql.Time;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
-
 import action.Core.SceneSwitch;
+import action.SellingJobs.ItemsHolder;
 import action.SocketClient;
 import action.SocketListener;
-import action.SellingJobs.ItemsHolder;
 import com.google.gson.JsonObject;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -22,31 +14,42 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.application.Platform;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
 
 public class AdminpageHandle implements Initializable, SocketListener {
 
     @FXML private TableView<ItemsHolder> ItemsTable;
     @FXML private TableColumn<ItemsHolder, String> ProductName;
+    @FXML private TableColumn<ItemsHolder, String> ProductDescription;
+    @FXML private TableColumn<ItemsHolder, String> Productinfomation1;
+    @FXML private TableColumn<ItemsHolder, String> Productinfomation2;
     @FXML private TableColumn<ItemsHolder, String> ProductPrice;
-    @FXML private TableColumn<ItemsHolder, LocalDate> ProductDate;
-    @FXML private TableColumn<ItemsHolder, LocalTime> ProductTime;
-    @FXML private TableColumn<ItemsHolder, Time> SellingTime;
+    @FXML private TableColumn<ItemsHolder, String> ProductDate;
+    @FXML private TableColumn<ItemsHolder, String> ProductTime;
+    @FXML private TableColumn<ItemsHolder, String> SellingTime;
     @FXML private TableColumn<ItemsHolder, CheckBox> CheckBox;
     @FXML private TableColumn<ItemsHolder, String> STTColumn;
 
-    private List<List<Object>> list = new ArrayList<>();
+    private final List<List<String>> list = new ArrayList<>();
 
     @Override
     public void initialize(URL location, ResourceBundle resource) {
         ProductName.setCellValueFactory(new PropertyValueFactory<>("itemname"));
+        ProductDescription.setCellValueFactory(new PropertyValueFactory<>("itemdescription"));
+        Productinfomation1.setCellValueFactory(new PropertyValueFactory<>("iteminformation1"));
+        Productinfomation2.setCellValueFactory(new PropertyValueFactory<>("iteminformation2"));
         ProductPrice.setCellValueFactory(new PropertyValueFactory<>("itemprice"));
         ProductDate.setCellValueFactory(new PropertyValueFactory<>("itemdate"));
         ProductTime.setCellValueFactory(new PropertyValueFactory<>("itemtime"));
         SellingTime.setCellValueFactory(new PropertyValueFactory<>("itemduration"));
         CheckBox.setCellValueFactory(new PropertyValueFactory<>("checkBox"));
 
-        STTColumn.setCellFactory(column -> new TableCell<ItemsHolder, String>() {
+        STTColumn.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
@@ -54,14 +57,17 @@ public class AdminpageHandle implements Initializable, SocketListener {
                     setText(null);
                     setGraphic(null);
                 } else {
-                    int index = getTableRow().getIndex();
-                    setText(String.valueOf(index + 1));
+                    setText(String.valueOf(getTableRow().getIndex() + 1));
                 }
             }
         });
         STTColumn.setStyle("-fx-alignment: CENTER;");
 
         SocketClient.getInstance().addListener(this);
+        requestAuctionList();
+    }
+
+    private void requestAuctionList() {
         JsonObject req = new JsonObject();
         req.addProperty("command", "LIST_AUCTIONS");
         SocketClient.getInstance().requestData(req.toString());
@@ -72,7 +78,7 @@ public class AdminpageHandle implements Initializable, SocketListener {
             JsonObject req = new JsonObject();
             req.addProperty("auctionId", item.getItemId());
 
-            if (item.getCheckBox().isSelected()){
+            if (item.getCheckBox().isSelected()) {
                 req.addProperty("command", "APPROVE_AUCTION");
             } else {
                 req.addProperty("command", "UPDATE_STATUS");
@@ -81,27 +87,29 @@ public class AdminpageHandle implements Initializable, SocketListener {
             SocketClient.getInstance().requestData(req.toString());
         }
 
-        JsonObject refreshReq = new JsonObject();
-        refreshReq.addProperty("command", "LIST_AUCTIONS");
-        SocketClient.getInstance().requestData(refreshReq.toString());
+        requestAuctionList();
     }
 
     private void renderAuctions() {
         ItemsTable.getItems().clear();
-        for (List<Object> item : list) {
-            String status = (String) item.get(3);
-            if ("PENDING".equals(status)) {
-                String itemname = (String) item.get(0);
-                String itemid = (String) item.get(1);
-                Double currentPrice = (Double) item.get(2);
-
-                ItemsHolder newProduct = new ItemsHolder(
-                        itemid, itemname, currentPrice,
-                        LocalTime.of(10, 10, 10),
-                        Time.valueOf(LocalTime.of(10, 10, 10))
-                );
-                ItemsTable.getItems().add(newProduct);
+        for (List<String> item : list) {
+            String status = item.get(3);
+            if (!"PENDING".equals(status)) {
+                continue;
             }
+
+            ItemsHolder product = new ItemsHolder(
+                    item.get(0),
+                    item.get(1),
+                    item.get(5),
+                    item.get(6),
+                    item.get(7),
+                    formatMoney(item.get(2)),
+                    item.get(8),
+                    item.get(9),
+                    item.get(10) + " phút"
+            );
+            ItemsTable.getItems().add(product);
         }
     }
 
@@ -117,13 +125,33 @@ public class AdminpageHandle implements Initializable, SocketListener {
             if (!dataPart.isBlank()) {
                 for (String itemData : dataPart.split(";")) {
                     String[] attr = itemData.split(":");
-                    if (attr.length >= 4) {
-                        list.add(List.of(attr[1], attr[0], Double.parseDouble(attr[2]), attr[3]));
+                    if (attr.length >= 11) {
+                        list.add(List.of(
+                                attr[0],
+                                attr[1],
+                                attr[2],
+                                attr[3],
+                                attr[4],
+                                attr[5],
+                                attr[6],
+                                attr[7],
+                                attr[8],
+                                attr[9],
+                                attr[10]
+                        ));
                     }
                 }
             }
             renderAuctions();
         });
+    }
+
+    private String formatMoney(String raw) {
+        try {
+            return String.format("%,.0f VNĐ", Double.parseDouble(raw));
+        } catch (NumberFormatException e) {
+            return raw;
+        }
     }
 
     public void LogOut(ActionEvent event) throws IOException {

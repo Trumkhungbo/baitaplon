@@ -9,10 +9,13 @@ import com.google.gson.JsonParser;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -35,26 +38,61 @@ public class InvesmentSiteHandle implements Initializable, SocketListener {
         if (flowPane != null) {
             flowPane.getChildren().clear();
         }
+        list.sort(Comparator.comparingInt(item -> statusPriority((String) item.get(3))));
+
+        String currentGroup = null;
         int renderedCount = 0;
         for (List item : list) {
             if (!item.isEmpty()) {
                 String status = (String) item.get(3);
-                if ("RUNNING".equals(status) || "OPEN".equals(status)) {
-                    AuctionCardItem cardItem = new AuctionCardItem(
-                            (String) item.get(0),
-                            (String) item.get(1),
-                            (Double) item.get(2),
-                            status,
-                            item.size() > 4 ? (String) item.get(4) : ""
-                    );
-                    if (flowPane != null) {
-                        flowPane.getChildren().add(cardItem);
-                        renderedCount++;
-                    }
+                if (!"RUNNING".equals(status) && !"OPEN".equals(status) && !"FINISHED".equals(status)) {
+                    continue;
+                }
+
+                if (!status.equals(currentGroup) && flowPane != null) {
+                    flowPane.getChildren().add(createGroupLabel(status));
+                    currentGroup = status;
+                }
+
+                AuctionCardItem cardItem = new AuctionCardItem(
+                        (String) item.get(0),
+                        (String) item.get(1),
+                        (Double) item.get(2),
+                        status,
+                        item.size() > 4 ? (String) item.get(4) : ""
+                );
+                if (flowPane != null) {
+                    flowPane.getChildren().add(cardItem);
+                    renderedCount++;
                 }
             }
         }
         System.out.println("[InvesmentSite] Rendered auction cards: " + renderedCount);
+    }
+
+    private Node createGroupLabel(String status) {
+        Label label = new Label(mapStatusTitle(status));
+        label.setStyle("-fx-text-fill: #FACC15; -fx-font-size: 20px; -fx-font-weight: bold; -fx-padding: 4 0 2 4;");
+        label.setPrefWidth(1200);
+        return label;
+    }
+
+    private int statusPriority(String status) {
+        return switch (status) {
+            case "RUNNING" -> 0;
+            case "OPEN" -> 1;
+            case "FINISHED" -> 2;
+            default -> 3;
+        };
+    }
+
+    private String mapStatusTitle(String status) {
+        return switch (status) {
+            case "RUNNING" -> "Đang diễn ra";
+            case "OPEN" -> "Sắp bắt đầu";
+            case "FINISHED" -> "Đã kết thúc";
+            default -> "Khác";
+        };
     }
 
     @Override

@@ -410,13 +410,32 @@ public class AuctionService {
 
             // Kiểm tra an toàn để tránh nối chữ "null" nếu dữ liệu trống
             String id = auction.getId() == null ? "" : auction.getId();
-            String itemName = auction.getItemName() == null ? "Unknown Item" : auction.getItemName();
+            String itemName = sanitizeListValue(auction.getItemName() == null ? "Unknown Item" : auction.getItemName());
             String status = auction.getStatus() == null ? "UNKNOWN" : auction.getStatus().name();
             String imageUrl = "";
+            String description = "";
+            String information1 = "";
+            String information2 = "";
+            String startDate = sanitizeListValue(auction.getStartDate());
+            String startTime = sanitizeListValue(auction.getStartClockTime());
+            String duration = String.valueOf(auction.getDurationMinutes());
             try {
                 com.bidding.common.model.item.Item item = itemDAO.findById(auction.getItemId());
-                if (item != null && item.getImageUrl() != null) {
-                    imageUrl = item.getImageUrl();
+                if (item != null) {
+                    if (item.getImageUrl() != null) {
+                        imageUrl = sanitizeListValue(item.getImageUrl());
+                    }
+                    if (item.getDescription() != null) {
+                        description = sanitizeListValue(item.getDescription());
+                    }
+                    String resolvedInformation1 = itemDAO.resolveInformation1(item);
+                    String resolvedInformation2 = itemDAO.resolveInformation2(item);
+                    if (resolvedInformation1 != null) {
+                        information1 = sanitizeListValue(resolvedInformation1);
+                    }
+                    if (resolvedInformation2 != null) {
+                        information2 = sanitizeListValue(resolvedInformation2);
+                    }
                 }
             } catch (RuntimeException e) {
                 System.err.println("[AUCTION_LIST] Cannot load image for auction " + id + ": " + e.getMessage());
@@ -431,7 +450,19 @@ public class AuctionService {
                     .append(":")
                     .append(status)
                     .append(":")
-                    .append(imageUrl);
+                    .append(imageUrl)
+                    .append(":")
+                    .append(description)
+                    .append(":")
+                    .append(information1)
+                    .append(":")
+                    .append(information2)
+                    .append(":")
+                    .append(startDate)
+                    .append(":")
+                    .append(startTime)
+                    .append(":")
+                    .append(duration);
 
             first = false;
         }
@@ -473,6 +504,7 @@ public class AuctionService {
         }
 
         syncAuctionFromDatabase(auction);
+        applyTimeBasedStatus(auction, System.currentTimeMillis());
 
         return auction;
     }
@@ -514,6 +546,14 @@ public class AuctionService {
         synchronized (auction) {
 
             long now = System.currentTimeMillis();
+            applyTimeBasedStatus(auction, now);
+
+            if (auction.getStatus() == AuctionStatus.OPEN
+                    && now < auction.getStartTimeMillis()) {
+                throw new AuctionClosedException(
+                        "Auction has not started yet"
+                );
+            }
 
             if (isActiveAuction(auction)
                     && now >= auction.getEndTime()) {
@@ -542,14 +582,6 @@ public class AuctionService {
 
                 throw new AuctionClosedException(
                         "Auction is not available"
-                );
-            }
-
-            if (auction.getStatus()
-                    == AuctionStatus.OPEN) {
-
-                auction.setStatus(
-                        AuctionStatus.RUNNING
                 );
             }
 
@@ -682,6 +714,7 @@ public class AuctionService {
         long now = System.currentTimeMillis();
 
         for (Auction auction : auctions.values()) {
+            applyTimeBasedStatus(auction, System.currentTimeMillis());
 
             synchronized (auction) {
 
@@ -692,7 +725,9 @@ public class AuctionService {
                     persistAuctionState(auction, 0);
                 }
 
-
+                if (applyTimeBasedStatus(auction, now)) {
+                    notifications.add("AUCTION_STARTED|auctionId=" + auction.getId());
+                }
 
                 if (isActiveAuction(auction)
                         && now >= auction.getEndTime()) {
@@ -955,7 +990,7 @@ public class AuctionService {
                 auction.getEndTime();
 
         if (remaining > 0
-                && remaining < ANTI_SNIPE_THRESHOLD_MS) {
+                && remaining <= ANTI_SNIPE_THRESHOLD_MS) {
 
             auction.extendEndTime(ANTI_SNIPE_EXTENSION_MS);
 
@@ -969,6 +1004,22 @@ public class AuctionService {
             persistAuctionState(auction, 0);
         }
     }
+
+    private boolean applyTimeBasedStatus(Auction auction, long now) {
+        if (auction == null) {
+            return false;
+        }
+
+        if (auction.getStatus() == AuctionStatus.OPEN
+                && now >= auction.getStartTimeMillis()
+                && now < auction.getEndTime()) {
+            auction.setStatus(AuctionStatus.RUNNING);
+            persistAuctionState(auction);
+            return true;
+        }
+
+        return false;
+    }
     public String getAuctionDetail(String auctionId) {
         Auction auction = auctions.get(auctionId);
 
@@ -977,6 +1028,7 @@ public class AuctionService {
         }
 
         syncAuctionFromDatabase(auction);
+        applyTimeBasedStatus(auction, System.currentTimeMillis());
 
         String bidder = auction.getHighestBidder() == null ? "NONE" : auction.getHighestBidder();
 
@@ -1040,6 +1092,19 @@ public class AuctionService {
             return "";
         }
         return value.replace("|", " ").replace("\r", " ").replace("\n", " ").trim();
+    }
+
+    private String sanitizeListValue(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replace(":", " ")
+                .replace(";", " ")
+                .replace("|", " ")
+                .replace("\r", " ")
+                .replace("\n", " ")
+                .trim();
     }
 
 

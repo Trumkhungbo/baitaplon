@@ -55,14 +55,19 @@ public class AuthService {
             response.addProperty("message", "Empty username");
             return response.toString();
         }
-        if (userDAO.existsByUsername(username)) {
-            response.addProperty("status", "FAILED");
-            response.addProperty("message", "Unable to add Username");
-            return response.toString();
-        }
         String normalizedEmail = (email == null || email.trim().isEmpty())
                 ? username.trim() + "@local.auction"
                 : email.trim();
+        if (userDAO.existsByUsername(username)) {
+            response.addProperty("status", "FAILED");
+            response.addProperty("message", "Username already exists");
+            return response.toString();
+        }
+        if (normalizedEmailExists(normalizedEmail)) {
+            response.addProperty("status", "FAILED");
+            response.addProperty("message", "Email already exists");
+            return response.toString();
+        }
 
         Bidder newUser = new Bidder();
         newUser.setUsername(username);
@@ -80,9 +85,27 @@ public class AuthService {
             response.addProperty("message", "Register Success");
         } catch (RuntimeException e) {
             response.addProperty("status", "FAILED");
-            response.addProperty("message", "Unable to add Username");
+            response.addProperty("message", resolveRegisterErrorMessage(e));
         }
         return response.toString();
+    }
+
+    private boolean normalizedEmailExists(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+        return userDAO.existsByEmail(email.trim());
+    }
+
+    private String resolveRegisterErrorMessage(RuntimeException e) {
+        String message = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
+        if (message.contains("users.username")) {
+            return "Username already exists";
+        }
+        if (message.contains("users.email")) {
+            return "Email already exists";
+        }
+        return "Unable to create account";
     }
 
     public String accountInformation(String username) {

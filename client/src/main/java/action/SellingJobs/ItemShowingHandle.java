@@ -144,12 +144,12 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         String amountText = cleanNumber(money.getText());
 
         if (auctionId == null || auctionId.isBlank()) {
-            status.setText("Thiếu mã phiên đấu giá");
+            setLabelText(status, "Thiếu mã phiên đấu giá");
             return;
         }
 
         if (amountText == null || !amountText.matches("\\d+(\\.\\d+)?")) {
-            status.setText("Số tiền đặt giá không hợp lệ");
+            setLabelText(status, "Số tiền đặt giá không hợp lệ");
             return;
         }
 
@@ -191,7 +191,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     @Override
     public void onDataReceived(String data) {
         Platform.runLater(() -> {
-            if (data == null || data.isEmpty()) {
+            if (data == null || data.isBlank()) {
                 return;
             }
 
@@ -199,28 +199,34 @@ public class ItemShowingHandle implements Initializable, SocketListener {
             String command = parts[0];
             Map<String, String> params = parseParams(parts);
 
-            if (command.equals("AUCTION_DETAIL")) {
-                renderAuctionDetail(params);
-            } else if (command.equals("BID_UPDATE") || command.equals("BID_RESULT") || command.equals("BID_SUCCESS")) {
-                renderBidUpdate(params);
-            } else if (command.equals("BID_HISTORY")) {
-                renderBidHistory(params.getOrDefault("entries", ""));
-            } else if (command.equals("AUTO_BID_SET")) {
-                setAutoBidStatus("Đã bật auto-bid cho phiên này");
-                getBidHistory();
-                getAccountBalance();
-            } else if (command.equals("AUCTION_CLOSED")) {
-                setLabelText(status, "FINISHED");
-                if (params.containsKey("finalPrice")) {
-                    setLabelText(price, formatMoney(params.get("finalPrice")) + " VNĐ");
+            switch (command) {
+                case "AUCTION_DETAIL" -> renderAuctionDetail(params);
+                case "BID_UPDATE", "BID_RESULT", "BID_SUCCESS" -> renderBidUpdate(params);
+                case "BID_HISTORY" -> renderBidHistory(params.getOrDefault("entries", ""));
+                case "AUTO_BID_SET" -> {
+                    setAutoBidStatus("Đã bật auto-bid cho phiên này");
+                    getBidHistory();
+                    getAccountBalance();
                 }
-                getBidHistory();
-            } else if (command.equals("ERROR")) {
-                renderError(parts, params);
-            } else if (command.equals("IMAGE_DATA")) {
-                renderImage(parts);
-            } else {
-                renderAccountInfo(data);
+                case "AUCTION_STARTED" -> {
+                    setLabelText(status, "RUNNING");
+                    getItem();
+                }
+                case "AUCTION_CLOSED" -> {
+                    setLabelText(status, "FINISHED");
+                    setLabelText(starTime, "00:00:00");
+                    if (timeProgress != null) {
+                        timeProgress.setProgress(0);
+                    }
+                    if (params.containsKey("finalPrice")) {
+                        setLabelText(price, formatMoney(params.get("finalPrice")) + " VNĐ");
+                    }
+                    getBidHistory();
+                    getItem();
+                }
+                case "ERROR" -> renderError(parts, params);
+                case "IMAGE_DATA" -> renderImage(parts);
+                default -> renderAccountInfo(data);
             }
         });
     }
@@ -238,19 +244,19 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     }
 
     private void renderAuctionDetail(Map<String, String> params) {
-        setLabelText(name, params.getOrDefault("itemName", "Đang cập nhật"));
+        setLabelText(name, params.getOrDefault("itemName", "Dang cap nhat"));
         setLabelText(price, formatMoney(params.getOrDefault("currentPrice", "0")) + " VNĐ");
         setLabelText(status, params.getOrDefault("status", "UNKNOWN"));
         setLabelText(date, params.getOrDefault("startDate", "--/--/----"));
-        setLabelText(Type, params.getOrDefault("itemType", "Chưa có dữ liệu"));
-        setLabelText(information1, params.getOrDefault("information1", "Chưa có dữ liệu"));
-        setLabelText(information2, params.getOrDefault("information2", "Chưa có dữ liệu"));
-        setLabelText(description, params.getOrDefault("description", "Chưa có mô tả chi tiết."));
+        setLabelText(Type, params.getOrDefault("itemType", "Chua co du lieu"));
+        setLabelText(information1, params.getOrDefault("information1", "Chua co du lieu"));
+        setLabelText(information2, params.getOrDefault("information2", "Chua co du lieu"));
+        setLabelText(description, params.getOrDefault("description", "Chua co mo ta chi tiet."));
 
         String durationVal = params.containsKey("duration")
                 ? params.get("duration")
                 : params.getOrDefault("durationMinutes", "0");
-        setLabelText(duration, durationVal + " phút");
+        setLabelText(duration, durationVal + " phut");
         updateCountdownConfig(params, durationVal);
 
         String imageUrl = params.getOrDefault("imageUrl", "");
@@ -262,7 +268,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
 
     private void renderBidUpdate(Map<String, String> params) {
         String resStatus = params.getOrDefault("status", "SUCCESS");
-        if (resStatus.equals("SUCCESS")) {
+        if ("SUCCESS".equals(resStatus)) {
             setLabelText(status, "RUNNING");
             if (params.containsKey("highestBid")) {
                 setLabelText(price, formatMoney(params.get("highestBid")) + " VNĐ");
@@ -270,19 +276,22 @@ public class ItemShowingHandle implements Initializable, SocketListener {
                 setLabelText(price, formatMoney(params.get("amount")) + " VNĐ");
             }
             updateCountdownConfig(params, params.getOrDefault("duration", String.valueOf(durationMinutes)));
-            money.clear();
+            if (money != null) {
+                money.clear();
+            }
             getBidHistory();
             getAccountBalance();
-        } else {
-            setLabelText(status, params.getOrDefault("message", "Lỗi đặt giá"));
+            return;
         }
+
+        setLabelText(status, params.getOrDefault("message", "Loi dat gia"));
     }
 
     private void renderBidHistory(String entries) {
         bidHistoryRows.clear();
 
         if (entries == null || entries.isBlank()) {
-            setLabelText(bidHistoryHint, "Chưa có lượt đặt giá nào.");
+            setLabelText(bidHistoryHint, "Chua co luot dat gia nao.");
             return;
         }
 
@@ -300,8 +309,8 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         }
 
         setLabelText(bidHistoryHint, bidHistoryRows.isEmpty()
-                ? "Chưa có lượt đặt giá nào."
-                : "Đã tải " + bidHistoryRows.size() + " lượt đặt giá.");
+                ? "Chua co luot dat gia nao."
+                : "Da tai " + bidHistoryRows.size() + " luot dat gia.");
     }
 
     private void updateCountdownConfig(Map<String, String> params, String durationValue) {
@@ -365,8 +374,21 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         if ((message == null || message.isBlank()) && parts.length > 1) {
             message = parts[1];
         }
-        setLabelText(status, message == null || message.isBlank() ? "Đã xảy ra lỗi!" : message);
-        setAutoBidStatus(message == null || message.isBlank() ? "Đã xảy ra lỗi!" : message);
+
+        String safeMessage = message == null || message.isBlank() ? "Da xay ra loi!" : message;
+        if ("Auction is not available".equalsIgnoreCase(safeMessage)) {
+            setLabelText(status, "FINISHED");
+            setLabelText(starTime, "00:00:00");
+            if (timeProgress != null) {
+                timeProgress.setProgress(0);
+            }
+            getItem();
+            getBidHistory();
+            return;
+        }
+
+        setLabelText(status, safeMessage);
+        setAutoBidStatus(safeMessage);
     }
 
     private void renderImage(String[] parts) {
@@ -417,7 +439,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
 
     private void setLabelText(Label label, String value) {
         if (label != null) {
-            label.setText(value == null || value.isBlank() ? "Chưa có dữ liệu" : value);
+            label.setText(value == null || value.isBlank() ? "Chua co du lieu" : value);
         }
     }
 
