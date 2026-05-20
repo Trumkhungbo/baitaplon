@@ -7,6 +7,8 @@ import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.repository.UserDAO;
 import com.google.gson.JsonObject;
 
+import java.util.Locale;
+
 public class AuthService {
 
     private final UserDAO userDAO = new UserDAO();
@@ -126,8 +128,8 @@ public class AuthService {
         response.addProperty("fullName", "");
         response.addProperty("phone", user.getPhone() != null ? user.getPhone() : "");
         response.addProperty("personalID", user.getPersonalId() != null ? user.getPersonalId() : "");
-        double balanceValue = (user instanceof Bidder bidder) ? bidder.getBalance() : 0.0;
-        response.addProperty("balance", String.format("%.2f", balanceValue));
+        double balanceValue = userDAO.getBalanceByUsername(username);
+        response.addProperty("balance", String.format(Locale.US, "%.2f", balanceValue));
         return response.toString();
     }
 
@@ -187,17 +189,12 @@ public class AuthService {
                 return response.toString();
             }
 
-            if (user instanceof Bidder bidder) {
-                double newTotal = bidder.getBalance() + amountToAdd;
-                userDAO.updateBalance(cleanUsername, newTotal);
+            double currentBalance = userDAO.getBalanceByUsername(cleanUsername);
+            double newTotal = currentBalance + amountToAdd;
+            userDAO.updateBalance(cleanUsername, newTotal);
 
-                response.addProperty("command", "MONEY_UPDATE");
-                response.addProperty("balance", String.format("%.2f", newTotal));
-                return response.toString();
-            }
-
-            response.addProperty("command", "ERROR");
-            response.addProperty("message", "Only bidders can add money");
+            response.addProperty("command", "MONEY_UPDATE");
+            response.addProperty("balance", String.format(Locale.US, "%.2f", newTotal));
             return response.toString();
 
         } catch (NumberFormatException e) {

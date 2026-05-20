@@ -194,6 +194,12 @@
     -fx-wrap-text: true;
 }
 
+.auction-detail-root .leader-label {
+    -fx-text-fill: #facc15;
+    -fx-font-size: 14px;
+    -fx-font-weight: 800;
+}
+
 .auction-detail-root .timer-label {
     -fx-text-fill: #ff5a5f;
     -fx-font-size: 14px;
@@ -299,9 +305,13 @@
 
 .auction-detail-root .compact-history {
     -fx-max-height: 120px;
-    -fx-opacity: 0.82;
-    -fx-background-color: #141418;
-    -fx-control-inner-background: #141418;
+    -fx-opacity: 1;
+    -fx-background-color: #111114;
+    -fx-control-inner-background: #111114;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-selection-bar: rgba(250, 204, 21, 0.18);
+    -fx-selection-bar-non-focused: rgba(250, 204, 21, 0.12);
 }
 
 .auction-detail-root .custom-table.compact-history,
@@ -310,11 +320,14 @@
 .auction-detail-root .compact-history .viewport,
 .auction-detail-root .compact-history .clipped-container,
 .auction-detail-root .compact-history .sheet,
+.auction-detail-root .compact-history .table-view,
+.auction-detail-root .compact-history .table-view .column-header-background,
+.auction-detail-root .compact-history .table-view .virtual-flow,
 .auction-detail-root .compact-history .corner,
 .auction-detail-root .compact-history .filler,
 .auction-detail-root .compact-history .placeholder,
 .auction-detail-root .compact-history .placeholder .region {
-    -fx-background-color: #141418;
+    -fx-background-color: #111114;
 }
 
 .auction-detail-root .compact-history .column-header-background .filler {
@@ -338,7 +351,7 @@
 }
 
 .auction-detail-root .compact-history .table-row-cell {
-    -fx-background-color: #141418;
+    -fx-background-color: #111114;
     -fx-table-cell-border-color: rgba(255, 255, 255, 0.04);
     -fx-text-background-color: #f3f4f6;
 }

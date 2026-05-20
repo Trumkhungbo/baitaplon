@@ -118,13 +118,17 @@ public class ClientHandler implements Runnable {
                     getJsonString(json, "username"),
                     getJsonString(json, "newPassword")
             };
-            case "GET_AUCTION_DETAIL", "GET_BID_HISTORY", "GET_WINNER", "WATCH", "CLOSE_AUCTION", "APPROVE_AUCTION", "DELETE_AUCTION" -> new String[]{
+            case "GET_AUCTION_DETAIL", "GET_BID_HISTORY", "GET_WINNER", "WATCH", "CLOSE_AUCTION", "APPROVE_AUCTION", "DELETE_AUCTION", "GET_AUTO_BID", "DISABLE_AUTO_BID" -> new String[]{
                     command,
                     getJsonString(json, "auctionId")
             };
             case "LIST_MY_AUCTIONS" -> new String[]{
                     "LIST_MY_AUCTIONS",
                     firstJsonString(json, "sellerUsername", "seller", "username")
+            };
+            case "LIST_ACCOUNT_AUCTIONS" -> new String[]{
+                    "LIST_ACCOUNT_AUCTIONS",
+                    firstJsonString(json, "username", "sellerUsername", "seller")
             };
             case "BID" -> new String[]{
                     "BID",

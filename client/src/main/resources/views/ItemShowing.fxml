@@ -144,6 +144,13 @@
                                                         <Label fx:id="starTime" styleClass="timer-label" text="--:--" />
                                                     </children>
                                                 </HBox>
+                                                <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                                    <children>
+                                                        <Label styleClass="muted-label" text="Nguoi dan dau" />
+                                                        <Region HBox.hgrow="ALWAYS" />
+                                                        <Label fx:id="leaderValueLabel" styleClass="leader-label" text="Chua co" />
+                                                    </children>
+                                                </HBox>
                                                 <ProgressBar fx:id="timeProgress" prefWidth="320.0" progress="0.0" styleClass="gold-progress" />
                                                 <TextField fx:id="money" promptText="Nhập số tiền muốn đặt giá" styleClass="dark-input" />
                                                 <Button fx:id="raiseBidButton" mnemonicParsing="false" onAction="#RaiseBind" prefHeight="48.0" styleClass="gold-button" text="Đặt giá ngay →" />

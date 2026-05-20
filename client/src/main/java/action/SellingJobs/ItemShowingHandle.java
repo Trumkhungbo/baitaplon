@@ -75,6 +75,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     @FXML private Label bidCountLabel;
     @FXML private Label finishedAtLabel;
     @FXML private Label resultHintLabel;
+    @FXML private Label leaderValueLabel;
     @FXML private TextField money;
     @FXML private TextField autoBidMax;
     @FXML private TextField autoBidIncrement;
@@ -101,6 +102,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     private long serverClockOffsetMillis;
     private long durationMinutes;
     private String currentAuctionStatus = "UNKNOWN";
+    private boolean autoBidActive;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -111,6 +113,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         getItem();
         getBidHistory();
         getAccountBalance();
+        getAutoBidStatus();
         applyStatusState("UNKNOWN");
     }
 
@@ -159,6 +162,13 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         SocketClient.getInstance().requestData(req.toString());
     }
 
+    private void getAutoBidStatus() {
+        String auctionId = StoreItemDataInit.description;
+        if (auctionId != null && !auctionId.isBlank()) {
+            SocketClient.getInstance().requestData("GET_AUTO_BID|" + auctionId);
+        }
+    }
+
     private void updateAvatar() {
         String username = StoreDataInput.getUsername();
         if (username == null || username.isBlank()) {
@@ -189,13 +199,19 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     @FXML
     public void EnableAutoBid(ActionEvent actionEvent) {
         String auctionId = StoreItemDataInit.description;
-        String maxBid = cleanNumber(autoBidMax.getText());
-        String increment = cleanNumber(autoBidIncrement.getText());
-
         if (auctionId == null || auctionId.isBlank()) {
             setAutoBidStatus("Thiếu mã phiên đấu giá");
             return;
         }
+
+        if (autoBidActive) {
+            setAutoBidStatus("Đang tắt auto-bid...");
+            SocketClient.getInstance().requestData("DISABLE_AUTO_BID|" + auctionId);
+            return;
+        }
+
+        String maxBid = cleanNumber(autoBidMax.getText());
+        String increment = cleanNumber(autoBidIncrement.getText());
 
         if (maxBid == null || !maxBid.matches("\\d+(\\.\\d+)?")
                 || increment == null || !increment.matches("\\d+(\\.\\d+)?")) {
@@ -235,10 +251,13 @@ public class ItemShowingHandle implements Initializable, SocketListener {
                 case "BID_UPDATE", "BID_RESULT", "BID_SUCCESS" -> renderBidUpdate(params);
                 case "BID_HISTORY" -> renderBidHistory(params.getOrDefault("entries", ""));
                 case "AUTO_BID_SET" -> {
+                    renderAutoBidStatus(params);
                     setAutoBidStatus("Đã bật auto-bid cho phiên này");
                     getBidHistory();
                     getAccountBalance();
                 }
+                case "AUTO_BID_STATUS" -> renderAutoBidStatus(params);
+                case "AUTO_BID_DISABLED" -> renderAutoBidDisabled();
                 case "AUCTION_STARTED" -> {
                     applyStatusState("RUNNING");
                     getItem();
@@ -304,6 +323,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         setLabelText(finalPriceStatLabel, formatMoney(params.getOrDefault("currentPrice", "0")) + " VNĐ");
         setLabelText(winnerPriceLabel, formatMoney(params.getOrDefault("currentPrice", "0")) + " VNĐ");
         setLabelText(bidCountLabel, parseLong(params.getOrDefault("bidCount", "0")) + " lượt");
+        setLabelText(leaderValueLabel, params.getOrDefault("highestBidder", "Chua co"));
         if (params.containsKey("endTime")) {
             setLabelText(finishedAtLabel, endTimeFormatter.format(Instant.ofEpochMilli(parseLong(params.get("endTime")))));
         }
@@ -330,6 +350,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
             setLabelText(price, amountText);
             setLabelText(finalPriceStatLabel, amountText);
             setLabelText(winnerPriceLabel, amountText);
+            setLabelText(leaderValueLabel, params.getOrDefault("highestBidder", params.getOrDefault("user", "Chua co")));
             updateCountdownConfig(params, params.getOrDefault("duration", String.valueOf(durationMinutes)));
             if (money != null) {
                 money.clear();
@@ -379,6 +400,40 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         setLabelText(winnerPriceLabel, finalPriceText);
         setLabelText(finalPriceStatLabel, finalPriceText);
         setLabelText(resultHintLabel, "Kết quả cuối cùng đã được xác nhận từ server.");
+    }
+
+    private void renderAutoBidStatus(Map<String, String> params) {
+        autoBidActive = Boolean.parseBoolean(params.getOrDefault("active", "false"));
+
+        if (autoBidButton != null) {
+            autoBidButton.setText(autoBidActive ? "Tat auto-bid" : "Bat auto-bid");
+        }
+
+        if (autoBidActive) {
+            String maxBid = params.getOrDefault("maxBid", "");
+            String increment = params.getOrDefault("increment", "");
+            if (autoBidMax != null && !maxBid.isBlank()) {
+                autoBidMax.setText(maxBid);
+            }
+            if (autoBidIncrement != null && !increment.isBlank()) {
+                autoBidIncrement.setText(increment);
+            }
+            setAutoBidStatus("Da luu auto-bid cho phien nay.");
+            return;
+        }
+
+        if (autoBidButton != null) {
+            autoBidButton.setText("Bat auto-bid");
+        }
+        setAutoBidStatus("Chua bat auto-bid.");
+    }
+
+    private void renderAutoBidDisabled() {
+        autoBidActive = false;
+        if (autoBidButton != null) {
+            autoBidButton.setText("Bat auto-bid");
+        }
+        setAutoBidStatus("Da tat auto-bid.");
     }
 
     private void renderError(String[] parts, Map<String, String> params) {

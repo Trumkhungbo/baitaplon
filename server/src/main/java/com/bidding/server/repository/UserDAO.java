@@ -110,6 +110,23 @@ public class UserDAO extends BaseDAO {
         }
     }
 
+    public double getBalanceByUsername(String username) {
+        String sql = "SELECT balance FROM users WHERE username = ?";
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("balance");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Loi lay balance: " + e.getMessage(), e);
+        }
+        return 0.0;
+    }
+
     public void updatePasswordHash(String username, String passwordHash) {
         String sql = "UPDATE users SET password_hash = ? WHERE username = ?";
         try (Connection conn = getConn();
