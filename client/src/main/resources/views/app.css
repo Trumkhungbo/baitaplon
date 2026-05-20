@@ -331,17 +331,17 @@
 }
 
 .auction-detail-root .compact-history .column-header-background .filler {
-    -fx-background-color: #23232a;
+    -fx-background-color: #000000;
 }
 
 .auction-detail-root .compact-history .column-header-background {
-    -fx-background-color: #23232a;
+    -fx-background-color: #000000;
     -fx-background-radius: 10 10 0 0;
 }
 
 .auction-detail-root .compact-history .column-header {
-    -fx-background-color: transparent;
-    -fx-border-color: rgba(212, 175, 55, 0.12);
+    -fx-background-color: #000000;
+    -fx-border-color: rgba(255, 255, 255, 0.08);
 }
 
 .auction-detail-root .compact-history .column-header .label {
@@ -351,13 +351,13 @@
 }
 
 .auction-detail-root .compact-history .table-row-cell {
-    -fx-background-color: #111114;
+    -fx-background-color: #000000;
     -fx-table-cell-border-color: rgba(255, 255, 255, 0.04);
     -fx-text-background-color: #f3f4f6;
 }
 
 .auction-detail-root .compact-history .table-row-cell:filled:odd {
-    -fx-background-color: #19191f;
+    -fx-background-color: #050505;
 }
 
 .auction-detail-root .compact-history .table-row-cell:filled:hover {
@@ -374,6 +374,13 @@
     -fx-alignment: CENTER_LEFT;
     -fx-border-color: transparent;
     -fx-background-color: transparent;
+}
+
+.auction-detail-root .compact-history .table-header-row,
+.auction-detail-root .compact-history .nested-column-header,
+.auction-detail-root .compact-history .table-row-cell:empty,
+.auction-detail-root .compact-history .table-row-cell:empty .table-cell {
+    -fx-background-color: #000000;
 }
 
 .auction-detail-root .compact-history .placeholder .label {

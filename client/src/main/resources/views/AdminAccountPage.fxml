@@ -1,14 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
 
-
-<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1">
+<VBox prefHeight="650.0" prefWidth="1200.0" spacing="18.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.AdminAccountPageHandle">
+   <padding>
+      <Insets bottom="28.0" left="36.0" right="36.0" top="28.0" />
+   </padding>
    <children>
-      <VBox prefHeight="200.0" prefWidth="100.0">
-         <children>
-            <HBox prefHeight="100.0" prefWidth="200.0" />
-         </children>
-      </VBox>
+      <Label style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" text="Quản Lý Tài Khoản" />
+      <Label fx:id="feedbackLabel" style="-fx-text-fill: #A7B0C0; -fx-font-size: 14px;" text="Hiển thị đầy đủ thông tin người dùng và xóa tài khoản khi cần." />
+      <TableView fx:id="usersTable" prefHeight="500.0" prefWidth="1128.0" style="-fx-background-color: #151515;">
+         <columns>
+            <TableColumn fx:id="sttColumn" prefWidth="55.0" text="STT" />
+            <TableColumn fx:id="usernameColumn" prefWidth="180.0" text="Tên Người Dùng" />
+            <TableColumn fx:id="balanceColumn" prefWidth="155.0" text="Số Dư Hiện Tại" />
+            <TableColumn fx:id="emailColumn" prefWidth="220.0" text="Gmail" />
+            <TableColumn fx:id="idColumn" prefWidth="80.0" text="ID" />
+            <TableColumn fx:id="phoneColumn" prefWidth="150.0" text="Số Điện Thoại" />
+            <TableColumn fx:id="personalIdColumn" prefWidth="150.0" text="CCCD" />
+            <TableColumn fx:id="roleColumn" prefWidth="100.0" text="Vai Trò" />
+            <TableColumn fx:id="actionColumn" prefWidth="130.0" text="Duyệt" />
+         </columns>
+      </TableView>
    </children>
-</StackPane>
+</VBox>

@@ -84,6 +84,7 @@
                                                         <RowConstraints />
                                                         <RowConstraints />
                                                         <RowConstraints />
+                                                        <RowConstraints />
                                                     </rowConstraints>
                                                     <children>
                                                         <Label styleClass="spec-key" text="Mã phiên" GridPane.columnIndex="0" GridPane.rowIndex="0" />
@@ -100,6 +101,8 @@
                                                         <Label fx:id="information1" styleClass="spec-value" text="Chưa có dữ liệu" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                                         <Label styleClass="spec-key" text="Thông tin 2" GridPane.columnIndex="2" GridPane.rowIndex="2" />
                                                         <Label fx:id="information2" styleClass="spec-value" text="Chưa có dữ liệu" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+                                                        <Label styleClass="spec-key" text="Người đăng" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+                                                        <Label fx:id="sellerLabel" styleClass="spec-value" text="Chưa có dữ liệu" GridPane.columnIndex="3" GridPane.rowIndex="3" />
                                                     </children>
                                                 </GridPane>
                                             </children>

@@ -1,13 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            prefHeight="400.0" prefWidth="600.0">
-
-</AnchorPane>
+<VBox prefHeight="650.0" prefWidth="1200.0" spacing="18.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.AdminTopUpRequestPageHandle">
+   <padding>
+      <Insets bottom="28.0" left="36.0" right="36.0" top="28.0" />
+   </padding>
+   <children>
+      <Label style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" text="Quản Lý Yêu Cầu Nạp Tiền" />
+      <Label fx:id="feedbackLabel" style="-fx-text-fill: #A7B0C0; -fx-font-size: 14px;" text="User gửi yêu cầu nạp tiền, admin đồng ý thì số dư mới được cộng." />
+      <TableView fx:id="requestsTable" prefHeight="500.0" prefWidth="1128.0" style="-fx-background-color: #151515;">
+         <columns>
+            <TableColumn fx:id="sttColumn" prefWidth="70.0" text="STT" />
+            <TableColumn fx:id="usernameColumn" prefWidth="220.0" text="Tên Người Dùng" />
+            <TableColumn fx:id="balanceColumn" prefWidth="220.0" text="Số Dư Hiện Tại" />
+            <TableColumn fx:id="amountColumn" prefWidth="220.0" text="Số Tiền Nạp" />
+            <TableColumn fx:id="emailColumn" prefWidth="240.0" text="Gmail" />
+            <TableColumn fx:id="actionColumn" prefWidth="150.0" text="Duyệt" />
+         </columns>
+      </TableView>
+   </children>
+</VBox>

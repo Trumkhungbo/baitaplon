@@ -35,8 +35,13 @@ public class CommandDispatcher {
         register("DISABLE_AUTO_BID", new DisableAutoBidCommand(auctionService, broadcastService));
         register("CLOSE_AUCTION", new CloseAuctionCommand(auctionService, broadcastService));
         register("GET_WINNER", new GetWinnerCommand(auctionService));
+        register("PAY_AUCTION", new PayAuctionCommand(auctionService, broadcastService));
         register("GET_ACCOUNTINFORMATION", new GetAccountInformationCommand(authService));
         register("ADD_MONEY", new GetNewMoneyCommand(authService));
+        register("ADMIN_LIST_USERS", new AdminListUsersCommand(authService));
+        register("ADMIN_DELETE_USER", new AdminDeleteUserCommand(authService));
+        register("ADMIN_LIST_TOPUP_REQUESTS", new AdminListTopUpRequestsCommand(authService));
+        register("ADMIN_APPROVE_TOPUP_REQUEST", new AdminApproveTopUpRequestCommand(authService));
         register("FORGOT_PASSWORD", new ForgotPasswordCommand(authService));
         register("RESET_PASSWORD", new ResetPasswordCommand(authService));
         register("UPDATE_STATUS", new UpdateStatusCommand(auctionService));

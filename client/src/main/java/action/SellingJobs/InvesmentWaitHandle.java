@@ -201,7 +201,7 @@ public class InvesmentWaitHandle implements Initializable, SocketListener {
         totalCountLabel.setText(String.valueOf(products.size()));
         runningCountLabel.setText(String.valueOf(products.stream().filter(p -> "RUNNING".equalsIgnoreCase(p.status())).count()));
         upcomingCountLabel.setText(String.valueOf(products.stream().filter(p -> "OPEN".equalsIgnoreCase(p.status()) || "PENDING".equalsIgnoreCase(p.status())).count()));
-        finishedCountLabel.setText(String.valueOf(products.stream().filter(p -> "FINISHED".equalsIgnoreCase(p.status())).count()));
+        finishedCountLabel.setText(String.valueOf(products.stream().filter(p -> "FINISHED".equalsIgnoreCase(p.status()) || "PAID".equalsIgnoreCase(p.status()) || "CANCELED".equalsIgnoreCase(p.status())).count()));
     }
 
     private HBox createRow(MyProductRowData product) {
@@ -209,7 +209,7 @@ public class InvesmentWaitHandle implements Initializable, SocketListener {
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(12.0, 10.0, 12.0, 10.0));
         row.getStyleClass().add("my-product-row");
-        row.setOnMouseClicked(event -> openAuctionRoom(product));
+        row.setOnMouseClicked(event -> { if (!"CANCELED".equalsIgnoreCase(product.status())) { openAuctionRoom(product); } else { setFeedback("San pham bi tu choi duyet va da chuyen sang CANCELED."); } });
 
         HBox productCell = new HBox(12.0);
         productCell.setPrefWidth(270.0);
@@ -331,7 +331,9 @@ public class InvesmentWaitHandle implements Initializable, SocketListener {
 
     private boolean isLockedByStatus(MyProductRowData product) {
         return "RUNNING".equalsIgnoreCase(product.status())
-                || "FINISHED".equalsIgnoreCase(product.status());
+                || "FINISHED".equalsIgnoreCase(product.status())
+                || "PAID".equalsIgnoreCase(product.status())
+                || "CANCELED".equalsIgnoreCase(product.status());
     }
 
     private void loadImage(String filename, ImageView imageView) {

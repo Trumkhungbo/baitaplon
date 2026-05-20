@@ -101,6 +101,18 @@ public class DatabaseInitializer {
                     )
                     """);
 
+            st.execute("""
+                    CREATE TABLE IF NOT EXISTS topup_requests (
+                        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username      TEXT    NOT NULL,
+                        amount        REAL    NOT NULL,
+                        status        TEXT    NOT NULL DEFAULT 'PENDING',
+                        requested_at  BIGINT  NOT NULL,
+                        decided_at    BIGINT,
+                        FOREIGN KEY (username) REFERENCES users(username)
+                    )
+                    """);
+
             ensureColumnExists("items", "information1", "TEXT");
             ensureColumnExists("items", "information2", "TEXT");
             ensureColumnExists("items", "description", "TEXT");
@@ -112,6 +124,7 @@ public class DatabaseInitializer {
             st.execute("CREATE INDEX IF NOT EXISTS idx_bid_auction_id ON bid_transactions(auction_id)");
             st.execute("CREATE INDEX IF NOT EXISTS idx_auto_bid_auction_id ON auto_bid_settings(auction_id)");
             st.execute("CREATE INDEX IF NOT EXISTS idx_auto_bid_active ON auto_bid_settings(auction_id, is_active)");
+            st.execute("CREATE INDEX IF NOT EXISTS idx_topup_status ON topup_requests(status)");
 
             st.execute("""
                     INSERT OR IGNORE INTO users (username, password_hash, email, phone, personal_id, role, created_at)

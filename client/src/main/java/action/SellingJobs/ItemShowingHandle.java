@@ -67,6 +67,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     @FXML private Label scheduleLabel;
     @FXML private Label historyTitleLabel;
     @FXML private Label historyModeLabel;
+    @FXML private Label sellerLabel;
     @FXML private Label winnerAvatarLabel;
     @FXML private Label winnerNameLabel;
     @FXML private Label winnerPriceLabel;
@@ -200,12 +201,17 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     public void EnableAutoBid(ActionEvent actionEvent) {
         String auctionId = StoreItemDataInit.description;
         if (auctionId == null || auctionId.isBlank()) {
-            setAutoBidStatus("Thiếu mã phiên đấu giá");
+            setAutoBidStatus("Thieu ma phien dau gia");
+            return;
+        }
+
+        if (!"RUNNING".equalsIgnoreCase(currentAuctionStatus)) {
+            setAutoBidStatus("Auto-bid chi bat khi phien dang RUNNING.");
             return;
         }
 
         if (autoBidActive) {
-            setAutoBidStatus("Đang tắt auto-bid...");
+            setAutoBidStatus("??ang t???t auto-bid...");
             SocketClient.getInstance().requestData("DISABLE_AUTO_BID|" + auctionId);
             return;
         }
@@ -215,11 +221,11 @@ public class ItemShowingHandle implements Initializable, SocketListener {
 
         if (maxBid == null || !maxBid.matches("\\d+(\\.\\d+)?")
                 || increment == null || !increment.matches("\\d+(\\.\\d+)?")) {
-            setAutoBidStatus("Thông tin auto-bid không hợp lệ");
+            setAutoBidStatus("Thong tin auto-bid khong hop le");
             return;
         }
 
-        setAutoBidStatus("Đang bật auto-bid...");
+        setAutoBidStatus("Dang bat auto-bid...");
         SocketClient.getInstance().requestData("SET_AUTO_BID|" + auctionId + "|" + maxBid + "|" + increment);
     }
 
@@ -307,6 +313,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         applyStatusState(params.getOrDefault("status", "UNKNOWN"));
         setLabelText(date, params.getOrDefault("startDate", "--/--/----"));
         setLabelText(Type, params.getOrDefault("itemType", "Chưa có dữ liệu"));
+        setLabelText(sellerLabel, params.getOrDefault("seller", "Chưa có dữ liệu"));
         setLabelText(information1, params.getOrDefault("information1", "Chưa có dữ liệu"));
         setLabelText(information2, params.getOrDefault("information2", "Chưa có dữ liệu"));
         setLabelText(description, params.getOrDefault("description", "Chưa có mô tả chi tiết."));
@@ -539,9 +546,12 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         configureStatusChip(status, currentAuctionStatus);
         configureStatusChip(heroStatusChip, currentAuctionStatus);
 
-        boolean isFinished = "FINISHED".equals(currentAuctionStatus);
+        boolean isFinished = "FINISHED".equals(currentAuctionStatus)
+                || "PAID".equals(currentAuctionStatus)
+                || "CANCELED".equals(currentAuctionStatus);
         boolean isRunning = "RUNNING".equals(currentAuctionStatus);
         boolean isOpen = "OPEN".equals(currentAuctionStatus);
+        boolean isPending = "PENDING".equals(currentAuctionStatus);
 
         modeLabel.setText(isFinished ? "Kết quả phiên đấu giá" : "Phiên đấu giá trực tuyến");
         statusSubLabel.setText(
@@ -568,13 +578,13 @@ public class ItemShowingHandle implements Initializable, SocketListener {
             money.setDisable(!isRunning);
         }
         if (autoBidButton != null) {
-            autoBidButton.setDisable(isFinished);
+            autoBidButton.setDisable(!isRunning);
         }
         if (autoBidMax != null) {
-            autoBidMax.setDisable(isFinished);
+            autoBidMax.setDisable(!isRunning);
         }
         if (autoBidIncrement != null) {
-            autoBidIncrement.setDisable(isFinished);
+            autoBidIncrement.setDisable(!isRunning);
         }
 
         historyTitleLabel.setText(isFinished ? "Danh sách giá thắng" : "Lịch sử đặt giá");

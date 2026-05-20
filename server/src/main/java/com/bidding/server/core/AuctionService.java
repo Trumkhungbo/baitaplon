@@ -14,9 +14,11 @@ import com.bidding.server.repository.AutoBidDAO;
 import com.bidding.server.repository.BidHistoryDAO;
 import com.bidding.server.repository.ItemDAO;
 import com.bidding.server.repository.SellerAuctionDAO;
+import com.bidding.server.repository.UserDAO;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +41,7 @@ public class AuctionService {
     private final AutoBidDAO autoBidDAO;
     private final ItemDAO itemDAO;
     private final SellerAuctionDAO sellerAuctionDAO;
+    private final UserDAO userDAO;
 
     public AuctionService() {
 
@@ -50,6 +53,7 @@ public class AuctionService {
         this.autoBidDAO = new AutoBidDAO();
         this.itemDAO = new ItemDAO();
         this.sellerAuctionDAO = new SellerAuctionDAO();
+        this.userDAO = new UserDAO();
 
         loadPersistedRuntimeAuctions();
 
@@ -307,7 +311,7 @@ public class AuctionService {
             }
             first = false;
 
-            appendAccountAuctionRow(sb, auction, item, "Seller", auction.getStartDate(), auction.getStartClockTime());
+            appendAccountAuctionRow(sb, auction, item, "Seller", auction.getStartDate(), auction.getStartClockTime(), "", false);
         }
 
         return sb.toString();
@@ -335,7 +339,10 @@ public class AuctionService {
                 sb.append(";");
             }
             first = false;
-            appendAccountAuctionRow(sb, auction, item, "Bidder", formatEpochDate(entry.getValue()), formatEpochTime(entry.getValue()));
+            String result = resolveBidderResultText(auction, username);
+            boolean canPay = "FINISHED".equalsIgnoreCase(auction.getStatus().name())
+                    && username.equalsIgnoreCase(auction.getHighestBidder());
+            appendAccountAuctionRow(sb, auction, item, "Bidder", formatEpochDate(entry.getValue()), formatEpochTime(entry.getValue()), result, canPay);
         }
 
         return sb.toString();
@@ -347,7 +354,7 @@ public class AuctionService {
         return itemDAO.findById(auction.getItemId());
     }
 
-    private void appendAccountAuctionRow(StringBuilder sb, Auction auction, Item item, String role, String displayDate, String displayTime) {
+    private void appendAccountAuctionRow(StringBuilder sb, Auction auction, Item item, String role, String displayDate, String displayTime, String result, boolean canPay) {
         String itemType = item.getItemType() == null ? "" : item.getItemType().name();
         String imageUrl = sanitizeListValue(item.getImageUrl());
         String description = sanitizeListValue(item.getDescription());
@@ -372,7 +379,64 @@ public class AuctionService {
                 .append(information2).append(":")
                 .append(auction.getStartTimeMillis()).append(":")
                 .append(auction.getEndTime()).append(":")
-                .append(role);
+                .append(role).append(":")
+                .append(sanitizeListValue(result)).append(":")
+                .append(canPay);
+    }
+
+    private String resolveBidderResultText(Auction auction, String username) {
+        if (auction == null || username == null || username.isBlank()) {
+            return "";
+        }
+
+        String status = auction.getStatus() == null ? "" : auction.getStatus().name();
+        if ("RUNNING".equalsIgnoreCase(status)) {
+            int rank = calculateBidderRank(auction.getId(), username);
+            return rank > 0 ? "Top " + rank : "";
+        }
+
+        if ("FINISHED".equalsIgnoreCase(status) || "PAID".equalsIgnoreCase(status)) {
+            return username.equalsIgnoreCase(auction.getHighestBidder()) ? "winner" : "lost";
+        }
+
+        if ("CANCELED".equalsIgnoreCase(status)) {
+            return "canceled";
+        }
+
+        return "";
+    }
+
+    private int calculateBidderRank(String auctionId, String username) {
+        Map<String, BidRecord> ranking = buildBidderRanking(auctionId);
+        int rank = 1;
+        for (BidRecord record : ranking.values().stream()
+                .sorted((left, right) -> {
+                    int amountCompare = Double.compare(right.getAmount(), left.getAmount());
+                    if (amountCompare != 0) {
+                        return amountCompare;
+                    }
+                    return Long.compare(left.getTimestamp(), right.getTimestamp());
+                })
+                .toList()) {
+            if (username.equalsIgnoreCase(record.getBidderUsername())) {
+                return rank;
+            }
+            rank++;
+        }
+        return 0;
+    }
+
+    private Map<String, BidRecord> buildBidderRanking(String auctionId) {
+        Map<String, BidRecord> bestBids = new HashMap<>();
+        for (BidRecord record : bidHistoryDAO.findByAuctionId(auctionId)) {
+            BidRecord current = bestBids.get(record.getBidderUsername());
+            if (current == null
+                    || record.getAmount() > current.getAmount()
+                    || (record.getAmount() == current.getAmount() && record.getTimestamp() < current.getTimestamp())) {
+                bestBids.put(record.getBidderUsername(), record);
+            }
+        }
+        return bestBids;
     }
 
     public String updateSellerAuction(String sellerUsername, String auctionId, Item item, long startTime, long durationMinutes) {
@@ -858,9 +922,14 @@ public class AuctionService {
         synchronized (auction) {
 
             syncAuctionFromDatabase(auction);
+            applyTimeBasedStatus(auction, System.currentTimeMillis());
 
             if (increment <= 0) {
                 return "ERROR|Increment invalid";
+            }
+
+            if (auction.getStatus() != AuctionStatus.RUNNING) {
+                return "ERROR|Auto-bid is only available when auction is running";
             }
 
             if (maxBid <= auction.getCurrentPrice()) {
@@ -928,6 +997,65 @@ public class AuctionService {
                 + "|auctionId=" + auctionId
                 + "|user=" + sanitizeMessageValue(username)
                 + "|active=false";
+    }
+
+    public String payAuction(String auctionId, String username) {
+        if (auctionId == null || auctionId.isBlank()) {
+            return "PAY_AUCTION_RESULT|status=FAILED|message=Auction id required";
+        }
+        if (username == null || username.isBlank()) {
+            return "PAY_AUCTION_RESULT|status=FAILED|message=Username required";
+        }
+
+        Auction auction = auctions.get(auctionId);
+        if (auction == null) {
+            return "PAY_AUCTION_RESULT|status=FAILED|message=Auction not found";
+        }
+
+        synchronized (auction) {
+            syncAuctionFromDatabase(auction);
+
+            if (auction.getStatus() == AuctionStatus.PAID) {
+                return "PAY_AUCTION_RESULT|status=FAILED|auctionId=" + auctionId + "|message=Auction already paid";
+            }
+
+            if (auction.getStatus() == AuctionStatus.CANCELED) {
+                return "PAY_AUCTION_RESULT|status=FAILED|auctionId=" + auctionId + "|message=Auction was canceled";
+            }
+
+            if (auction.getStatus() != AuctionStatus.FINISHED) {
+                return "PAY_AUCTION_RESULT|status=FAILED|auctionId=" + auctionId + "|message=Auction is not ready for payment";
+            }
+
+            String winner = auction.getHighestBidder();
+            if (winner == null || winner.isBlank() || !winner.equalsIgnoreCase(username)) {
+                return "PAY_AUCTION_RESULT|status=FAILED|auctionId=" + auctionId + "|message=Only the winner can pay";
+            }
+
+            double amount = auction.getCurrentPrice();
+            double buyerBalance = userDAO.getBalanceByUsername(username);
+            if (buyerBalance < amount) {
+                auction.setStatus(AuctionStatus.CANCELED);
+                persistAuctionState(auction, bidHistoryDAO.countByAuctionId(auctionId));
+                return "PAY_AUCTION_RESULT|status=FAILED|auctionId=" + auctionId + "|newStatus=CANCELED|message=Insufficient balance";
+            }
+
+            String sellerUsername = auction.getSellerUsername();
+            double sellerBalance = userDAO.getBalanceByUsername(sellerUsername);
+            userDAO.updateBalance(username, buyerBalance - amount);
+            userDAO.updateBalance(sellerUsername, sellerBalance + amount);
+
+            auction.setStatus(AuctionStatus.PAID);
+            persistAuctionState(auction, bidHistoryDAO.countByAuctionId(auctionId));
+
+            return "PAY_AUCTION_RESULT|status=SUCCESS"
+                    + "|auctionId=" + auctionId
+                    + "|newStatus=PAID"
+                    + "|paidAmount=" + (long) amount
+                    + "|buyerBalance=" + (long) (buyerBalance - amount)
+                    + "|seller=" + sanitizeMessageValue(sellerUsername)
+                    + "|message=Payment completed";
+        }
     }
 
     public List<String> closeExpiredAuctions() {

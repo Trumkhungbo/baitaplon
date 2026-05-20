@@ -14,6 +14,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -53,7 +54,9 @@ public class ActionInformationHandle implements Initializable, SocketListener {
     @FXML private TableColumn<AccountAuctionRow, String> roleColumn;
     @FXML private TableColumn<AccountAuctionRow, String> moneyColumn;
     @FXML private TableColumn<AccountAuctionRow, String> statusColumn;
+    @FXML private TableColumn<AccountAuctionRow, String> resultColumn;
     @FXML private TableColumn<AccountAuctionRow, String> timeColumn;
+    @FXML private TableColumn<AccountAuctionRow, AccountAuctionRow> actionColumn;
 
     private final ObservableList<AccountAuctionRow> rows = FXCollections.observableArrayList();
     private final DecimalFormat moneyFormat = new DecimalFormat("#,###");
@@ -71,8 +74,9 @@ public class ActionInformationHandle implements Initializable, SocketListener {
         productNameColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().itemName()));
         auctionCodeColumn.setCellValueFactory(param -> new SimpleStringProperty("#AU" + param.getValue().auctionId()));
         roleColumn.setCellValueFactory(param -> new SimpleStringProperty(normalizeRole(param.getValue().role())));
-        moneyColumn.setCellValueFactory(param -> new SimpleStringProperty(formatMoney(param.getValue().currentPrice()) + " đ"));
+        moneyColumn.setCellValueFactory(param -> new SimpleStringProperty(formatMoney(param.getValue().currentPrice()) + " VND"));
         statusColumn.setCellValueFactory(param -> new SimpleStringProperty(normalizeStatus(param.getValue().status())));
+        resultColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().result()));
         timeColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().startDate() + " " + param.getValue().startClockTime()));
 
         statusColumn.setCellFactory(column -> new TableCell<>() {
@@ -86,12 +90,57 @@ public class ActionInformationHandle implements Initializable, SocketListener {
                 }
                 setText(item);
                 String style = switch (item) {
-                    case "Đang đấu giá" -> "-fx-text-fill: #4ADE80; -fx-font-weight: bold;";
-                    case "Sắp diễn ra" -> "-fx-text-fill: #60A5FA; -fx-font-weight: bold;";
-                    case "Chờ duyệt" -> "-fx-text-fill: #FACC15; -fx-font-weight: bold;";
+                    case "Dang dau gia" -> "-fx-text-fill: #4ADE80; -fx-font-weight: bold;";
+                    case "Sap dien ra" -> "-fx-text-fill: #60A5FA; -fx-font-weight: bold;";
+                    case "Cho duyet" -> "-fx-text-fill: #FACC15; -fx-font-weight: bold;";
+                    case "Da thanh toan" -> "-fx-text-fill: #22C55E; -fx-font-weight: bold;";
+                    case "Da huy" -> "-fx-text-fill: #F87171; -fx-font-weight: bold;";
                     default -> "-fx-text-fill: #CBD5E1; -fx-font-weight: bold;";
                 };
                 setStyle(style);
+            }
+        });
+
+        resultColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null || item.isBlank()) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                setText(item);
+                String normalized = item.toLowerCase(Locale.ROOT);
+                String style = switch (normalized) {
+                    case "winner" -> "-fx-text-fill: #FACC15; -fx-font-weight: bold;";
+                    case "lost", "canceled" -> "-fx-text-fill: #F87171; -fx-font-weight: bold;";
+                    default -> "-fx-text-fill: #93C5FD; -fx-font-weight: bold;";
+                };
+                setStyle(style);
+            }
+        });
+
+        actionColumn.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue()));
+        actionColumn.setCellFactory(column -> new TableCell<>() {
+            private final Button payButton = new Button("Thanh toan");
+
+            {
+                payButton.getStyleClass().add("btn-gold");
+                payButton.setOnAction(event -> {
+                    AccountAuctionRow row = getItem();
+                    if (row == null) {
+                        return;
+                    }
+                    event.consume();
+                    openPayment(row);
+                });
+            }
+
+            @Override
+            protected void updateItem(AccountAuctionRow item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(!empty && item != null && item.canPay() ? payButton : null);
             }
         });
 
@@ -100,6 +149,10 @@ public class ActionInformationHandle implements Initializable, SocketListener {
             TableRow<AccountAuctionRow> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
                 if (row.isEmpty()) {
+                    return;
+                }
+                if ("CANCELED".equalsIgnoreCase(row.getItem().status())) {
+                    setFeedback("Phien dau gia nay da bi huy.");
                     return;
                 }
                 openAuctionRoom(row.getItem());
@@ -138,7 +191,7 @@ public class ActionInformationHandle implements Initializable, SocketListener {
         addReq.addProperty("username", StoreDataInput.username);
         addReq.addProperty("money", input);
         SocketClient.getInstance().requestData(addReq.toString());
-        setFeedback("Đang gửi yêu cầu nạp tiền...");
+        setFeedback("Dang gui yeu cau nap tien...");
     }
 
     @FXML
@@ -187,8 +240,12 @@ public class ActionInformationHandle implements Initializable, SocketListener {
                     case "MONEY_UPDATE" -> {
                         money.setText(formatMoneyText(getAsString(res, "balance")));
                         moneyIn.clear();
-                        setFeedback("Nạp tiền thành công.");
+                        setFeedback("Nap tien thanh cong.");
                         loadAccountInfo();
+                    }
+                    case "TOPUP_REQUEST_CREATED" -> {
+                        moneyIn.clear();
+                        setFeedback(getAsString(res, "message"));
                     }
                     case "ERROR" -> setFeedback(getAsString(res, "message"));
                     default -> {
@@ -212,7 +269,7 @@ public class ActionInformationHandle implements Initializable, SocketListener {
             String[] recordRows = payload.split(";");
             for (String row : recordRows) {
                 String[] attr = row.split(":", -1);
-                if (attr.length < 17) {
+                if (attr.length < 18) {
                     continue;
                 }
                 rows.add(new AccountAuctionRow(
@@ -226,7 +283,9 @@ public class ActionInformationHandle implements Initializable, SocketListener {
                         attr[11],
                         attr[13],
                         attr[14],
-                        attr.length > 17 ? attr[17] : "Seller"
+                        attr.length > 17 ? attr[17] : "Bidder",
+                        attr.length > 18 ? attr[18] : "",
+                        attr.length > 19 && Boolean.parseBoolean(attr[19])
                 ));
             }
         }
@@ -239,13 +298,16 @@ public class ActionInformationHandle implements Initializable, SocketListener {
         long pending = rows.stream().filter(row -> "PENDING".equalsIgnoreCase(row.status())).count();
         long open = rows.stream().filter(row -> "OPEN".equalsIgnoreCase(row.status())).count();
         long running = rows.stream().filter(row -> "RUNNING".equalsIgnoreCase(row.status())).count();
-        long finished = rows.stream().filter(row -> "FINISHED".equalsIgnoreCase(row.status())).count();
+        long finished = rows.stream().filter(row ->
+                "FINISHED".equalsIgnoreCase(row.status())
+                        || "PAID".equalsIgnoreCase(row.status())
+                        || "CANCELED".equalsIgnoreCase(row.status())).count();
 
-        allStatusLabel.setText("Tất cả: " + rows.size());
-        pendingStatusLabel.setText("Chờ duyệt: " + pending);
-        openStatusLabel.setText("Sắp diễn ra: " + open);
-        runningStatusLabel.setText("Đang đấu giá: " + running);
-        finishedStatusLabel.setText("Đã kết thúc: " + finished);
+        allStatusLabel.setText("Tat ca: " + rows.size());
+        pendingStatusLabel.setText("Cho duyet: " + pending);
+        openStatusLabel.setText("Sap dien ra: " + open);
+        runningStatusLabel.setText("Dang dau gia: " + running);
+        finishedStatusLabel.setText("Da ket thuc: " + finished);
     }
 
     private void openAuctionRoom(AccountAuctionRow row) {
@@ -263,21 +325,42 @@ public class ActionInformationHandle implements Initializable, SocketListener {
                 LobbyHandle.getInstance().ItemShowing();
             }
         } catch (IOException e) {
-            setFeedback("Không thể mở phòng đấu giá của sản phẩm.");
+            setFeedback("Khong the mo phong dau gia cua san pham.");
+        }
+    }
+
+    private void openPayment(AccountAuctionRow row) {
+        StoreItemDataInit.name = row.itemName();
+        StoreItemDataInit.description = row.auctionId();
+        StoreItemDataInit.price = formatMoney(row.currentPrice());
+        StoreItemDataInit.status = row.status();
+        StoreItemDataInit.image = row.imageUrl();
+        StoreItemDataInit.itemInformation1 = row.information1();
+        StoreItemDataInit.itemInformation2 = row.information2();
+        StoreItemDataInit.itemType = row.itemType();
+
+        try {
+            if (LobbyHandle.getInstance() != null) {
+                LobbyHandle.getInstance().MovingCenter("/views/Payment_BuyingStuff.fxml");
+            }
+        } catch (IOException e) {
+            setFeedback("Khong the mo trang thanh toan.");
         }
     }
 
     private String normalizeStatus(String status) {
-        return switch (status.toUpperCase()) {
-            case "PENDING" -> "Chờ duyệt";
-            case "OPEN" -> "Sắp diễn ra";
-            case "RUNNING" -> "Đang đấu giá";
-            default -> "Đã kết thúc";
+        return switch (status.toUpperCase(Locale.ROOT)) {
+            case "PENDING" -> "Cho duyet";
+            case "OPEN" -> "Sap dien ra";
+            case "RUNNING" -> "Dang dau gia";
+            case "PAID" -> "Da thanh toan";
+            case "CANCELED" -> "Da huy";
+            default -> "Da ket thuc";
         };
     }
 
     private String normalizeRole(String role) {
-        return "Bidder".equalsIgnoreCase(role) ? "Người đặt" : "Người bán";
+        return "Bidder".equalsIgnoreCase(role) ? "Nguoi dat" : "Nguoi ban";
     }
 
     private String getAsString(JsonObject object, String key) {
@@ -285,7 +368,7 @@ public class ActionInformationHandle implements Initializable, SocketListener {
     }
 
     private String maskPassword(String raw) {
-        return "••••••••";
+        return "********";
     }
 
     private String formatMoney(double value) {
@@ -350,7 +433,9 @@ public class ActionInformationHandle implements Initializable, SocketListener {
             String imageUrl,
             String information1,
             String information2,
-            String role
+            String role,
+            String result,
+            boolean canPay
     ) {
     }
 }
