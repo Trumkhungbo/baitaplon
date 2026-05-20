@@ -333,3 +333,50 @@
     -fx-control-inner-background: #1A1A1A; /* Màu nền trong bảng */
     -fx-padding: 0;
 }
+.my-product-row {
+    -fx-background-color: rgba(255,255,255,0.02);
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255,255,255,0.05);
+    -fx-border-radius: 14;
+    -fx-cursor: hand;
+}
+
+.my-product-row:hover {
+    -fx-background-color: rgba(250, 204, 21, 0.08);
+    -fx-border-color: rgba(250, 204, 21, 0.45);
+    -fx-effect: dropshadow(three-pass-box, rgba(250, 204, 21, 0.16), 16, 0, 0, 0);
+}
+
+.outline-gold-button {
+    -fx-background-color: transparent;
+    -fx-border-color: rgba(250, 204, 21, 0.45);
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: #FACC15;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.outline-gold-button:hover {
+    -fx-background-color: rgba(250, 204, 21, 0.14);
+    -fx-border-color: #FACC15;
+    -fx-text-fill: #FFF3B0;
+    -fx-effect: dropshadow(three-pass-box, rgba(250, 204, 21, 0.18), 10, 0, 0, 0);
+}
+
+.outline-danger-button {
+    -fx-background-color: transparent;
+    -fx-border-color: #7F1D1D;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: #F87171;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.outline-danger-button:hover {
+    -fx-background-color: rgba(248, 113, 113, 0.14);
+    -fx-border-color: #F87171;
+    -fx-text-fill: #FCA5A5;
+    -fx-effect: dropshadow(three-pass-box, rgba(248, 113, 113, 0.18), 10, 0, 0, 0);
+}

@@ -106,7 +106,7 @@
 
 .auction-detail-root .product-title {
     -fx-text-fill: #ffffff;
-    -fx-font-size: 28px;
+    -fx-font-size: 24px;
     -fx-font-weight: 900;
     -fx-line-spacing: -2px;
 }
@@ -188,9 +188,10 @@
 
 .auction-detail-root .price-label {
     -fx-text-fill: #f8c84c;
-    -fx-font-size: 42px;
+    -fx-font-size: 34px;
     -fx-font-weight: 950;
     -fx-effect: dropshadow(gaussian, rgba(250, 204, 21, 0.18), 16, 0.12, 0, 0);
+    -fx-wrap-text: true;
 }
 
 .auction-detail-root .timer-label {
@@ -299,14 +300,25 @@
 .auction-detail-root .compact-history {
     -fx-max-height: 120px;
     -fx-opacity: 0.82;
+    -fx-background-color: #141418;
+    -fx-control-inner-background: #141418;
 }
 
+.auction-detail-root .custom-table.compact-history,
 .auction-detail-root .compact-history,
 .auction-detail-root .compact-history .virtual-flow,
 .auction-detail-root .compact-history .viewport,
+.auction-detail-root .compact-history .clipped-container,
+.auction-detail-root .compact-history .sheet,
 .auction-detail-root .compact-history .corner,
-.auction-detail-root .compact-history .filler {
+.auction-detail-root .compact-history .filler,
+.auction-detail-root .compact-history .placeholder,
+.auction-detail-root .compact-history .placeholder .region {
     -fx-background-color: #141418;
+}
+
+.auction-detail-root .compact-history .column-header-background .filler {
+    -fx-background-color: #23232a;
 }
 
 .auction-detail-root .compact-history .column-header-background {
@@ -348,6 +360,7 @@
     -fx-text-fill: #f3f4f6;
     -fx-alignment: CENTER_LEFT;
     -fx-border-color: transparent;
+    -fx-background-color: transparent;
 }
 
 .auction-detail-root .compact-history .placeholder .label {

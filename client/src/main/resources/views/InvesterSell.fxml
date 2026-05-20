@@ -26,7 +26,7 @@
          <children>
             <HBox alignment="CENTER_LEFT">
                <children>
-                  <Label style="-fx-text-fill: #FACC15; -fx-font-size: 24px; -fx-font-weight: bold;" text="Đăng bán sản phẩm mới" />
+                  <Label fx:id="pageTitle" style="-fx-text-fill: #FACC15; -fx-font-size: 24px; -fx-font-weight: bold;" text="Đăng bán sản phẩm mới" />
                   <Region HBox.hgrow="ALWAYS" />
                   <Label style="-fx-text-fill: #A0A0A0; -fx-font-size: 13px;" text="Hệ thống đấu giá MiniBoom" />
                </children>
@@ -85,10 +85,7 @@
                         <Label style="-fx-text-fill: #A0A0A0; -fx-font-weight: bold;" text="Hình ảnh sản phẩm" />
                         <StackPane styleClass="image-upload-placeholder" VBox.vgrow="ALWAYS">
                            <children>
-                              <ImageView fx:id="imageset" fitHeight="250.0" fitWidth="250.0" pickOnBounds="true" preserveRatio="true">
-                                 <image>
-                                 </image>
-                              </ImageView>
+                              <ImageView fx:id="imageset" fitHeight="250.0" fitWidth="250.0" pickOnBounds="true" preserveRatio="true" />
                               <Button mnemonicParsing="false" onAction="#AddImage" styleClass="btn-add-image" text="+" StackPane.alignment="BOTTOM_RIGHT">
                                  <StackPane.margin>
                                     <Insets bottom="10.0" right="10.0" />
@@ -105,7 +102,7 @@
 
             <HBox alignment="CENTER_RIGHT" spacing="15.0">
                <children>
-                  <Button mnemonicParsing="false" onAction="#Clicked" prefWidth="170.0" styleClass="btn-gold" text="Đăng bán ngay" />
+                  <Button fx:id="submitButton" mnemonicParsing="false" onAction="#Clicked" prefWidth="180.0" styleClass="btn-gold" text="Đăng bán ngay" />
                </children>
             </HBox>
             <Pane prefHeight="0.0" prefWidth="820.0">

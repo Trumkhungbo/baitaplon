@@ -1,15 +1,15 @@
 package action.SellingJobs;
 
 import action.Authentication.StoreDataInput;
-import action.Core.SceneSwitch;
+import action.MainUI.LobbyHandle;
 import action.SocketClient;
 import action.SocketListener;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -20,6 +20,7 @@ import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -43,25 +44,26 @@ public class InvesterSellHandle implements Initializable, SocketListener {
     @FXML private TextField duration;
     @FXML private ImageView imageset;
     @FXML private Label statusLabel;
+    @FXML private Label pageTitle;
+    @FXML private Button submitButton;
 
     private File selectedImageFile;
-    private String pendingMessage;
-
-    private final SceneSwitch sceneSwitch = new SceneSwitch();
+    private String pendingImageFilename = "";
 
     @Override
     public void initialize(URL location, ResourceBundle resource) {
-        setDescription();
+        initializeDefaults();
         SocketClient.getInstance().addListener(this);
+        loadEditState();
     }
 
     @FXML
-    public void Clicked(ActionEvent actionEvent) throws IOException {
+    public void Clicked(ActionEvent actionEvent) {
         try {
             LocalDate date = auctionDate != null && auctionDate.getValue() != null
                     ? auctionDate.getValue()
                     : LocalDate.now();
-            LocalTime time = LocalTime.parse(TimeStart.getText());
+            LocalTime time = LocalTime.parse(TimeStart.getText().trim());
             if ((auctionDate == null || auctionDate.getValue() == null) && time.isBefore(LocalTime.now())) {
                 date = date.plusDays(1);
             }
@@ -70,36 +72,18 @@ public class InvesterSellHandle implements Initializable, SocketListener {
                     .atZone(ZoneId.systemDefault())
                     .toInstant()
                     .toEpochMilli();
-            long durationMins = Long.parseLong(duration.getText());
-            long priceValue = Long.parseLong(price.getText());
-
-            JsonObject req = new JsonObject();
-            req.addProperty("command", "ADD_AUCTION");
-            req.addProperty("seller", StoreDataInput.getUsername());
-            req.addProperty("itemType", description.getValue());
-            req.addProperty("itemName", itemname.getText());
-            req.addProperty("des1", description1.getText());
-            req.addProperty("des2", description2.getText());
-            req.addProperty("price", String.valueOf(priceValue));
-            req.addProperty("startTime", String.valueOf(startEpochMillis));
-            req.addProperty("durationMinutes", String.valueOf(durationMins));
-            req.addProperty("description", productDescription == null ? "" : productDescription.getText());
-            pendingMessage = req.toString();
+            long durationMins = Long.parseLong(duration.getText().trim());
+            long priceValue = Long.parseLong(price.getText().trim().replace(",", ""));
 
             if (selectedImageFile != null) {
                 uploadImage(selectedImageFile);
-                setStatus("Dang upload anh...");
-            } else {
-                JsonObject payload = JsonParser.parseString(pendingMessage).getAsJsonObject();
-                payload.addProperty("imageUrl", "");
-                SocketClient.getInstance().requestData(payload.toString());
-                setStatus("Dang dang ban...");
-                pendingMessage = null;
+                setStatus("Đang upload ảnh...");
+                return;
             }
 
+            sendAuctionPayload(startEpochMillis, durationMins, priceValue, pendingImageFilename);
         } catch (Exception e) {
-            sceneSwitch.SwitchToLockPage(actionEvent, "/views/WrongInputShow.fxml");
-            e.printStackTrace();
+            setStatus("Dữ liệu không hợp lệ, vui lòng kiểm tra lại.");
         }
     }
 
@@ -108,7 +92,7 @@ public class InvesterSellHandle implements Initializable, SocketListener {
         Stage currentStage = (Stage) ((javafx.scene.Node) actionEvent.getSource()).getScene().getWindow();
 
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Chon anh san pham");
+        fileChooser.setTitle("Chọn ảnh sản phẩm");
         fileChooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp")
         );
@@ -117,8 +101,28 @@ public class InvesterSellHandle implements Initializable, SocketListener {
         if (file != null) {
             selectedImageFile = file;
             imageset.setImage(new Image(file.toURI().toString()));
-            setStatus("Anh da chon: " + file.getName());
+            setStatus("Ảnh đã chọn: " + file.getName());
         }
+    }
+
+    private void sendAuctionPayload(long startEpochMillis, long durationMins, long priceValue, String imageUrl) {
+        JsonObject req = new JsonObject();
+        req.addProperty("command", StoreSellerProductEdit.editing ? "UPDATE_AUCTION" : "ADD_AUCTION");
+        if (StoreSellerProductEdit.editing) {
+            req.addProperty("auctionId", StoreSellerProductEdit.auctionId);
+        }
+        req.addProperty("seller", StoreDataInput.getUsername());
+        req.addProperty("itemType", description.getValue());
+        req.addProperty("itemName", itemname.getText());
+        req.addProperty("des1", description1.getText());
+        req.addProperty("des2", description2.getText());
+        req.addProperty("price", String.valueOf(priceValue));
+        req.addProperty("startTime", String.valueOf(startEpochMillis));
+        req.addProperty("durationMinutes", String.valueOf(durationMins));
+        req.addProperty("description", productDescription == null ? "" : productDescription.getText());
+        req.addProperty("imageUrl", imageUrl == null ? "" : imageUrl);
+        SocketClient.getInstance().requestData(req.toString());
+        setStatus(StoreSellerProductEdit.editing ? "Đang cập nhật sản phẩm..." : "Đang đăng bán...");
     }
 
     private void uploadImage(File imageFile) throws IOException {
@@ -134,28 +138,73 @@ public class InvesterSellHandle implements Initializable, SocketListener {
     @Override
     public void onDataReceived(String data) {
         Platform.runLater(() -> {
-            if (data.startsWith("UPLOAD_IMAGE_SUCCESS|") && pendingMessage != null) {
-                String filename = data.substring("UPLOAD_IMAGE_SUCCESS|".length()).trim();
+            if (data.startsWith("UPLOAD_IMAGE_SUCCESS|")) {
+                pendingImageFilename = data.substring("UPLOAD_IMAGE_SUCCESS|".length()).trim();
+                if (StoreSellerProductEdit.editing) {
+                    StoreSellerProductEdit.imageUrl = pendingImageFilename;
+                }
+                selectedImageFile = null;
+                try {
+                    LocalDate date = auctionDate != null && auctionDate.getValue() != null
+                            ? auctionDate.getValue()
+                            : LocalDate.now();
+                    LocalTime time = LocalTime.parse(TimeStart.getText().trim());
+                    long startEpochMillis = date.atTime(time)
+                            .atZone(ZoneId.systemDefault())
+                            .toInstant()
+                            .toEpochMilli();
+                    long durationMins = Long.parseLong(duration.getText().trim());
+                    long priceValue = Long.parseLong(price.getText().trim().replace(",", ""));
+                    sendAuctionPayload(startEpochMillis, durationMins, priceValue, pendingImageFilename);
+                } catch (Exception e) {
+                    setStatus("Không thể gửi dữ liệu sau khi upload ảnh.");
+                }
+                return;
+            }
 
-                JsonObject payload = JsonParser.parseString(pendingMessage).getAsJsonObject();
-                payload.addProperty("imageUrl", filename);
-                SocketClient.getInstance().requestData(payload.toString());
-                System.out.println("[SELL] Sent ADD_AUCTION with image: " + filename);
+            if (data.startsWith("IMAGE_DATA|")
+                    && StoreSellerProductEdit.editing
+                    && StoreSellerProductEdit.imageUrl != null
+                    && !StoreSellerProductEdit.imageUrl.isBlank()) {
+                String[] parts = data.split("\\|", 4);
+                if (parts.length >= 4 && StoreSellerProductEdit.imageUrl.equals(parts[1])) {
+                    try {
+                        byte[] bytes = Base64.getDecoder().decode(parts[3]);
+                        imageset.setImage(new Image(new ByteArrayInputStream(bytes)));
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+                return;
+            }
 
-                pendingMessage = null;
-                setStatus("Dang dang ban...");
-
-            } else if (data.startsWith("ADD_AUCTION_SUCCESS")
+            if (data.startsWith("ADD_AUCTION_SUCCESS")
                     || data.startsWith("CREATE_AUCTION_SUCCESS")
-                    || data.startsWith("ADD_AUCTION_PENDING")) {
-                setStatus("Dang ban thanh cong!");
-                clearForm();
+                    || data.startsWith("ADD_AUCTION_PENDING")
+                    || data.startsWith("UPDATE_AUCTION_SUCCESS")) {
+                boolean wasEditing = StoreSellerProductEdit.editing;
+                if (wasEditing) {
+                    resetToFreshCreateForm();
+                } else {
+                    setStatus("Đăng bán thành công!");
+                    clearForm();
+                    StoreSellerProductEdit.clear();
+                }
+                return;
+            }
 
-            } else if (data.startsWith("ERROR|")) {
-                setStatus("Loi: " + data.substring("ERROR|".length()));
-                pendingMessage = null;
+            if (data.startsWith("ERROR|")) {
+                if (StoreSellerProductEdit.editing) {
+                    resetToFreshCreateForm();
+                } else {
+                    setStatus("Lỗi: " + data.substring("ERROR|".length()));
+                }
             }
         });
+    }
+
+    private void initializeDefaults() {
+        description.getItems().setAll("ELECTRONICS", "ART", "VEHICLE");
+        clearForm();
     }
 
     private void clearForm() {
@@ -163,30 +212,71 @@ public class InvesterSellHandle implements Initializable, SocketListener {
         if (productDescription != null) {
             productDescription.clear();
         }
-        price.clear();
         description1.clear();
         description2.clear();
+        price.clear();
         TimeStart.clear();
         duration.clear();
+        if (description != null && !description.getItems().isEmpty()) {
+            description.setValue(description.getItems().get(0));
+        }
         if (auctionDate != null) {
             auctionDate.setValue(LocalDate.now());
         }
-        imageset.setImage(null);
+        if (imageset != null) {
+            imageset.setImage(null);
+        }
         selectedImageFile = null;
+        pendingImageFilename = "";
+        if (pageTitle != null) {
+            pageTitle.setText("Đăng bán sản phẩm mới");
+        }
+        if (submitButton != null) {
+            submitButton.setText("Đăng bán ngay");
+        }
+    }
+
+    private void resetToFreshCreateForm() {
+        StoreSellerProductEdit.clear();
+        clearForm();
+        try {
+            if (LobbyHandle.getInstance() != null) {
+                LobbyHandle.getInstance().MovingCenter("/views/InvesterSell.fxml");
+            }
+        } catch (IOException e) {
+            setStatus("Không thể tải lại form đăng bán.");
+        }
     }
 
     private void setStatus(String msg) {
         if (statusLabel != null) {
             statusLabel.setText(msg);
         }
-        System.out.println("[SELL] " + msg);
     }
 
-    public void setDescription() {
-        description.getItems().addAll("ELECTRONICS", "ART", "VEHICLE");
-        description.setValue(description.getItems().get(0));
-        if (auctionDate != null) {
-            auctionDate.setValue(LocalDate.now());
+    private void loadEditState() {
+        if (!StoreSellerProductEdit.editing) {
+            return;
+        }
+
+        pageTitle.setText("Chỉnh sửa sản phẩm");
+        submitButton.setText("Cập nhật sản phẩm");
+        itemname.setText(StoreSellerProductEdit.itemName);
+        if (productDescription != null) {
+            productDescription.setText(StoreSellerProductEdit.description);
+        }
+        description.setValue(StoreSellerProductEdit.itemType);
+        description1.setText(StoreSellerProductEdit.information1);
+        description2.setText(StoreSellerProductEdit.information2);
+        price.setText(StoreSellerProductEdit.price);
+        TimeStart.setText(StoreSellerProductEdit.time);
+        duration.setText(StoreSellerProductEdit.duration);
+        if (auctionDate != null && StoreSellerProductEdit.date != null && !StoreSellerProductEdit.date.isBlank()) {
+            auctionDate.setValue(LocalDate.parse(StoreSellerProductEdit.date));
+        }
+        pendingImageFilename = StoreSellerProductEdit.imageUrl == null ? "" : StoreSellerProductEdit.imageUrl;
+        if (!pendingImageFilename.isBlank()) {
+            SocketClient.getInstance().requestData("GET_IMAGE|" + pendingImageFilename);
         }
     }
 }
