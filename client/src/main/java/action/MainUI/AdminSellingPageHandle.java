@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class AdminpageHandle implements Initializable, SocketListener {
+public class AdminSellingPageHandle implements Initializable, SocketListener {
 
     @FXML private TableView<ItemsHolder> ItemsTable;
     @FXML private TableColumn<ItemsHolder, String> ProductName;

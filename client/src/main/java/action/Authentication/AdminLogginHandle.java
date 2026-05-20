@@ -32,7 +32,7 @@ public class AdminLogginHandle {
                 req.addProperty("command", "ELEVATE");
 
                 SocketClient.getInstance().requestData(req.toString());
-                sceneSwitch.SwitchToAnyWhere(event, "/views/AdminPage.fxml");
+                sceneSwitch.SwitchToAnyWhere(event, "/views/AdminLobby.fxml");
             }
             else{
                 label.setText("WRONG!!!!");

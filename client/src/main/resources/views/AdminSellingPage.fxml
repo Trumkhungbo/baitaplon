@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox prefHeight="700.0" prefWidth="1000.0" spacing="20.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.AdminpageHandle">
+<VBox prefHeight="700.0" prefWidth="1000.0" spacing="20.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.AdminSellingPageHandle">
     <padding>
         <Insets bottom="30.0" left="40.0" right="40.0" top="30.0" />
     </padding>
