@@ -13,9 +13,12 @@
    <children>
       <Label style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" text="Quản Lý Yêu Cầu Nạp Tiền" />
       <Label fx:id="feedbackLabel" style="-fx-text-fill: #A7B0C0; -fx-font-size: 14px;" text="User gửi yêu cầu nạp tiền, admin đồng ý thì số dư mới được cộng." />
-      <TableView fx:id="requestsTable" prefHeight="500.0" prefWidth="1128.0" style="-fx-background-color: #151515;">
+      <TableView fx:id="requestsTable" prefHeight="500.0" prefWidth="1128.0" styleClass="custom-table">
+         <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+         </columnResizePolicy>
          <columns>
-            <TableColumn fx:id="sttColumn" prefWidth="70.0" text="STT" />
+            <TableColumn fx:id="sttColumn" maxWidth="70.0" minWidth="70.0" text="STT" />
             <TableColumn fx:id="usernameColumn" prefWidth="220.0" text="Tên Người Dùng" />
             <TableColumn fx:id="balanceColumn" prefWidth="220.0" text="Số Dư Hiện Tại" />
             <TableColumn fx:id="amountColumn" prefWidth="220.0" text="Số Tiền Nạp" />

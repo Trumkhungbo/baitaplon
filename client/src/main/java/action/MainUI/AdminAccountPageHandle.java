@@ -74,11 +74,7 @@ public class AdminAccountPageHandle implements Initializable, SocketListener {
             @Override
             protected void updateItem(UserRow item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null || "ADMIN".equalsIgnoreCase(item.role())) {
-                    setGraphic(null);
-                } else {
-                    setGraphic(deleteButton);
-                }
+                setGraphic(empty || item == null || "ADMIN".equalsIgnoreCase(item.role()) ? null : deleteButton);
             }
         });
         usersTable.setItems(rows);
@@ -121,20 +117,19 @@ public class AdminAccountPageHandle implements Initializable, SocketListener {
 
     private void renderUsers(JsonArray users) {
         rows.clear();
-        if (users == null) {
-            return;
-        }
-        for (JsonElement element : users) {
-            JsonObject item = element.getAsJsonObject();
-            rows.add(new UserRow(
-                    getAsLong(item, "id"),
-                    getAsString(item, "username"),
-                    getAsDouble(item, "balance"),
-                    getAsString(item, "email"),
-                    getAsString(item, "phone"),
-                    getAsString(item, "personalID"),
-                    getAsString(item, "role")
-            ));
+        if (users != null) {
+            for (JsonElement element : users) {
+                JsonObject item = element.getAsJsonObject();
+                rows.add(new UserRow(
+                        getAsLong(item, "id"),
+                        getAsString(item, "username"),
+                        getAsDouble(item, "balance"),
+                        getAsString(item, "email"),
+                        getAsString(item, "phone"),
+                        getAsString(item, "personalID"),
+                        getAsString(item, "role")
+                ));
+            }
         }
         setFeedback("Tổng tài khoản: " + rows.size());
     }

@@ -1,4 +1,4 @@
-package action.SellingJobs;
+package action.MainUI;
 
 import javafx.scene.control.CheckBox;
 

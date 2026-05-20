@@ -1,7 +1,6 @@
 package action.MainUI;
 
 import action.Core.SceneSwitch;
-import action.SellingJobs.ItemsHolder;
 import action.SocketClient;
 import action.SocketListener;
 import com.google.gson.JsonObject;

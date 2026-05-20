@@ -1,4 +1,4 @@
-package action.Authentication;
+package action.MainUI;
 
 import action.SocketClient;
 import action.SocketListener;

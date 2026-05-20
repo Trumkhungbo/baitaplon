@@ -13,9 +13,12 @@
    <children>
       <Label style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" text="Quản Lý Tài Khoản" />
       <Label fx:id="feedbackLabel" style="-fx-text-fill: #A7B0C0; -fx-font-size: 14px;" text="Hiển thị đầy đủ thông tin người dùng và xóa tài khoản khi cần." />
-      <TableView fx:id="usersTable" prefHeight="500.0" prefWidth="1128.0" style="-fx-background-color: #151515;">
+      <TableView fx:id="usersTable" prefHeight="500.0" prefWidth="1128.0" styleClass="custom-table">
+         <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+         </columnResizePolicy>
          <columns>
-            <TableColumn fx:id="sttColumn" prefWidth="55.0" text="STT" />
+            <TableColumn fx:id="sttColumn" maxWidth="55.0" minWidth="55.0" text="STT" />
             <TableColumn fx:id="usernameColumn" prefWidth="180.0" text="Tên Người Dùng" />
             <TableColumn fx:id="balanceColumn" prefWidth="155.0" text="Số Dư Hiện Tại" />
             <TableColumn fx:id="emailColumn" prefWidth="220.0" text="Gmail" />
