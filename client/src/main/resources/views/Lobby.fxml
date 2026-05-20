@@ -44,11 +44,11 @@
 
             <HBox alignment="CENTER" styleClass="switch-container">
                <children>
-                  <ToggleButton maxWidth="Infinity" mnemonicParsing="false" onAction="#ReturnLobby" selected="true" styleClass="switch-btn" text="Trang Chủ" toggleGroup="$navbarGroup" HBox.hgrow="ALWAYS" />
-                  <ToggleButton maxWidth="Infinity" mnemonicParsing="false" onAction="#ReturnDesiner" styleClass="switch-btn" text="Giới Thiệu" toggleGroup="$navbarGroup" HBox.hgrow="ALWAYS" />
-                  <ToggleButton maxWidth="-Infinity" mnemonicParsing="false" onAction="#ReturnSeller" styleClass="switch-btn" text="Phòng Đăng Bán" toggleGroup="$navbarGroup" HBox.hgrow="ALWAYS" />
-                  <ToggleButton maxWidth="Infinity" mnemonicParsing="false" onAction="#ReturnInvesmentWait" styleClass="switch-btn" text="Phòng Chuẩn Bị" toggleGroup="$navbarGroup" HBox.hgrow="ALWAYS" />
-                  <ToggleButton maxWidth="Infinity" mnemonicParsing="false" onAction="#ReturnInvesmentSite" styleClass="switch-btn" text="Phòng Đấu Giá" toggleGroup="$navbarGroup" HBox.hgrow="ALWAYS" />
+                  <ToggleButton fx:id="navHomeButton" maxWidth="Infinity" mnemonicParsing="false" onAction="#ReturnLobby" selected="true" styleClass="switch-btn" text="Trang Chủ" toggleGroup="$navbarGroup" HBox.hgrow="ALWAYS" />
+                  <ToggleButton fx:id="navAboutButton" maxWidth="Infinity" mnemonicParsing="false" onAction="#ReturnDesiner" styleClass="switch-btn" text="Giới Thiệu" toggleGroup="$navbarGroup" HBox.hgrow="ALWAYS" />
+                  <ToggleButton fx:id="navSellerButton" maxWidth="-Infinity" mnemonicParsing="false" onAction="#ReturnSeller" styleClass="switch-btn" text="Phòng Đăng Bán" toggleGroup="$navbarGroup" HBox.hgrow="ALWAYS" />
+                  <ToggleButton fx:id="navMyProductsButton" maxWidth="Infinity" mnemonicParsing="false" onAction="#ReturnInvesmentWait" styleClass="switch-btn" text="Sản phẩm của tôi" toggleGroup="$navbarGroup" HBox.hgrow="ALWAYS" />
+                  <ToggleButton fx:id="navAuctionButton" maxWidth="Infinity" mnemonicParsing="false" onAction="#ReturnInvesmentSite" styleClass="switch-btn" text="Phòng Đấu Giá" toggleGroup="$navbarGroup" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
 

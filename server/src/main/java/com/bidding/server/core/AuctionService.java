@@ -13,6 +13,7 @@ import com.bidding.server.repository.AuctionStateDAO;
 import com.bidding.server.repository.AutoBidDAO;
 import com.bidding.server.repository.BidHistoryDAO;
 import com.bidding.server.repository.ItemDAO;
+import com.bidding.server.repository.SellerAuctionDAO;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -37,6 +38,7 @@ public class AuctionService {
     private final AuctionRecordDAO auctionRecordDAO;
     private final AutoBidDAO autoBidDAO;
     private final ItemDAO itemDAO;
+    private final SellerAuctionDAO sellerAuctionDAO;
 
     public AuctionService() {
 
@@ -47,6 +49,7 @@ public class AuctionService {
         this.auctionRecordDAO = new AuctionRecordDAO();
         this.autoBidDAO = new AutoBidDAO();
         this.itemDAO = new ItemDAO();
+        this.sellerAuctionDAO = new SellerAuctionDAO();
 
         loadPersistedRuntimeAuctions();
 
@@ -274,6 +277,142 @@ public class AuctionService {
         persistAuctionState(auction, 0);
 
         return "ADD_AUCTION_PENDING|auctionId=" + auctionId;
+    }
+
+    public String getSellerAuctionList(String sellerUsername) {
+        if (sellerUsername == null || sellerUsername.isBlank()) {
+            return "ERROR|Seller username required";
+        }
+
+        StringBuilder sb = new StringBuilder("MY_AUCTIONS|");
+        boolean first = true;
+
+        for (Auction auction : auctions.values().stream()
+                .filter(a -> sellerUsername.equals(a.getSellerUsername()))
+                .sorted((left, right) -> Integer.compare(
+                        Integer.parseInt(right.getId()),
+                        Integer.parseInt(left.getId())))
+                .toList()) {
+
+            syncAuctionFromDatabase(auction);
+            applyTimeBasedStatus(auction, System.currentTimeMillis());
+
+            Item item = itemDAO.findById(auction.getItemId());
+            if (item == null) {
+                continue;
+            }
+
+            if (!first) {
+                sb.append(";");
+            }
+            first = false;
+
+            String itemType = item.getItemType() == null ? "" : item.getItemType().name();
+            String imageUrl = sanitizeListValue(item.getImageUrl());
+            String description = sanitizeListValue(item.getDescription());
+            String information1 = sanitizeListValue(itemDAO.resolveInformation1(item));
+            String information2 = sanitizeListValue(itemDAO.resolveInformation2(item));
+            int bidCount = bidHistoryDAO.countByAuctionId(auction.getId());
+
+            sb.append(auction.getId()).append(":")
+                    .append(auction.getItemId()).append(":")
+                    .append(sanitizeListValue(auction.getItemName())).append(":")
+                    .append(itemType).append(":")
+                    .append((long) auction.getStartPrice()).append(":")
+                    .append((long) auction.getCurrentPrice()).append(":")
+                    .append(auction.getStatus().name()).append(":")
+                    .append(sanitizeListValue(auction.getStartDate())).append(":")
+                    .append(sanitizeListValue(auction.getStartClockTime())).append(":")
+                    .append(auction.getDurationMinutes()).append(":")
+                    .append(bidCount).append(":")
+                    .append(imageUrl).append(":")
+                    .append(description).append(":")
+                    .append(information1).append(":")
+                    .append(information2).append(":")
+                    .append(auction.getStartTimeMillis()).append(":")
+                    .append(auction.getEndTime());
+        }
+
+        return sb.toString();
+    }
+
+    public String updateSellerAuction(String sellerUsername, String auctionId, Item item, long startTime, long durationMinutes) {
+        Auction current = auctions.get(auctionId);
+        if (current == null) {
+            return "ERROR|Auction not found";
+        }
+
+        if (!sellerUsername.equals(current.getSellerUsername())) {
+            return "ERROR|You can only edit your own auction";
+        }
+
+        int bidCount = bidHistoryDAO.countByAuctionId(auctionId);
+        if (bidCount > 0 || current.getHighestBidder() != null) {
+            return "ERROR|Auction already has bids and cannot be edited";
+        }
+
+        if (current.getStatus() == AuctionStatus.RUNNING || current.getStatus() == AuctionStatus.FINISHED) {
+            return "ERROR|Auction cannot be edited after it has started";
+        }
+
+        itemDAO.update(current.getItemId(), item, sellerUsername);
+
+        Auction updated = new Auction(
+                current.getId(),
+                sellerUsername,
+                item.getName(),
+                item.getStartingPrice(),
+                current.getStatus()
+        );
+        updated.setItemId(current.getItemId());
+        updated.setStartTimeMillis(startTime);
+        updated.setDurationMinutes((int) durationMinutes);
+        updated.setCurrentPrice(item.getStartingPrice());
+        updated.setHighestBidder(null);
+
+        auctions.put(auctionId, updated);
+        auctionRecordDAO.updateListing(
+                auctionId,
+                updated.getItemId(),
+                sellerUsername,
+                item.getStartingPrice(),
+                updated.getStartTimeMillis(),
+                updated.getEndTime(),
+                updated.getDurationMinutes(),
+                updated.getStatus()
+        );
+        persistAuctionState(updated, 0);
+
+        return "UPDATE_AUCTION_SUCCESS|auctionId=" + auctionId;
+    }
+
+    public String deleteSellerAuction(String sellerUsername, String auctionId) {
+        Auction auction = auctions.get(auctionId);
+        if (auction == null) {
+            return "ERROR|Auction not found";
+        }
+
+        if (!sellerUsername.equals(auction.getSellerUsername())) {
+            return "ERROR|You can only delete your own auction";
+        }
+
+        int bidCount = bidHistoryDAO.countByAuctionId(auctionId);
+        if (bidCount > 0 || auction.getHighestBidder() != null) {
+            return "ERROR|Auction already has bids and cannot be deleted";
+        }
+
+        if (auction.getStatus() == AuctionStatus.RUNNING || auction.getStatus() == AuctionStatus.FINISHED) {
+            return "ERROR|Auction cannot be deleted after it has started";
+        }
+
+        sellerAuctionDAO.deleteAutoBidByAuctionId(auctionId);
+        sellerAuctionDAO.deleteBidHistoryByAuctionId(auctionId);
+        auctionStateDAO.deleteByAuctionId(auctionId);
+        auctionRecordDAO.deleteByAuctionId(auctionId);
+        itemDAO.deleteById(auction.getItemId());
+        auctions.remove(auctionId);
+
+        return "DELETE_AUCTION_SUCCESS|auctionId=" + auctionId;
     }
 
     public String addAuction(

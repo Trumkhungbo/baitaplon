@@ -191,6 +191,57 @@ public class ItemDAO extends BaseDAO {
         return items;
     }
 
+    public void update(long itemId, Item item, String sellerUsername) {
+        String sql = """
+            UPDATE items
+            SET name = ?,
+                description = ?,
+                information1 = ?,
+                information2 = ?,
+                starting_price = ?,
+                item_type = ?,
+                seller_username = ?,
+                image_url = ?,
+                artist = ?,
+                creation_year = ?,
+                brand = ?,
+                warranty_months = ?,
+                engine_type = ?,
+                mileage = ?
+            WHERE id = ?
+        """;
+
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, item.getName());
+            ps.setString(2, item.getDescription());
+            ps.setString(3, getInformation1(item));
+            ps.setString(4, getInformation2(item));
+            ps.setDouble(5, item.getStartingPrice());
+            ps.setString(6, item.getItemType().name());
+            ps.setString(7, sellerUsername);
+            ps.setString(8, item.getImageUrl());
+
+            clearTypeFields(ps);
+            setTypeSpecificFields(ps, item);
+            ps.setLong(15, itemId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update item: " + e.getMessage(), e);
+        }
+    }
+
+    public void deleteById(long itemId) {
+        String sql = "DELETE FROM items WHERE id = ?";
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, itemId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete item", e);
+        }
+    }
+
     private void setTypeSpecificFields(
             PreparedStatement ps,
             Item item

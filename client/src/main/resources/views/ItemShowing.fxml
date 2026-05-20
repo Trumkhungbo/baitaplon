@@ -47,13 +47,13 @@
 
                         <HBox alignment="TOP_CENTER" spacing="24.0">
                             <children>
-                                <VBox spacing="18.0" HBox.hgrow="ALWAYS">
+                                <VBox maxWidth="860.0" prefWidth="860.0" spacing="18.0" HBox.hgrow="ALWAYS">
                                     <children>
                                         <VBox spacing="12.0" styleClass="gallery-card">
                                             <children>
-                                                <StackPane minHeight="420.0" styleClass="hero-gallery">
+                                                <StackPane maxWidth="860.0" minHeight="420.0" prefWidth="860.0" styleClass="hero-gallery">
                                                     <children>
-                                                        <ImageView fx:id="image" fitHeight="390.0" fitWidth="740.0" pickOnBounds="true" preserveRatio="true" smooth="true" />
+                                                        <ImageView fx:id="image" fitHeight="390.0" fitWidth="620.0" pickOnBounds="true" preserveRatio="true" smooth="true" />
                                                         <Label fx:id="heroStatusChip" styleClass="gallery-status-chip status-running-chip" text="SẢN PHẨM ĐANG ĐẤU GIÁ" StackPane.alignment="TOP_LEFT">
                                                             <StackPane.margin>
                                                                 <Insets left="22.0" top="18.0" />
@@ -108,7 +108,7 @@
                                     </children>
                                 </VBox>
 
-                                <VBox minWidth="350.0" prefWidth="390.0" spacing="16.0" HBox.hgrow="NEVER">
+                                <VBox minWidth="440.0" prefWidth="440.0" spacing="16.0" HBox.hgrow="NEVER">
                                     <children>
                                         <VBox spacing="10.0" styleClass="title-panel">
                                             <children>

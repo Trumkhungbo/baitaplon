@@ -118,9 +118,13 @@ public class ClientHandler implements Runnable {
                     getJsonString(json, "username"),
                     getJsonString(json, "newPassword")
             };
-            case "GET_AUCTION_DETAIL", "GET_BID_HISTORY", "GET_WINNER", "WATCH", "CLOSE_AUCTION", "APPROVE_AUCTION" -> new String[]{
+            case "GET_AUCTION_DETAIL", "GET_BID_HISTORY", "GET_WINNER", "WATCH", "CLOSE_AUCTION", "APPROVE_AUCTION", "DELETE_AUCTION" -> new String[]{
                     command,
                     getJsonString(json, "auctionId")
+            };
+            case "LIST_MY_AUCTIONS" -> new String[]{
+                    "LIST_MY_AUCTIONS",
+                    firstJsonString(json, "sellerUsername", "seller", "username")
             };
             case "BID" -> new String[]{
                     "BID",
@@ -139,6 +143,7 @@ public class ClientHandler implements Runnable {
                     getJsonString(json, "status")
             };
             case "ADD_AUCTION" -> buildJsonAddAuctionParts(json);
+            case "UPDATE_AUCTION" -> buildJsonUpdateAuctionParts(json);
             case "UPLOAD_IMAGE" -> new String[]{
                     "UPLOAD_IMAGE",
                     getJsonString(json, "extension"),
@@ -155,6 +160,23 @@ public class ClientHandler implements Runnable {
     private String[] buildJsonAddAuctionParts(JsonObject json) {
         return new String[]{
                 "ADD_AUCTION",
+                firstJsonString(json, "sellerUsername", "seller", "username"),
+                getJsonString(json, "itemType"),
+                firstJsonString(json, "itemName", "name"),
+                firstJsonString(json, "des1", "information1", "param1", "brand", "engineType", "artist"),
+                firstJsonString(json, "des2", "information2", "param2", "warrantyMonths", "mileage", "creationYear"),
+                firstJsonString(json, "price", "startPrice", "startingPrice"),
+                getJsonString(json, "startTime"),
+                getJsonString(json, "durationMinutes"),
+                firstJsonString(json, "description", "productDescription"),
+                getJsonString(json, "imageUrl")
+        };
+    }
+
+    private String[] buildJsonUpdateAuctionParts(JsonObject json) {
+        return new String[]{
+                "UPDATE_AUCTION",
+                getJsonString(json, "auctionId"),
                 firstJsonString(json, "sellerUsername", "seller", "username"),
                 getJsonString(json, "itemType"),
                 firstJsonString(json, "itemName", "name"),

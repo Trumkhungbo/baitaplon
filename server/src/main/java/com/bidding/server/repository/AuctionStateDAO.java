@@ -121,6 +121,17 @@ public class AuctionStateDAO extends BaseDAO {
         }
     }
 
+    public void deleteByAuctionId(String auctionId) {
+        String sql = "DELETE FROM auction_runtime_state WHERE auction_id = ?";
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, auctionId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete auction state", e);
+        }
+    }
+
     public record AuctionStateSnapshot(
             String auctionId,
             String sellerUsername,

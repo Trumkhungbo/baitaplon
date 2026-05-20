@@ -122,4 +122,45 @@ public class AuctionRecordDAO extends BaseDAO {
             throw new RuntimeException("Failed to update auction record", e);
         }
     }
+
+    public void updateListing(String auctionId, long itemId, String sellerUsername, double startPrice, long startTimeMillis, long endTimeMillis, int durationMinutes, AuctionStatus status) {
+        String sql = """
+                UPDATE auctions
+                SET item_id = ?,
+                    seller_username = ?,
+                    start_time = ?,
+                    end_time = ?,
+                    duration_minutes = ?,
+                    status = ?,
+                    current_highest_bid = ?,
+                    highest_bidder_username = NULL
+                WHERE id = ?
+                """;
+
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, itemId);
+            ps.setString(2, sellerUsername);
+            ps.setLong(3, startTimeMillis);
+            ps.setLong(4, endTimeMillis);
+            ps.setInt(5, durationMinutes);
+            ps.setString(6, status.name());
+            ps.setDouble(7, startPrice);
+            ps.setLong(8, Long.parseLong(auctionId));
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update auction listing", e);
+        }
+    }
+
+    public void deleteByAuctionId(String auctionId) {
+        String sql = "DELETE FROM auctions WHERE id = ?";
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, Long.parseLong(auctionId));
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete auction record", e);
+        }
+    }
 }
