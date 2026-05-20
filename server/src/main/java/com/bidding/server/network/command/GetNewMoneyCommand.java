@@ -13,11 +13,13 @@ public class GetNewMoneyCommand implements CommandHandler {
 
     @Override
     public void handle(String[] parts, ClientHandler client) {
-        if (parts.length < 3) {
+        String username = client.isLoggedIn() ? client.getCurrentUser() : (parts.length > 1 ? parts[1] : "");
+        String money = parts.length > 2 ? parts[2] : "";
+        if (username == null || username.isBlank() || money.isBlank()) {
             client.sendMessage("{\"command\":\"ERROR\", \"message\":\"Missing add money params\"}");
             return;
         }
 
-        client.sendMessage(authService.addMoney(parts[1], parts[2]));
+        client.sendMessage(authService.addMoney(username, money));
     }
 }

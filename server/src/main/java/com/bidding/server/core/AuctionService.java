@@ -307,33 +307,72 @@ public class AuctionService {
             }
             first = false;
 
-            String itemType = item.getItemType() == null ? "" : item.getItemType().name();
-            String imageUrl = sanitizeListValue(item.getImageUrl());
-            String description = sanitizeListValue(item.getDescription());
-            String information1 = sanitizeListValue(itemDAO.resolveInformation1(item));
-            String information2 = sanitizeListValue(itemDAO.resolveInformation2(item));
-            int bidCount = bidHistoryDAO.countByAuctionId(auction.getId());
-
-            sb.append(auction.getId()).append(":")
-                    .append(auction.getItemId()).append(":")
-                    .append(sanitizeListValue(auction.getItemName())).append(":")
-                    .append(itemType).append(":")
-                    .append((long) auction.getStartPrice()).append(":")
-                    .append((long) auction.getCurrentPrice()).append(":")
-                    .append(auction.getStatus().name()).append(":")
-                    .append(sanitizeListValue(auction.getStartDate())).append(":")
-                    .append(sanitizeListValue(auction.getStartClockTime())).append(":")
-                    .append(auction.getDurationMinutes()).append(":")
-                    .append(bidCount).append(":")
-                    .append(imageUrl).append(":")
-                    .append(description).append(":")
-                    .append(information1).append(":")
-                    .append(information2).append(":")
-                    .append(auction.getStartTimeMillis()).append(":")
-                    .append(auction.getEndTime());
+            appendAccountAuctionRow(sb, auction, item, "Seller", auction.getStartDate(), auction.getStartClockTime());
         }
 
         return sb.toString();
+    }
+
+    public String getAccountAuctionList(String username) {
+        if (username == null || username.isBlank()) {
+            return "ERROR|Username required";
+        }
+
+        StringBuilder sb = new StringBuilder("ACCOUNT_AUCTIONS|");
+        boolean first = true;
+
+        Map<String, Long> bidderAuctionTimes = bidHistoryDAO.findLatestBidTimesByBidder(username);
+        for (Map.Entry<String, Long> entry : bidderAuctionTimes.entrySet()) {
+            Auction auction = auctions.get(entry.getKey());
+            if (auction == null || username.equals(auction.getSellerUsername())) {
+                continue;
+            }
+            Item item = prepareAuctionForAccountList(auction);
+            if (item == null) {
+                continue;
+            }
+            if (!first) {
+                sb.append(";");
+            }
+            first = false;
+            appendAccountAuctionRow(sb, auction, item, "Bidder", formatEpochDate(entry.getValue()), formatEpochTime(entry.getValue()));
+        }
+
+        return sb.toString();
+    }
+
+    private Item prepareAuctionForAccountList(Auction auction) {
+        syncAuctionFromDatabase(auction);
+        applyTimeBasedStatus(auction, System.currentTimeMillis());
+        return itemDAO.findById(auction.getItemId());
+    }
+
+    private void appendAccountAuctionRow(StringBuilder sb, Auction auction, Item item, String role, String displayDate, String displayTime) {
+        String itemType = item.getItemType() == null ? "" : item.getItemType().name();
+        String imageUrl = sanitizeListValue(item.getImageUrl());
+        String description = sanitizeListValue(item.getDescription());
+        String information1 = sanitizeListValue(itemDAO.resolveInformation1(item));
+        String information2 = sanitizeListValue(itemDAO.resolveInformation2(item));
+        int bidCount = bidHistoryDAO.countByAuctionId(auction.getId());
+
+        sb.append(auction.getId()).append(":")
+                .append(auction.getItemId()).append(":")
+                .append(sanitizeListValue(auction.getItemName())).append(":")
+                .append(itemType).append(":")
+                .append((long) auction.getStartPrice()).append(":")
+                .append((long) auction.getCurrentPrice()).append(":")
+                .append(auction.getStatus().name()).append(":")
+                .append(sanitizeListValue(displayDate)).append(":")
+                .append(sanitizeListValue(displayTime)).append(":")
+                .append(auction.getDurationMinutes()).append(":")
+                .append(bidCount).append(":")
+                .append(imageUrl).append(":")
+                .append(description).append(":")
+                .append(information1).append(":")
+                .append(information2).append(":")
+                .append(auction.getStartTimeMillis()).append(":")
+                .append(auction.getEndTime()).append(":")
+                .append(role);
     }
 
     public String updateSellerAuction(String sellerUsername, String auctionId, Item item, long startTime, long durationMinutes) {
@@ -851,8 +890,44 @@ public class AuctionService {
 
             return "AUTO_BID_SET"
                     + "|auctionId=" + auctionId
-                    + "|user=" + username;
+                    + "|user=" + username
+                    + "|maxBid=" + (long) maxBid
+                    + "|increment=" + (long) increment
+                    + "|active=true";
         }
+    }
+
+    public String getAutoBid(String auctionId, String username) {
+        if (auctionId == null || auctionId.isBlank()) {
+            return "ERROR|Auction id required";
+        }
+
+        AutoBid autoBid = autoBidDAO.findOne(Long.parseLong(auctionId), username);
+        if (autoBid == null) {
+            return "AUTO_BID_STATUS"
+                    + "|auctionId=" + auctionId
+                    + "|user=" + sanitizeMessageValue(username)
+                    + "|active=false";
+        }
+
+        return "AUTO_BID_STATUS"
+                + "|auctionId=" + auctionId
+                + "|user=" + sanitizeMessageValue(username)
+                + "|maxBid=" + (long) autoBid.getMaxBid()
+                + "|increment=" + (long) autoBid.getIncrement()
+                + "|active=" + autoBid.isActive();
+    }
+
+    public String disableAutoBid(String auctionId, String username) {
+        if (auctionId == null || auctionId.isBlank()) {
+            return "ERROR|Auction id required";
+        }
+
+        autoBidDAO.disable(Long.parseLong(auctionId), username);
+        return "AUTO_BID_DISABLED"
+                + "|auctionId=" + auctionId
+                + "|user=" + sanitizeMessageValue(username)
+                + "|active=false";
     }
 
     public List<String> closeExpiredAuctions() {
@@ -1254,6 +1329,24 @@ public class AuctionService {
                 .replace("\r", " ")
                 .replace("\n", " ")
                 .trim();
+    }
+
+    private String formatEpochDate(long epochMillis) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(epochMillis);
+        return String.format("%04d-%02d-%02d",
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH) + 1,
+                calendar.get(Calendar.DAY_OF_MONTH));
+    }
+
+    private String formatEpochTime(long epochMillis) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(epochMillis);
+        return String.format("%02d:%02d:%02d",
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                calendar.get(Calendar.SECOND));
     }
 
 
