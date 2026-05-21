@@ -70,6 +70,7 @@ public class ActionInformationHandle implements Initializable, SocketListener {
     }
 
     private void setupTable() {
+        ItemsTable.setPlaceholder(new Label("Chưa có dữ liệu"));
         sttColumn.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(ItemsTable.getItems().indexOf(param.getValue()) + 1));
         productNameColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().itemName()));
         auctionCodeColumn.setCellValueFactory(param -> new SimpleStringProperty("#AU" + param.getValue().auctionId()));
@@ -90,11 +91,11 @@ public class ActionInformationHandle implements Initializable, SocketListener {
                 }
                 setText(item);
                 String style = switch (item) {
-                    case "Dang dau gia" -> "-fx-text-fill: #4ADE80; -fx-font-weight: bold;";
-                    case "Sap dien ra" -> "-fx-text-fill: #60A5FA; -fx-font-weight: bold;";
-                    case "Cho duyet" -> "-fx-text-fill: #FACC15; -fx-font-weight: bold;";
-                    case "Da thanh toan" -> "-fx-text-fill: #22C55E; -fx-font-weight: bold;";
-                    case "Da huy" -> "-fx-text-fill: #F87171; -fx-font-weight: bold;";
+                    case "Đang đấu giá" -> "-fx-text-fill: #4ADE80; -fx-font-weight: bold;";
+                    case "Sắp diễn ra" -> "-fx-text-fill: #60A5FA; -fx-font-weight: bold;";
+                    case "Chờ duyệt" -> "-fx-text-fill: #FACC15; -fx-font-weight: bold;";
+                    case "Đã thanh toán" -> "-fx-text-fill: #22C55E; -fx-font-weight: bold;";
+                    case "Đã hủy" -> "-fx-text-fill: #F87171; -fx-font-weight: bold;";
                     default -> "-fx-text-fill: #CBD5E1; -fx-font-weight: bold;";
                 };
                 setStyle(style);
@@ -123,7 +124,7 @@ public class ActionInformationHandle implements Initializable, SocketListener {
 
         actionColumn.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue()));
         actionColumn.setCellFactory(column -> new TableCell<>() {
-            private final Button payButton = new Button("Thanh toan");
+            private final Button payButton = new Button("Thanh toán");
 
             {
                 payButton.getStyleClass().add("btn-gold");
@@ -152,7 +153,7 @@ public class ActionInformationHandle implements Initializable, SocketListener {
                     return;
                 }
                 if ("CANCELED".equalsIgnoreCase(row.getItem().status())) {
-                    setFeedback("Phien dau gia nay da bi huy.");
+                    setFeedback("Phiên đấu giá này đã bị hủy.");
                     return;
                 }
                 openAuctionRoom(row.getItem());
@@ -191,7 +192,7 @@ public class ActionInformationHandle implements Initializable, SocketListener {
         addReq.addProperty("username", StoreDataInput.username);
         addReq.addProperty("money", input);
         SocketClient.getInstance().requestData(addReq.toString());
-        setFeedback("Dang gui yeu cau nap tien...");
+        setFeedback("Đang gửi yêu cầu nạp tiền...");
     }
 
     @FXML
@@ -240,7 +241,7 @@ public class ActionInformationHandle implements Initializable, SocketListener {
                     case "MONEY_UPDATE" -> {
                         money.setText(formatMoneyText(getAsString(res, "balance")));
                         moneyIn.clear();
-                        setFeedback("Nap tien thanh cong.");
+                        setFeedback("Nạp tiền thành công.");
                         loadAccountInfo();
                     }
                     case "TOPUP_REQUEST_CREATED" -> {
@@ -303,11 +304,11 @@ public class ActionInformationHandle implements Initializable, SocketListener {
                         || "PAID".equalsIgnoreCase(row.status())
                         || "CANCELED".equalsIgnoreCase(row.status())).count();
 
-        allStatusLabel.setText("Tat ca: " + rows.size());
-        pendingStatusLabel.setText("Cho duyet: " + pending);
-        openStatusLabel.setText("Sap dien ra: " + open);
-        runningStatusLabel.setText("Dang dau gia: " + running);
-        finishedStatusLabel.setText("Da ket thuc: " + finished);
+        allStatusLabel.setText("Tất cả: " + rows.size());
+        pendingStatusLabel.setText("Chờ duyệt: " + pending);
+        openStatusLabel.setText("Sắp diễn ra: " + open);
+        runningStatusLabel.setText("Đang đấu giá: " + running);
+        finishedStatusLabel.setText("Đã kết thúc: " + finished);
     }
 
     private void openAuctionRoom(AccountAuctionRow row) {
@@ -325,7 +326,7 @@ public class ActionInformationHandle implements Initializable, SocketListener {
                 LobbyHandle.getInstance().ItemShowing();
             }
         } catch (IOException e) {
-            setFeedback("Khong the mo phong dau gia cua san pham.");
+            setFeedback("Không thể mở phòng đấu giá của sản phẩm.");
         }
     }
 
@@ -344,23 +345,23 @@ public class ActionInformationHandle implements Initializable, SocketListener {
                 LobbyHandle.getInstance().MovingCenter("/views/Payment_BuyingStuff.fxml");
             }
         } catch (IOException e) {
-            setFeedback("Khong the mo trang thanh toan.");
+            setFeedback("Không thể mở trang thanh toán.");
         }
     }
 
     private String normalizeStatus(String status) {
         return switch (status.toUpperCase(Locale.ROOT)) {
-            case "PENDING" -> "Cho duyet";
-            case "OPEN" -> "Sap dien ra";
-            case "RUNNING" -> "Dang dau gia";
-            case "PAID" -> "Da thanh toan";
-            case "CANCELED" -> "Da huy";
-            default -> "Da ket thuc";
+            case "PENDING" -> "Chờ duyệt";
+            case "OPEN" -> "Sắp diễn ra";
+            case "RUNNING" -> "Đang đấu giá";
+            case "PAID" -> "Đã thanh toán";
+            case "CANCELED" -> "Đã hủy";
+            default -> "Đã kết thúc";
         };
     }
 
     private String normalizeRole(String role) {
-        return "Bidder".equalsIgnoreCase(role) ? "Nguoi dat" : "Nguoi ban";
+        return "Bidder".equalsIgnoreCase(role) ? "Người đặt" : "Người bán";
     }
 
     private String getAsString(JsonObject object, String key) {

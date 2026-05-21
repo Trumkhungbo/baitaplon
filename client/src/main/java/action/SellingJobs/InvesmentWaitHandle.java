@@ -49,13 +49,14 @@ public class InvesmentWaitHandle implements Initializable, SocketListener {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         SocketClient.getInstance().addListener(this);
         setupFilters();
+        SocketClient.getInstance().requestData("WATCH|");
         loadProducts();
     }
 
     private void setupFilters() {
         typeFilter.getItems().setAll("Tất cả danh mục", "Điện tử", "Nghệ thuật", "Xe cộ");
         typeFilter.setValue("Tất cả danh mục");
-        statusFilter.getItems().setAll("Tất cả trạng thái", "Đang đấu giá", "Sắp diễn ra", "Chờ duyệt", "Đã kết thúc");
+        statusFilter.getItems().setAll("Tất cả trạng thái", "Đang đấu giá", "Sắp diễn ra", "Chờ duyệt", "Đã kết thúc", "Đã thanh toán", "Đã hủy");
         statusFilter.setValue("Tất cả trạng thái");
     }
 
@@ -94,6 +95,11 @@ public class InvesmentWaitHandle implements Initializable, SocketListener {
             if (data.startsWith("MY_AUCTIONS|")) {
                 parseMyAuctions(data.substring("MY_AUCTIONS|".length()));
                 renderProducts();
+                return;
+            }
+
+            if (data.startsWith("AUCTION_LIST|") || data.startsWith("AUCTION_PAYMENT_UPDATE|")) {
+                loadProducts();
                 return;
             }
 
@@ -193,6 +199,8 @@ public class InvesmentWaitHandle implements Initializable, SocketListener {
             case "Sắp diễn ra" -> "OPEN".equalsIgnoreCase(item.status());
             case "Chờ duyệt" -> "PENDING".equalsIgnoreCase(item.status());
             case "Đã kết thúc" -> "FINISHED".equalsIgnoreCase(item.status());
+            case "Đã thanh toán" -> "PAID".equalsIgnoreCase(item.status());
+            case "Đã hủy" -> "CANCELED".equalsIgnoreCase(item.status());
             default -> true;
         };
     }
@@ -209,7 +217,7 @@ public class InvesmentWaitHandle implements Initializable, SocketListener {
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(12.0, 10.0, 12.0, 10.0));
         row.getStyleClass().add("my-product-row");
-        row.setOnMouseClicked(event -> { if (!"CANCELED".equalsIgnoreCase(product.status())) { openAuctionRoom(product); } else { setFeedback("San pham bi tu choi duyet va da chuyen sang CANCELED."); } });
+        row.setOnMouseClicked(event -> { if (!"CANCELED".equalsIgnoreCase(product.status())) { openAuctionRoom(product); } else { setFeedback("Sản phẩm bị từ chối duyệt và đã chuyển sang CANCELED."); } });
 
         HBox productCell = new HBox(12.0);
         productCell.setPrefWidth(270.0);
@@ -238,7 +246,7 @@ public class InvesmentWaitHandle implements Initializable, SocketListener {
         Label startPrice = createPlainCell(formatMoney(product.startPrice()) + " VNĐ", 140.0, "#F3F4F6");
         Label currentPrice = createPlainCell(formatMoney(product.currentPrice()) + " VNĐ", 140.0, "#4ADE80");
         Label statusBadge = createStatusBadge(product.status());
-        statusBadge.setPrefWidth(120.0);
+        statusBadge.setPrefWidth(150.0);
 
         VBox timeBox = new VBox(4.0);
         timeBox.setPrefWidth(160.0);
@@ -382,6 +390,14 @@ public class InvesmentWaitHandle implements Initializable, SocketListener {
             case "PENDING" -> {
                 style = "-fx-background-color: rgba(250,204,21,0.16); -fx-text-fill: #FACC15; -fx-background-radius: 999; -fx-padding: 6 10; -fx-font-weight: bold;";
                 text = "CHỜ DUYỆT";
+            }
+            case "PAID" -> {
+                style = "-fx-background-color: rgba(34,197,94,0.16); -fx-text-fill: #86EFAC; -fx-background-radius: 999; -fx-padding: 6 10; -fx-font-weight: bold;";
+                text = "ĐÃ THANH TOÁN";
+            }
+            case "CANCELED" -> {
+                style = "-fx-background-color: rgba(239,68,68,0.16); -fx-text-fill: #FCA5A5; -fx-background-radius: 999; -fx-padding: 6 10; -fx-font-weight: bold;";
+                text = "ĐÃ HỦY";
             }
             default -> {
                 style = "-fx-background-color: rgba(148,163,184,0.16); -fx-text-fill: #CBD5E1; -fx-background-radius: 999; -fx-padding: 6 10; -fx-font-weight: bold;";

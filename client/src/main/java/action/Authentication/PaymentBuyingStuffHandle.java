@@ -43,7 +43,7 @@ public class PaymentBuyingStuffHandle implements Initializable, SocketListener {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         SocketClient.getInstance().addListener(this);
-        itemNameLabel.setText(StoreItemDataInit.name == null ? "San pham" : StoreItemDataInit.name);
+        itemNameLabel.setText(StoreItemDataInit.name == null ? "Sản phẩm" : StoreItemDataInit.name);
         auctionCodeLabel.setText("#AU" + StoreItemDataInit.description);
         requestAuctionDetail();
         requestAccountInfo();
@@ -94,7 +94,7 @@ public class PaymentBuyingStuffHandle implements Initializable, SocketListener {
             if (data.startsWith("WINNER_INFO|")) {
                 Map<String, String> params = parseParams(data.split("\\|"));
                 currentWinner = params.getOrDefault("winner", "NONE");
-                winnerLabel.setText("Nguoi thang: " + currentWinner);
+                winnerLabel.setText("Người thắng: " + currentWinner);
                 refreshPayState();
                 return;
             }
@@ -127,8 +127,8 @@ public class PaymentBuyingStuffHandle implements Initializable, SocketListener {
 
         itemNameLabel.setText(params.getOrDefault("itemName", StoreItemDataInit.name));
         auctionCodeLabel.setText("#AU" + params.getOrDefault("id", StoreItemDataInit.description));
-        sellerLabel.setText("Nguoi ban: " + currentSeller);
-        auctionStatusLabel.setText("Trang thai phien: " + currentStatus);
+        sellerLabel.setText("Người bán: " + currentSeller);
+        auctionStatusLabel.setText("Trạng thái phiên: " + currentStatus);
         priceLabel.setText(formatMoney(currentPrice) + " VND");
         balanceAfterLabel.setText(formatMoney(currentBalance - currentPrice) + " VND");
         refreshPayState();
@@ -139,7 +139,7 @@ public class PaymentBuyingStuffHandle implements Initializable, SocketListener {
         String message = params.getOrDefault("message", "");
         if ("SUCCESS".equalsIgnoreCase(status)) {
             currentStatus = params.getOrDefault("newStatus", "PAID");
-            paymentStatusLabel.setText("DA THANH TOAN");
+            paymentStatusLabel.setText("ĐÃ THANH TOÁN");
             paymentStatusLabel.setStyle("-fx-background-color: rgba(34,197,94,0.18); -fx-text-fill: #86EFAC; -fx-background-radius: 10; -fx-padding: 8 12; -fx-font-weight: bold;");
             currentBalance = parseDouble(params.getOrDefault("buyerBalance", "0"));
             balanceLabel.setText(formatMoney(currentBalance) + " VND");
@@ -148,7 +148,7 @@ public class PaymentBuyingStuffHandle implements Initializable, SocketListener {
         } else {
             if ("CANCELED".equalsIgnoreCase(params.getOrDefault("newStatus", ""))) {
                 currentStatus = "CANCELED";
-                paymentStatusLabel.setText("DA HUY");
+                paymentStatusLabel.setText("ĐÃ HỦY");
             }
             setFeedback(message);
         }
@@ -160,13 +160,13 @@ public class PaymentBuyingStuffHandle implements Initializable, SocketListener {
         boolean canPay = isWinner && "FINISHED".equalsIgnoreCase(currentStatus) && currentBalance >= currentPrice;
 
         if ("PAID".equalsIgnoreCase(currentStatus)) {
-            paymentStatusLabel.setText("DA THANH TOAN");
+            paymentStatusLabel.setText("ĐÃ THANH TOÁN");
             paymentStatusLabel.setStyle("-fx-background-color: rgba(34,197,94,0.18); -fx-text-fill: #86EFAC; -fx-background-radius: 10; -fx-padding: 8 12; -fx-font-weight: bold;");
         } else if ("CANCELED".equalsIgnoreCase(currentStatus)) {
-            paymentStatusLabel.setText("DA HUY");
+            paymentStatusLabel.setText("ĐÃ HỦY");
             paymentStatusLabel.setStyle("-fx-background-color: rgba(239,68,68,0.18); -fx-text-fill: #FCA5A5; -fx-background-radius: 10; -fx-padding: 8 12; -fx-font-weight: bold;");
         } else {
-            paymentStatusLabel.setText("CHO THANH TOAN");
+            paymentStatusLabel.setText("CHỜ THANH TOÁN");
             paymentStatusLabel.setStyle("-fx-background-color: rgba(239,68,68,0.18); -fx-text-fill: #FCA5A5; -fx-background-radius: 10; -fx-padding: 8 12; -fx-font-weight: bold;");
         }
 
@@ -175,9 +175,9 @@ public class PaymentBuyingStuffHandle implements Initializable, SocketListener {
         }
 
         if (!isWinner && !"NONE".equalsIgnoreCase(currentWinner)) {
-            setFeedback("Chi bidder thang moi duoc thanh toan.");
+            setFeedback("Chỉ bidder thắng mới được thanh toán.");
         } else if ("FINISHED".equalsIgnoreCase(currentStatus) && currentBalance < currentPrice) {
-            setFeedback("So du hien tai khong du de thanh toan.");
+            setFeedback("Số dư hiện tại không đủ để thanh toán.");
         }
     }
 

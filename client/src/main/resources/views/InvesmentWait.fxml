@@ -84,7 +84,7 @@
                               <Label style="-fx-text-fill: #8B8B92; -fx-pref-width: 120; -fx-font-weight: bold;" text="Danh mục" />
                               <Label style="-fx-text-fill: #8B8B92; -fx-pref-width: 140; -fx-font-weight: bold;" text="Giá khởi điểm" />
                               <Label style="-fx-text-fill: #8B8B92; -fx-pref-width: 140; -fx-font-weight: bold;" text="Giá hiện tại" />
-                              <Label style="-fx-text-fill: #8B8B92; -fx-pref-width: 120; -fx-font-weight: bold;" text="Trạng thái" />
+                              <Label style="-fx-text-fill: #8B8B92; -fx-pref-width: 150; -fx-font-weight: bold;" text="Trạng thái" />
                               <Label style="-fx-text-fill: #8B8B92; -fx-pref-width: 160; -fx-font-weight: bold;" text="Thời gian" />
                               <Label style="-fx-text-fill: #8B8B92; -fx-pref-width: 180; -fx-font-weight: bold;" text="Thao tác" />
                            </children>

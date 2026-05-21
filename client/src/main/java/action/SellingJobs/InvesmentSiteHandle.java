@@ -129,13 +129,13 @@ public class InvesmentSiteHandle implements Initializable, SocketListener {
 
     private String mapStatusTitle(String status) {
         return switch (status) {
-            case "RUNNING" -> "Dang dien ra";
-            case "OPEN" -> "Sap bat dau";
-            case "PENDING" -> "Dang cho duyet";
-            case "PAID" -> "Da thanh toan";
-            case "CANCELED" -> "Da huy";
-            case "FINISHED" -> "Da ket thuc";
-            default -> "Dang cho duyet";
+            case "RUNNING" -> "Đang diễn ra";
+            case "OPEN" -> "Sắp bắt đầu";
+            case "PENDING" -> "Đang chờ duyệt";
+            case "PAID" -> "Đã thanh toán";
+            case "CANCELED" -> "Đã hủy";
+            case "FINISHED" -> "Đã kết thúc";
+            default -> "Đang chờ duyệt";
         };
     }
 

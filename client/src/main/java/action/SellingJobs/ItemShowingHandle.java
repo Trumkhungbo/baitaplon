@@ -18,12 +18,20 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -85,15 +93,21 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     @FXML private TableColumn<BidHistoryRow, String> bidUserColumn;
     @FXML private TableColumn<BidHistoryRow, String> bidAmountColumn;
     @FXML private TableColumn<BidHistoryRow, String> bidTimeColumn;
+    @FXML private LineChart<String, Number> bidHistoryChart;
+    @FXML private CategoryAxis bidHistoryTimeAxis;
+    @FXML private NumberAxis bidHistoryPriceAxis;
     @FXML private VBox activeBidCard;
     @FXML private VBox finishedResultCard;
     @FXML private VBox autoBidCard;
     @FXML private VBox topWinnersBox;
     @FXML private Button raiseBidButton;
-    @FXML private Button autoBidButton;
+    @FXML private ToggleButton autoBidToggle;
 
     private final ObservableList<BidHistoryRow> bidHistoryRows = FXCollections.observableArrayList();
+    private final XYChart.Series<String, Number> bidHistorySeries = new XYChart.Series<>();
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy")
+            .withZone(ZoneId.systemDefault());
+    private final DateTimeFormatter chartTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
             .withZone(ZoneId.systemDefault());
     private final DateTimeFormatter endTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
             .withZone(ZoneId.systemDefault());
@@ -108,6 +122,8 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setupBidHistoryTable();
+        setupBidHistoryChart();
+        syncAutoBidToggle();
         SocketClient.getInstance().addListener(this);
         watchAuction();
         updateAvatar();
@@ -122,7 +138,51 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         bidUserColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().username()));
         bidAmountColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().amount()));
         bidTimeColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().time()));
+        styleHistoryColumn(bidUserColumn);
+        styleHistoryColumn(bidAmountColumn);
+        styleHistoryColumn(bidTimeColumn);
+        bidHistoryTable.setRowFactory(table -> {
+            TableRow<BidHistoryRow> row = new TableRow<>();
+            row.setStyle("-fx-background-color: #000000; -fx-table-cell-border-color: rgba(255,255,255,0.05);");
+            return row;
+        });
+        bidHistoryTable.setPlaceholder(new Label("Chưa có lượt đặt giá nào."));
         bidHistoryTable.setItems(bidHistoryRows);
+    }
+
+    private void styleHistoryColumn(TableColumn<BidHistoryRow, String> column) {
+        column.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : item);
+                setStyle("-fx-background-color: #000000; -fx-text-fill: #f3f4f6; -fx-border-color: transparent; -fx-alignment: CENTER_LEFT;");
+            }
+        });
+    }
+
+    private void setupBidHistoryChart() {
+        if (bidHistoryChart == null) {
+            return;
+        }
+
+        bidHistorySeries.setName("Giá đặt");
+        bidHistoryChart.getData().setAll(bidHistorySeries);
+        bidHistoryChart.setLegendVisible(false);
+        bidHistoryChart.setAnimated(false);
+
+        if (bidHistoryTimeAxis != null) {
+            bidHistoryTimeAxis.setTickLabelRotation(0);
+        }
+        if (bidHistoryPriceAxis != null) {
+            bidHistoryPriceAxis.setForceZeroInRange(false);
+            bidHistoryPriceAxis.setTickLabelFormatter(new NumberAxis.DefaultFormatter(bidHistoryPriceAxis) {
+                @Override
+                public String toString(Number object) {
+                    return object == null ? "" : formatMoney(String.valueOf(object.doubleValue()));
+                }
+            });
+        }
     }
 
     private void watchAuction() {
@@ -201,17 +261,22 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     public void EnableAutoBid(ActionEvent actionEvent) {
         String auctionId = StoreItemDataInit.description;
         if (auctionId == null || auctionId.isBlank()) {
-            setAutoBidStatus("Thieu ma phien dau gia");
+            syncAutoBidToggle();
+            setAutoBidStatus("Thiếu mã phiên đấu giá.");
             return;
         }
 
         if (!"RUNNING".equalsIgnoreCase(currentAuctionStatus)) {
-            setAutoBidStatus("Auto-bid chi bat khi phien dang RUNNING.");
+            syncAutoBidToggle();
+            setAutoBidStatus("Auto-bid chỉ bật khi phiên đang RUNNING.");
             return;
         }
 
         if (autoBidActive) {
-            setAutoBidStatus("??ang t???t auto-bid...");
+            if (autoBidToggle != null) {
+                autoBidToggle.setText("OFF");
+            }
+            setAutoBidStatus("Đang tắt auto-bid...");
             SocketClient.getInstance().requestData("DISABLE_AUTO_BID|" + auctionId);
             return;
         }
@@ -221,11 +286,15 @@ public class ItemShowingHandle implements Initializable, SocketListener {
 
         if (maxBid == null || !maxBid.matches("\\d+(\\.\\d+)?")
                 || increment == null || !increment.matches("\\d+(\\.\\d+)?")) {
-            setAutoBidStatus("Thong tin auto-bid khong hop le");
+            syncAutoBidToggle();
+            setAutoBidStatus("Thông tin auto-bid không hợp lệ.");
             return;
         }
 
-        setAutoBidStatus("Dang bat auto-bid...");
+        setAutoBidStatus("Đang bật auto-bid...");
+        if (autoBidToggle != null) {
+            autoBidToggle.setText("ON");
+        }
         SocketClient.getInstance().requestData("SET_AUTO_BID|" + auctionId + "|" + maxBid + "|" + increment);
     }
 
@@ -330,7 +399,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         setLabelText(finalPriceStatLabel, formatMoney(params.getOrDefault("currentPrice", "0")) + " VNĐ");
         setLabelText(winnerPriceLabel, formatMoney(params.getOrDefault("currentPrice", "0")) + " VNĐ");
         setLabelText(bidCountLabel, parseLong(params.getOrDefault("bidCount", "0")) + " lượt");
-        setLabelText(leaderValueLabel, params.getOrDefault("highestBidder", "Chua co"));
+        setLabelText(leaderValueLabel, params.getOrDefault("highestBidder", "Chưa có"));
         if (params.containsKey("endTime")) {
             setLabelText(finishedAtLabel, endTimeFormatter.format(Instant.ofEpochMilli(parseLong(params.get("endTime")))));
         }
@@ -357,7 +426,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
             setLabelText(price, amountText);
             setLabelText(finalPriceStatLabel, amountText);
             setLabelText(winnerPriceLabel, amountText);
-            setLabelText(leaderValueLabel, params.getOrDefault("highestBidder", params.getOrDefault("user", "Chua co")));
+            setLabelText(leaderValueLabel, params.getOrDefault("highestBidder", params.getOrDefault("user", "Chưa có")));
             updateCountdownConfig(params, params.getOrDefault("duration", String.valueOf(durationMinutes)));
             if (money != null) {
                 money.clear();
@@ -375,6 +444,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
 
         if (entries == null || entries.isBlank()) {
             setLabelText(bidHistoryHint, "Chưa có lượt đặt giá nào.");
+            updateBidHistoryChart();
             renderTopWinners();
             return;
         }
@@ -398,7 +468,41 @@ public class ItemShowingHandle implements Initializable, SocketListener {
                 ? "Chưa có lượt đặt giá nào."
                 : "Đã tải " + bidHistoryRows.size() + " lượt đặt giá.");
         setLabelText(bidCountLabel, bidHistoryRows.size() + " lượt");
+        updateBidHistoryChart();
         renderTopWinners();
+    }
+
+    private void updateBidHistoryChart() {
+        if (bidHistoryChart == null) {
+            return;
+        }
+
+        bidHistorySeries.getData().clear();
+        bidHistoryRows.stream()
+                .sorted((left, right) -> Long.compare(left.epochMillis(), right.epochMillis()))
+                .forEach(row -> {
+                    XYChart.Data<String, Number> point =
+                            new XYChart.Data<>(formatChartTimestamp(row.epochMillis()), row.amountValue());
+                    bidHistorySeries.getData().add(point);
+                    installChartPointTooltip(point, row);
+                });
+
+        bidHistoryChart.setTitle(bidHistoryRows.isEmpty() ? "Chưa có dữ liệu đặt giá" : null);
+    }
+
+    private void installChartPointTooltip(XYChart.Data<String, Number> point, BidHistoryRow row) {
+        Platform.runLater(() -> {
+            if (point.getNode() == null) {
+                return;
+            }
+            Tooltip tooltip = new Tooltip(
+                    "Người đấu giá: " + row.username()
+                            + "\nGiá: " + row.amount()
+                            + "\nThời điểm: " + row.time()
+            );
+            Tooltip.install(point.getNode(), tooltip);
+            point.getNode().setStyle("-fx-cursor: hand;");
+        });
     }
 
     private void renderWinnerInfo(Map<String, String> params) {
@@ -412,9 +516,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     private void renderAutoBidStatus(Map<String, String> params) {
         autoBidActive = Boolean.parseBoolean(params.getOrDefault("active", "false"));
 
-        if (autoBidButton != null) {
-            autoBidButton.setText(autoBidActive ? "Tat auto-bid" : "Bat auto-bid");
-        }
+        syncAutoBidToggle();
 
         if (autoBidActive) {
             String maxBid = params.getOrDefault("maxBid", "");
@@ -425,22 +527,17 @@ public class ItemShowingHandle implements Initializable, SocketListener {
             if (autoBidIncrement != null && !increment.isBlank()) {
                 autoBidIncrement.setText(increment);
             }
-            setAutoBidStatus("Da luu auto-bid cho phien nay.");
+            setAutoBidStatus("Đã lưu auto-bid cho phiên này.");
             return;
         }
 
-        if (autoBidButton != null) {
-            autoBidButton.setText("Bat auto-bid");
-        }
-        setAutoBidStatus("Chua bat auto-bid.");
+        setAutoBidStatus("Chưa bật auto-bid.");
     }
 
     private void renderAutoBidDisabled() {
         autoBidActive = false;
-        if (autoBidButton != null) {
-            autoBidButton.setText("Bat auto-bid");
-        }
-        setAutoBidStatus("Da tat auto-bid.");
+        syncAutoBidToggle();
+        setAutoBidStatus("Đã tắt auto-bid.");
     }
 
     private void renderError(String[] parts, Map<String, String> params) {
@@ -464,6 +561,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
 
         setLabelText(statusSubLabel, safeMessage);
         setAutoBidStatus(safeMessage);
+        syncAutoBidToggle();
     }
 
     private void renderImage(String[] parts) {
@@ -577,8 +675,8 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         if (money != null) {
             money.setDisable(!isRunning);
         }
-        if (autoBidButton != null) {
-            autoBidButton.setDisable(!isRunning);
+        if (autoBidToggle != null) {
+            autoBidToggle.setDisable(!isRunning);
         }
         if (autoBidMax != null) {
             autoBidMax.setDisable(!isRunning);
@@ -695,6 +793,13 @@ public class ItemShowingHandle implements Initializable, SocketListener {
         }
     }
 
+    private String formatChartTimestamp(long epochMillis) {
+        if (epochMillis <= 0) {
+            return "--:--";
+        }
+        return chartTimeFormatter.format(Instant.ofEpochMilli(epochMillis));
+    }
+
     private String formatMoney(String raw) {
         try {
             double value = Double.parseDouble(raw);
@@ -732,6 +837,14 @@ public class ItemShowingHandle implements Initializable, SocketListener {
 
     private void setAutoBidStatus(String value) {
         setLabelText(autoBidStatus, value);
+    }
+
+    private void syncAutoBidToggle() {
+        if (autoBidToggle == null) {
+            return;
+        }
+        autoBidToggle.setSelected(autoBidActive);
+        autoBidToggle.setText(autoBidActive ? "ON" : "OFF");
     }
 
     public record BidHistoryRow(String username, String amount, String time, double amountValue, long epochMillis) {

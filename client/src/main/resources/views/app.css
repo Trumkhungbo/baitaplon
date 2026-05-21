@@ -262,6 +262,35 @@
     -fx-padding: 11 14;
 }
 
+.auction-detail-root .auto-bid-switch {
+    -fx-background-color: #050505;
+    -fx-background-radius: 999px;
+    -fx-border-color: rgba(255, 255, 255, 0.24);
+    -fx-border-radius: 999px;
+    -fx-border-width: 2px;
+    -fx-text-fill: #facc15;
+    -fx-font-size: 18px;
+    -fx-font-weight: 950;
+    -fx-cursor: hand;
+    -fx-alignment: center-left;
+    -fx-padding: 0 0 0 28px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 16, 0.2, 0, 5);
+}
+
+.auction-detail-root .auto-bid-switch:selected {
+    -fx-background-color: linear-gradient(to right, #f59e0b, #facc15, #fde047);
+    -fx-border-color: rgba(250, 204, 21, 0.92);
+    -fx-text-fill: #0b0b0b;
+    -fx-alignment: center-right;
+    -fx-padding: 0 28px 0 0;
+    -fx-effect: dropshadow(gaussian, rgba(250, 204, 21, 0.42), 22, 0.28, 0, 0);
+}
+
+.auction-detail-root .auto-bid-switch:disabled {
+    -fx-opacity: 0.52;
+    -fx-cursor: default;
+}
+
 .auction-detail-root .description-copy {
     -fx-text-fill: #d0d0d5;
     -fx-font-size: 14px;
@@ -274,6 +303,96 @@
 
 .auction-detail-root .spec-grid {
     -fx-padding: 4 0 0 0;
+}
+
+.auction-detail-root .auction-info-tabs {
+    -fx-background-color: transparent;
+    -fx-tab-min-height: 42px;
+}
+
+.auction-detail-root .auction-info-tabs .tab-header-area {
+    -fx-padding: 0 0 0 0;
+}
+
+.auction-detail-root .auction-info-tabs .tab-header-background {
+    -fx-background-color: rgba(0, 0, 0, 0.88);
+    -fx-border-color: rgba(255, 255, 255, 0.08);
+    -fx-border-width: 0 0 1px 0;
+}
+
+.auction-detail-root .auction-info-tabs .tab {
+    -fx-background-color: transparent;
+    -fx-padding: 9 18;
+}
+
+.auction-detail-root .auction-info-tabs .tab:selected {
+    -fx-background-color: rgba(250, 204, 21, 0.10);
+    -fx-border-color: transparent transparent #facc15 transparent;
+    -fx-border-width: 0 0 2px 0;
+}
+
+.auction-detail-root .auction-info-tabs .tab .tab-label {
+    -fx-text-fill: #a1a1aa;
+    -fx-font-weight: 800;
+}
+
+.auction-detail-root .auction-info-tabs .tab:selected .tab-label {
+    -fx-text-fill: #facc15;
+}
+
+.auction-detail-root .auction-info-tabs .tab-content-area,
+.auction-detail-root .tab-card {
+    -fx-background-color: #000000;
+}
+
+.auction-detail-root .history-tab-card {
+    -fx-border-color: rgba(250, 204, 21, 0.16);
+}
+
+.auction-detail-root .recent-history-panel {
+    -fx-background-color: #000000;
+    -fx-background-radius: 16px;
+    -fx-border-color: rgba(255, 255, 255, 0.07);
+    -fx-border-radius: 16px;
+    -fx-padding: 14;
+}
+
+.auction-detail-root .bid-history-chart {
+    -fx-background-color: #000000;
+    -fx-background-radius: 16px;
+    -fx-border-color: rgba(255, 255, 255, 0.07);
+    -fx-border-radius: 16px;
+    -fx-padding: 12;
+    -fx-min-height: 430px;
+    -fx-pref-height: 520px;
+}
+
+.auction-detail-root .bid-history-chart .chart-plot-background {
+    -fx-background-color: linear-gradient(to bottom, rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.2));
+}
+
+.auction-detail-root .bid-history-chart .chart-vertical-grid-lines,
+.auction-detail-root .bid-history-chart .chart-horizontal-grid-lines {
+    -fx-stroke: rgba(255, 255, 255, 0.08);
+}
+
+.auction-detail-root .bid-history-chart .axis {
+    -fx-tick-label-fill: #a1a1aa;
+}
+
+.auction-detail-root .bid-history-chart .axis-label {
+    -fx-text-fill: #cbd5e1;
+}
+
+.auction-detail-root .bid-history-chart .default-color0.chart-series-line {
+    -fx-stroke: #facc15;
+    -fx-stroke-width: 3px;
+}
+
+.auction-detail-root .bid-history-chart .default-color0.chart-line-symbol {
+    -fx-background-color: #facc15, #000000;
+    -fx-background-radius: 8px;
+    -fx-padding: 5px;
 }
 
 .auction-detail-root .spec-value {
@@ -304,7 +423,7 @@
 }
 
 .auction-detail-root .compact-history {
-    -fx-max-height: 120px;
+    -fx-max-height: 9999px;
     -fx-opacity: 1;
     -fx-background-color: #111114;
     -fx-control-inner-background: #111114;
@@ -395,6 +514,45 @@
 .auction-detail-root .compact-history .scroll-bar .thumb {
     -fx-background-color: #3a3a42;
     -fx-background-radius: 999px;
+}
+
+.auction-detail-root .black-history-table,
+.auction-detail-root .black-history-table .virtual-flow,
+.auction-detail-root .black-history-table .viewport,
+.auction-detail-root .black-history-table .clipped-container,
+.auction-detail-root .black-history-table .sheet,
+.auction-detail-root .black-history-table .corner,
+.auction-detail-root .black-history-table .filler,
+.auction-detail-root .black-history-table .placeholder {
+    -fx-background-color: #000000;
+    -fx-control-inner-background: #000000;
+}
+
+.auction-detail-root .black-history-table .column-header-background,
+.auction-detail-root .black-history-table .column-header,
+.auction-detail-root .black-history-table .nested-column-header {
+    -fx-background-color: #000000;
+}
+
+.auction-detail-root .black-history-table .column-header {
+    -fx-border-color: rgba(255, 255, 255, 0.10);
+}
+
+.auction-detail-root .black-history-table .column-header .label {
+    -fx-text-fill: #ffffff;
+}
+
+.auction-detail-root .black-history-table .table-row-cell,
+.auction-detail-root .black-history-table .table-row-cell:odd,
+.auction-detail-root .black-history-table .table-row-cell:empty,
+.auction-detail-root .black-history-table .table-cell {
+    -fx-background-color: #000000;
+    -fx-text-fill: #f3f4f6;
+    -fx-table-cell-border-color: rgba(255, 255, 255, 0.04);
+}
+
+.auction-detail-root .black-history-table .table-row-cell:filled:hover {
+    -fx-background-color: #090909;
 }
 
 .auction-detail-root .gallery-status-chip {
