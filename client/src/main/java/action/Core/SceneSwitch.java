@@ -36,6 +36,7 @@ public class SceneSwitch {
         stage = (Stage) loginField.getScene().getWindow();
         scene = new Scene(root);
         stage.setScene(scene);
+        stage.centerOnScreen();
         stage.show();
     }
 
@@ -44,6 +45,7 @@ public class SceneSwitch {
         stage = getStageFromEvent(event); // Đã thay thế
         scene = new Scene(root);
         stage.setScene(scene);
+        stage.centerOnScreen();
         stage.show();
     }
 
@@ -52,6 +54,7 @@ public class SceneSwitch {
         stage = getStageFromEvent(event); // Đã thay thế
         scene = new Scene(root);
         stage.setScene(scene);
+        stage.centerOnScreen();
         stage.show();
     }
 
@@ -60,6 +63,7 @@ public class SceneSwitch {
         stage = getStageFromEvent(event); // Đã thay thế
         scene = new Scene(root);
         stage.setScene(scene);
+        stage.centerOnScreen();
         stage.show();
     }
 
@@ -70,6 +74,7 @@ public class SceneSwitch {
         Stage modalStage = new Stage();
         scene = new Scene(root);
         modalStage.setScene(scene);
+        modalStage.centerOnScreen();
         modalStage.initModality(Modality.APPLICATION_MODAL);
 
         // Thêm icon an toàn
