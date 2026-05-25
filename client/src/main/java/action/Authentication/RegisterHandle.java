@@ -1,8 +1,11 @@
 package action.Authentication;
 
 import action.Core.SceneSwitch;
-import action.Core.StartScence;
+import action.SocketClient;
+import action.SocketListener;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -11,7 +14,7 @@ import javafx.scene.control.TextField;
 
 import java.io.IOException;
 
-public class RegisterHandle {
+public class RegisterHandle implements SocketListener {
     SceneSwitch sceneswitch = new SceneSwitch();
     @FXML
     private TextField Name;
@@ -29,6 +32,12 @@ public class RegisterHandle {
     private Button Login;
     @FXML
     private Button Signup;
+
+    @FXML
+    public void initialize() {
+        SocketClient.getInstance().addListener(this);
+    }
+
     public void Register(ActionEvent event) throws IOException {
         String name = Name.getText();
         String phoneNumber = PhoneNumber.getText();
@@ -42,6 +51,7 @@ public class RegisterHandle {
         }
         else if(!password.equals(confirmPassword)) {
             System.out.println("Passwords do not match");
+            sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
         }
         else if (!email.matches("^[a-zA-Z0-9._%+-]+@gmail\\.com$")) {
             sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
@@ -49,33 +59,11 @@ public class RegisterHandle {
         else if (!phoneNumber.matches("^[0-9]{10}$")) {
             sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
         }
-        else if (!personalID.matches("[0-9]{12}$"))
-            {
-                sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
-            }
+        else if (!personalID.matches("^[0-9]{12}$"))
+        {
+            sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
+        }
         else {
-
-            StartScence.client.setServerListener(message -> {
-                javafx.application.Platform.runLater(() -> {
-                    if (message.startsWith("REGISTER_SUCCESS")) {
-                        try {
-                            SceneSwitch sceneswitch = new SceneSwitch();
-                            sceneswitch.SwitchToLogin(event);
-                            sceneswitch.SwitchToLockPage(event, "/views/RegisterPopUp.fxml");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (message.startsWith("REGISTER_FAILED")) {
-                        try {
-                            // Tài khoản đã tồn tại hoặc lỗi
-                            SceneSwitch sceneswitch = new SceneSwitch();
-                            sceneswitch.SwitchToLockPage(event, "/views/WrongInputShow.fxml");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-            });
             JsonObject req = new JsonObject();
             req.addProperty("command", "REGISTER");
             req.addProperty("username", name);
@@ -83,11 +71,44 @@ public class RegisterHandle {
             req.addProperty("phone", phoneNumber);
             req.addProperty("email", email);
             req.addProperty("personalID", personalID);
-            StartScence.client.sendMessage(req.toString());
+            SocketClient.getInstance().requestData(req.toString());
         }
-
     }
+
     public void Login(ActionEvent event) throws IOException {
+        SocketClient.getInstance().removeListener(this);
         sceneswitch.SwitchToLogin(event);
+    }
+
+    @Override
+    public void onDataReceived(String data) {
+        Platform.runLater(() -> {
+            try {
+                // 1. Dịch chuỗi nhận được thành JSON
+                JsonObject res = JsonParser.parseString(data).getAsJsonObject();
+
+                // 2. Kiểm tra xem có đúng là gói tin phản hồi Đăng ký không
+                if (res.has("command") && res.get("command").getAsString().equals("REGISTER_RESULT")) {
+                    String status = res.get("status").getAsString();
+
+                    if (status.equals("SUCCESS")) {
+                        // Đăng ký thành công -> Gỡ tai nghe -> Bật Pop-up -> Chuyển về Login
+                        SocketClient.getInstance().removeListener(this);
+                        try {
+                            sceneswitch.SwitchToLogin(new ActionEvent(Name.getScene().getWindow(), null));
+                            sceneswitch.SwitchToLockPage(new ActionEvent(Name.getScene().getWindow(), null), "/views/RegisterPopUp.fxml");
+                        } catch (IOException e) { e.printStackTrace(); }
+
+                    } else {
+                        // Đăng ký thất bại (Trùng tài khoản) -> Bật Pop-up báo lỗi
+                        try {
+                            sceneswitch.SwitchToLockPage(new ActionEvent(Name.getScene().getWindow(), null), "/views/UsedAccount.fxml");
+                        } catch (IOException e) { e.printStackTrace(); }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

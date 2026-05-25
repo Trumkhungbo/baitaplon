@@ -15,6 +15,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.bidding.server.core.AuctionService;
+
 public class AuctionServer {
 
     private static final int DEFAULT_PORT = 888;
@@ -35,7 +37,7 @@ public class AuctionServer {
     public AuctionServer() {
         this(DEFAULT_PORT);
     }
-
+      
     public AuctionServer(int port) {
         this.port = port;
         this.clientPool = Executors.newFixedThreadPool(MAX_CLIENT_THREADS);
@@ -120,17 +122,26 @@ public class AuctionServer {
     }
 
     public void broadcastAuctionListUpdate() {
-        broadcastService.broadcastLobbyUpdate();
+        broadcastService.broadcastLobbyUpdate(
+                auctionService.getAuctionList(false)
+        );
     }
 
     private void startAuctionMonitor() {
         auctionMonitor.scheduleAtFixedRate(() -> {
-            var messages = auctionService.closeExpiredAuctions();
+            try {
+                var messages = auctionService.closeExpiredAuctions();
 
-            for (String message : messages) {
-                broadcastService.broadcastAuctionClosedMessage(message);
-                broadcastService.broadcastLobbyUpdate();
-                System.out.println("[AUCTION MONITOR] " + message);
+                for (String message : messages) {
+                    broadcastService.broadcastAuctionClosedMessage(message);
+                    broadcastService.broadcastLobbyUpdate(
+                            auctionService.getAuctionList(false)
+                    );
+                    System.out.println("[AUCTION MONITOR] " + message);
+                }
+            } catch (Exception e) {
+                System.err.println("[AUCTION MONITOR] Error while closing expired auctions: " + e.getMessage());
+                e.printStackTrace(System.err);
             }
         }, 1, 1, TimeUnit.SECONDS);
     }

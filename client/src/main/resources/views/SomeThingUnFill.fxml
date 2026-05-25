@@ -8,9 +8,9 @@
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-<StackPane prefHeight="700.0" prefWidth="900.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.Utilities.SomeThingUnFillHandle">
+<StackPane prefHeight="768.0" prefWidth="1024.0" style="-fx-background-color: rgba(0, 0, 0, 0.85);" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.Utilities.SomeThingUnFillHandle">
    <children>
-      <VBox alignment="CENTER" maxHeight="350.0" maxWidth="450.0" spacing="25.0" styleClass="card">
+      <VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefWidth="420.0" spacing="30.0" styleClass="card" style="-fx-border-color: #FACC15; -fx-border-width: 1.5; -fx-border-radius: 20;">
          <padding>
             <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
          </padding>
@@ -18,23 +18,24 @@
 
             <StackPane>
                <children>
-                  <Circle fill="TRANSPARENT" radius="35.0" stroke="#FACC15" strokeType="INSIDE" strokeWidth="3.0" />
+                  <Circle fill="TRANSPARENT" radius="38.0" stroke="#FACC15" strokeType="INSIDE" strokeWidth="1.0" opacity="0.3" />
+                  <Circle fill="TRANSPARENT" radius="32.0" stroke="#FACC15" strokeType="INSIDE" strokeWidth="2.5" />
                   <Label text="!" textFill="#FACC15">
                      <font>
-                        <Font name="System Bold" size="40.0" />
+                        <Font name="System Bold" size="44.0" />
                      </font>
                   </Label>
                </children>
             </StackPane>
 
-            <VBox alignment="CENTER" spacing="10.0">
+            <VBox alignment="CENTER" spacing="12.0">
                <children>
-                  <Label style="-fx-text-fill: #FACC15; -fx-font-size: 22px; -fx-font-weight: bold;" text="Thiếu thông tin!" />
-                  <Label style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px; -fx-text-alignment: center;" text="Hình như bạn đã bỏ sót điều gì đó.&#10;Vui lòng kiểm tra lại các trường nhập liệu." wrapText="true" />
+                  <Label style="-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;" text="Thiếu Thông Tin" />
+                  <Label style="-fx-text-fill: #A0A0A0; -fx-font-size: 15px; -fx-line-spacing: 5;" text="Có vẻ như một vài ô nhập liệu vẫn còn đang để trống. Vui lòng hoàn thiện để tiếp tục." textAlignment="CENTER" wrapText="true" />
                </children>
             </VBox>
 
-            <Button fx:id="ReturnPreviousPage" maxWidth="250.0" mnemonicParsing="false" onAction="#ReturnPreviousPage" styleClass="btn-gold" text="Back To Refill">
+            <Button fx:id="ReturnPreviousPage" maxWidth="Infinity" mnemonicParsing="false" onAction="#ReturnPreviousPage" prefHeight="45.0" styleClass="btn-gold" text="QUAY LẠI HOÀN THIỆN">
                <VBox.margin>
                   <Insets top="10.0" />
                </VBox.margin>

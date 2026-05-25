@@ -1,9 +1,7 @@
 package com.bidding.server;
 
-import action.Core.StartScence;
 import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.network.AuctionServer;
-import javafx.application.Application;
 
 public class ServerApplication {
     public static void main(String[] args) {
@@ -29,11 +27,8 @@ public class ServerApplication {
 
             AuctionServer server = new AuctionServer(port);
             server.start();
-        });
+        }, "auction-server-main");
 
-        serverThread.setDaemon(true);
         serverThread.start();
-
-        Application.launch(StartScence.class, args);
     }
 }

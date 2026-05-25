@@ -1,8 +1,5 @@
 package com.bidding.server.repository;
 
-import com.bidding.server.core.Auction;
-import com.bidding.server.core.AuctionStatus;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,6 +7,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.bidding.common.enums.AuctionStatus;
+import com.bidding.server.core.Auction;
 
 public class AuctionStateDAO extends BaseDAO {
 
@@ -35,7 +35,7 @@ public class AuctionStateDAO extends BaseDAO {
                         rs.getString("item_name"),
                         rs.getDouble("start_price"),
                         rs.getDouble("current_price"),
-                        AuctionStatus.valueOf(rs.getString("status")),
+                        parseStatus(rs.getString("status")),
                         rs.getString("highest_bidder"),
                         rs.getLong("end_time"),
                         rs.getLong("start_time"),
@@ -118,6 +118,17 @@ public class AuctionStateDAO extends BaseDAO {
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save auction state", e);
+        }
+    }
+
+    public void deleteByAuctionId(String auctionId) {
+        String sql = "DELETE FROM auction_runtime_state WHERE auction_id = ?";
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, auctionId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete auction state", e);
         }
     }
 

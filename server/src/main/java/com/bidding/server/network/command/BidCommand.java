@@ -43,7 +43,8 @@ public class BidCommand implements CommandHandler {
             String response = auctionService.placeBid(parts[1], client.getCurrentUser(), amount);
             client.sendMessage(response);
 
-            if (response.startsWith("BID_SUCCESS")) {
+            if (response.startsWith("BID_RESULT|status=SUCCESS")
+                    || response.startsWith("BID_SUCCESS")) {
                 broadcastService.broadcastBidUpdate(parts[1]);
                 broadcastService.broadcastLobbyUpdate();
             }

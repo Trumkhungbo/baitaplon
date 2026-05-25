@@ -1,5 +1,6 @@
 package com.bidding.server.network;
 
+import com.bidding.common.enums.UserRole;
 import com.bidding.server.network.command.CommandDispatcher;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -23,6 +24,7 @@ public class ClientHandler implements Runnable {
 
     private volatile boolean connected;
     private String currentUser;
+    private UserRole currentRole;
     private String watchingAuctionId;
 
     public ClientHandler(Socket clientSocket, AuctionServer server, CommandDispatcher commandDispatcher) {
@@ -37,8 +39,10 @@ public class ClientHandler implements Runnable {
         try {
             initStreams();
 
-            sendMessage("CONNECTED|Welcome to the Auction Server");
-            sendMessage("INFO|Supported commands: PING, LOGIN|user|pass, LIST_AUCTIONS, GET_AUCTION_DETAIL|auctionId, ADD_AUCTION|seller|itemName|startPrice, WATCH|auctionId, BID|auctionId|user|amount, QUIT");
+            JsonObject greeting = new JsonObject();
+            greeting.addProperty("command", "INFO");
+            greeting.addProperty("message", "Welcome to the Auction Server. JSON API is Ready!");
+            sendMessage(greeting.toString());
 
             String clientMessage;
             while (connected && (clientMessage = reader.readLine()) != null) {
@@ -70,48 +74,151 @@ public class ClientHandler implements Runnable {
             JsonObject json = JsonParser.parseString(request).getAsJsonObject();
             command = json.get("command").getAsString().toUpperCase();
 
-            if (command.equals("GET_ACCOUNTINFORMATION")) {
-                parts = new String[]{"GET_ACCOUNTINFORMATION", json.get("username").getAsString()};
-            } else if (command.equals("ADD_MONEY")) {
-                parts = new String[]{"ADD_MONEY", json.get("username").getAsString(), json.get("money").getAsString()};
-            } else if (command.equals("LOGIN")) {
-                parts = new String[]{
-                        "LOGIN",
-                        json.has("username") ? json.get("username").getAsString() : "",
-                        json.has("password") ? json.get("password").getAsString() : ""
-                };
-            } else if (command.equals("REGISTER")) {
-                parts = new String[]{
-                        "REGISTER",
-                        json.has("username") ? json.get("username").getAsString() : "",
-                        json.has("password") ? json.get("password").getAsString() : "",
-                        json.has("phone") ? json.get("phone").getAsString() : "",
-                        json.has("email") ? json.get("email").getAsString() : "",
-                        json.has("personalID") ? json.get("personalID").getAsString() : ""
-                };
-            } else if (command.equals("FORGOT_PASSWORD")) {
-                parts = new String[]{
-                        "FORGOT_PASSWORD",
-                        json.has("username") ? json.get("username").getAsString() : "",
-                        json.has("phone") ? json.get("phone").getAsString() : "",
-                        json.has("personalID") ? json.get("personalID").getAsString() : ""
-                };
-            } else {
-                parts = new String[]{command};
-            }
+            parts = buildJsonCommandParts(command, json);
         } catch (Exception e) {
-            if (request.startsWith("CREATE_ITEM_CMD|")) {
-                parts = request.split("\\|", 2);
-            } else {
-                parts = request.split("\\|");
-            }
+            parts = request.split("\\|");
             command = parts[0].toUpperCase();
         }
 
         commandDispatcher.dispatch(command, parts, this);
     }
 
-    public void sendMessage(String message) {
+    private String[] buildJsonCommandParts(String command, JsonObject json) {
+        return switch (command) {
+            case "LOGIN" -> new String[]{
+                    "LOGIN",
+                    getJsonString(json, "username"),
+                    getJsonString(json, "password")
+            };
+            case "REGISTER" -> new String[]{
+                    "REGISTER",
+                    getJsonString(json, "username"),
+                    getJsonString(json, "password"),
+                    getJsonString(json, "phone"),
+                    getJsonString(json, "email"),
+                    getJsonString(json, "personalID")
+            };
+            case "GET_ACCOUNTINFORMATION" -> new String[]{
+                    "GET_ACCOUNTINFORMATION",
+                    getJsonString(json, "username")
+            };
+            case "ADD_MONEY" -> new String[]{
+                    "ADD_MONEY",
+                    getJsonString(json, "username"),
+                    getJsonString(json, "money")
+            };
+            case "FORGOT_PASSWORD" -> new String[]{
+                    "FORGOT_PASSWORD",
+                    getJsonString(json, "username"),
+                    getJsonString(json, "phone"),
+                    getJsonString(json, "personalID")
+            };
+            case "RESET_PASSWORD" -> new String[]{
+                    "RESET_PASSWORD",
+                    getJsonString(json, "username"),
+                    getJsonString(json, "newPassword")
+            };
+            case "GET_AUCTION_DETAIL", "GET_BID_HISTORY", "GET_WINNER", "WATCH", "CLOSE_AUCTION", "APPROVE_AUCTION", "DELETE_AUCTION", "GET_AUTO_BID", "DISABLE_AUTO_BID", "PAY_AUCTION" -> new String[]{
+                    command,
+                    getJsonString(json, "auctionId")
+            };
+            case "ADMIN_DELETE_USER" -> new String[]{
+                    "ADMIN_DELETE_USER",
+                    firstJsonString(json, "userId", "id")
+            };
+            case "ADMIN_APPROVE_TOPUP_REQUEST" -> new String[]{
+                    "ADMIN_APPROVE_TOPUP_REQUEST",
+                    firstJsonString(json, "requestId", "id")
+            };
+            case "LIST_MY_AUCTIONS" -> new String[]{
+                    "LIST_MY_AUCTIONS",
+                    firstJsonString(json, "sellerUsername", "seller", "username")
+            };
+            case "LIST_ACCOUNT_AUCTIONS" -> new String[]{
+                    "LIST_ACCOUNT_AUCTIONS",
+                    firstJsonString(json, "username", "sellerUsername", "seller")
+            };
+            case "BID" -> new String[]{
+                    "BID",
+                    getJsonString(json, "auctionId"),
+                    getJsonString(json, "amount")
+            };
+            case "SET_AUTO_BID" -> new String[]{
+                    "SET_AUTO_BID",
+                    getJsonString(json, "auctionId"),
+                    getJsonString(json, "maxBid"),
+                    getJsonString(json, "increment")
+            };
+            case "UPDATE_STATUS" -> new String[]{
+                    "UPDATE_STATUS",
+                    getJsonString(json, "auctionId"),
+                    getJsonString(json, "status")
+            };
+            case "ADD_AUCTION" -> buildJsonAddAuctionParts(json);
+            case "UPDATE_AUCTION" -> buildJsonUpdateAuctionParts(json);
+            case "UPLOAD_IMAGE" -> new String[]{
+                    "UPLOAD_IMAGE",
+                    getJsonString(json, "extension"),
+                    getJsonString(json, "data")
+            };
+            case "GET_IMAGE" -> new String[]{
+                    "GET_IMAGE",
+                    getJsonString(json, "filename")
+            };
+            default -> new String[]{command};
+        };
+    }
+
+    private String[] buildJsonAddAuctionParts(JsonObject json) {
+        return new String[]{
+                "ADD_AUCTION",
+                firstJsonString(json, "sellerUsername", "seller", "username"),
+                getJsonString(json, "itemType"),
+                firstJsonString(json, "itemName", "name"),
+                firstJsonString(json, "des1", "information1", "param1", "brand", "engineType", "artist"),
+                firstJsonString(json, "des2", "information2", "param2", "warrantyMonths", "mileage", "creationYear"),
+                firstJsonString(json, "price", "startPrice", "startingPrice"),
+                getJsonString(json, "startTime"),
+                getJsonString(json, "durationMinutes"),
+                firstJsonString(json, "description", "productDescription"),
+                getJsonString(json, "imageUrl")
+        };
+    }
+
+    private String[] buildJsonUpdateAuctionParts(JsonObject json) {
+        return new String[]{
+                "UPDATE_AUCTION",
+                getJsonString(json, "auctionId"),
+                firstJsonString(json, "sellerUsername", "seller", "username"),
+                getJsonString(json, "itemType"),
+                firstJsonString(json, "itemName", "name"),
+                firstJsonString(json, "des1", "information1", "param1", "brand", "engineType", "artist"),
+                firstJsonString(json, "des2", "information2", "param2", "warrantyMonths", "mileage", "creationYear"),
+                firstJsonString(json, "price", "startPrice", "startingPrice"),
+                getJsonString(json, "startTime"),
+                getJsonString(json, "durationMinutes"),
+                firstJsonString(json, "description", "productDescription"),
+                getJsonString(json, "imageUrl")
+        };
+    }
+
+    private String firstJsonString(JsonObject json, String... keys) {
+        for (String key : keys) {
+            String value = getJsonString(json, key);
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
+    }
+
+    private String getJsonString(JsonObject json, String key) {
+        return json.has(key) && !json.get(key).isJsonNull()
+                ? json.get(key).getAsString()
+                : "";
+    }
+
+    public synchronized void sendMessage(String message) {
         if (writer != null) {
             writer.println(message);
         }
@@ -163,11 +270,20 @@ public class ClientHandler implements Runnable {
         this.watchingAuctionId = watchingAuctionId;
     }
 
+    public UserRole getCurrentRole() {
+        return currentRole;
+    }
+
+    public void setCurrentRole(UserRole currentRole) {
+        this.currentRole = currentRole;
+    }
+
     public boolean isLoggedIn() {
         return currentUser != null;
     }
 
     public boolean isAdmin() {
-        return "admin".equals(currentUser);
+        // Kiem tra role thuc su tu DB, khong dua vao ten username
+        return currentRole == UserRole.ADMIN;
     }
 }

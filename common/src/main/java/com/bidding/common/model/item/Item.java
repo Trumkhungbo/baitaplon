@@ -1,9 +1,10 @@
-
 package com.bidding.common.model.item;
 
 import com.bidding.common.enums.ItemType;
+import com.bidding.common.model.Entity;
 
-public abstract class Item extends com.bidding.common.model.Entity {
+public abstract class Item extends Entity {
+
     private String name;
     private String description;
     private double startingPrice;
@@ -14,19 +15,23 @@ public abstract class Item extends com.bidding.common.model.Entity {
         super();
     }
 
-    public Item(String name, String description, double startingPrice) {
+    public Item(
+            String name,
+            double startingPrice,
+            ItemType itemType,
+            String imageUrl
+    ) {
         super();
+
         this.name = name;
-        this.description = description;
+        this.description = "";
         this.startingPrice = startingPrice;
+        this.itemType = itemType;
+        this.imageUrl = imageUrl;
     }
 
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getDescription() {
@@ -34,7 +39,16 @@ public abstract class Item extends com.bidding.common.model.Entity {
     }
 
     public void setDescription(String description) {
-        this.description = description;
+        this.description = description == null ? "" : description.trim();
+    }
+
+    public void setName(String name) {
+
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Item name cannot be empty");
+        }
+
+        this.name = name;
     }
 
     public double getStartingPrice() {
@@ -42,6 +56,11 @@ public abstract class Item extends com.bidding.common.model.Entity {
     }
 
     public void setStartingPrice(double startingPrice) {
+
+        if (startingPrice < 0) {
+            throw new IllegalArgumentException("Starting price must be >= 0");
+        }
+
         this.startingPrice = startingPrice;
     }
 
@@ -58,8 +77,25 @@ public abstract class Item extends com.bidding.common.model.Entity {
     }
 
     public void setImageUrl(String imageUrl) {
+
+        if (imageUrl == null) {
+            imageUrl = "";
+        }
+
         this.imageUrl = imageUrl;
     }
-
     public abstract String getItemDetails();
+
+    @Override
+    public String toString() {
+        return "Item{" +
+                "id=" + getId() +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", startingPrice=" + startingPrice +
+                ", itemType=" + itemType +
+                ", imageUrl='" + imageUrl + '\'' +
+                ", createdAt=" + getCreatedAt() +
+                '}';
+    }
 }

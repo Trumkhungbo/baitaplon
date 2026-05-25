@@ -17,7 +17,7 @@ import java.util.List;
 public class UserDAO extends BaseDAO {
 
     public User save(User user) {
-        String sql = "INSERT INTO users (username, password_hash, email, phone, personal_id, role, balance, rating, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO users (username, password_hash, email, phone, personal_id, role, balance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConn();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -26,10 +26,14 @@ public class UserDAO extends BaseDAO {
             ps.setString(3, user.getEmail());
             ps.setString(4, user.getPhone());
             ps.setString(5, user.getPersonalId());
-            ps.setString(6, user.getRole().name());
+            String roleStr = switch (user.getRole()) {
+                case ADMIN -> "ADMIN";
+                case SELLER -> "SELLER";
+                default -> "USER";
+            };
+            ps.setString(6, roleStr);
             ps.setDouble(7, user instanceof Bidder b ? b.getBalance() : 0);
-            ps.setDouble(8, user instanceof Seller s ? s.getRating() : 0);
-            ps.setLong(9, user.getCreatedAt());
+            ps.setLong(8, user.getCreatedAt());
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -106,6 +110,23 @@ public class UserDAO extends BaseDAO {
         }
     }
 
+    public double getBalanceByUsername(String username) {
+        String sql = "SELECT balance FROM users WHERE username = ?";
+        try (Connection conn = getConn();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("balance");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Loi lay balance: " + e.getMessage(), e);
+        }
+        return 0.0;
+    }
+
     public void updatePasswordHash(String username, String passwordHash) {
         String sql = "UPDATE users SET password_hash = ? WHERE username = ?";
         try (Connection conn = getConn();
@@ -160,19 +181,21 @@ public class UserDAO extends BaseDAO {
     }
 
     private User map(ResultSet rs) throws SQLException {
-        UserRole role = UserRole.valueOf(rs.getString("role"));
+        String roleStr = rs.getString("role");
+        UserRole role = switch (roleStr) {
+            case "ADMIN" -> UserRole.ADMIN;
+            case "SELLER" -> UserRole.SELLER;
+            default -> UserRole.BIDDER;
+        };
         User user = switch (role) {
             case BIDDER -> {
                 Bidder b = new Bidder();
                 b.setBalance(rs.getDouble("balance"));
                 yield b;
             }
-            case SELLER -> {
-                Seller s = new Seller();
-                s.setRating(rs.getDouble("rating"));
-                yield s;
-            }
+            case SELLER -> new Seller();
             case ADMIN -> new Admin();
+            default -> new Bidder();
         };
         user.setId(rs.getLong("id"));
         user.setUsername(rs.getString("username"));

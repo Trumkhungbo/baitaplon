@@ -24,17 +24,30 @@ public class CommandDispatcher {
         register("QUIT", new QuitCommand());
         register("GET_AUCTION_DETAIL", new GetAuctionDetailCommand(auctionService));
         register("GET_BID_HISTORY", new GetBidHistoryCommand(auctionService));
+        register("LIST_MY_AUCTIONS", new ListMyAuctionsCommand(auctionService));
+        register("LIST_ACCOUNT_AUCTIONS", new ListAccountAuctionsCommand(auctionService));
         register("ADD_AUCTION", new AddAuctionCommand(auctionService, broadcastService));
+        register("UPDATE_AUCTION", new UpdateAuctionCommand(auctionService, broadcastService));
+        register("APPROVE_AUCTION", new ApproveAuctionCommand(auctionService, broadcastService));
+        register("DELETE_AUCTION", new DeleteAuctionCommand(auctionService, broadcastService));
         register("SET_AUTO_BID", new SetAutoBidCommand(auctionService, broadcastService));
+        register("GET_AUTO_BID", new GetAutoBidCommand(auctionService));
+        register("DISABLE_AUTO_BID", new DisableAutoBidCommand(auctionService, broadcastService));
         register("CLOSE_AUCTION", new CloseAuctionCommand(auctionService, broadcastService));
         register("GET_WINNER", new GetWinnerCommand(auctionService));
+        register("PAY_AUCTION", new PayAuctionCommand(auctionService, broadcastService));
         register("GET_ACCOUNTINFORMATION", new GetAccountInformationCommand(authService));
         register("ADD_MONEY", new GetNewMoneyCommand(authService));
+        register("ADMIN_LIST_USERS", new AdminListUsersCommand(authService));
+        register("ADMIN_DELETE_USER", new AdminDeleteUserCommand(authService));
+        register("ADMIN_LIST_TOPUP_REQUESTS", new AdminListTopUpRequestsCommand(authService));
+        register("ADMIN_APPROVE_TOPUP_REQUEST", new AdminApproveTopUpRequestCommand(authService));
         register("FORGOT_PASSWORD", new ForgotPasswordCommand(authService));
         register("RESET_PASSWORD", new ResetPasswordCommand(authService));
         register("UPDATE_STATUS", new UpdateStatusCommand(auctionService));
-        register("CREATE_ITEM_CMD", new CreateItemCommand());
-        register("LIST_ITEMS", new ListItemsCommand());
+        register("ELEVATE", new ElevateCommand());
+        register("UPLOAD_IMAGE", new UploadImageCommand());
+        register("GET_IMAGE", new GetImageCommand());
     }
 
     public void dispatch(String command, String[] parts, ClientHandler client) {

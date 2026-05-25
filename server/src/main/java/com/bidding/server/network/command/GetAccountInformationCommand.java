@@ -13,11 +13,12 @@ public class GetAccountInformationCommand implements CommandHandler {
 
     @Override
     public void handle(String[] parts, ClientHandler client) {
-        if (parts.length < 2) {
+        String username = client.isLoggedIn() ? client.getCurrentUser() : (parts.length > 1 ? parts[1] : "");
+        if (username == null || username.isBlank()) {
             client.sendMessage("ERROR|Invalid syntax. Use: GET_ACCOUNTINFORMATION|username");
             return;
         }
 
-        client.sendMessage(authService.accountInformation(parts[1]));
+        client.sendMessage(authService.accountInformation(username));
     }
 }

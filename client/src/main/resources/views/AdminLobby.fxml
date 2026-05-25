@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane fx:id="ShowingStage" prefHeight="768.0" prefWidth="1200.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.AdminLobbyHandle">
+   <top>
+      <HBox alignment="CENTER_LEFT" prefHeight="92.0" style="-fx-background-color: #1A1A1A; -fx-border-color: #333333; -fx-border-width: 0 0 1px 0;" BorderPane.alignment="CENTER">
+         <padding>
+            <Insets left="36.0" right="36.0" />
+         </padding>
+         <children>
+            <HBox alignment="CENTER_LEFT" spacing="12.0">
+               <children>
+                  <ImageView fitHeight="42.0" fitWidth="42.0" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../assets/Icon.png" />
+                     </image>
+                  </ImageView>
+                  <VBox alignment="CENTER_LEFT">
+                     <children>
+                        <Label style="-fx-text-fill: #FACC15; -fx-font-size: 22px; -fx-font-weight: bold;" text="MiniBoom" />
+                        <Label style="-fx-text-fill: #777777; -fx-font-size: 11px; -fx-font-weight: bold;" text="ADMIN SYSTEM" />
+                     </children>
+                  </VBox>
+               </children>
+            </HBox>
+            <Region HBox.hgrow="ALWAYS" />
+            <HBox alignment="CENTER_RIGHT" spacing="12.0">
+               <fx:define>
+                  <ToggleGroup fx:id="adminNavGroup" />
+               </fx:define>
+               <children>
+                  <ToggleButton mnemonicParsing="false" onAction="#MovingToAccountPage" prefHeight="46.0" prefWidth="150.0" selected="true" styleClass="switch-btn" text="Tài Khoản" toggleGroup="$adminNavGroup" />
+                  <ToggleButton mnemonicParsing="false" onAction="#MovingToHandleUserRequest" prefHeight="46.0" prefWidth="150.0" styleClass="switch-btn" text="Yêu Cầu" toggleGroup="$adminNavGroup" />
+                  <ToggleButton mnemonicParsing="false" onAction="#MovingToSellingPage" prefHeight="46.0" prefWidth="150.0" styleClass="switch-btn" text="Hàng Chờ" toggleGroup="$adminNavGroup" />
+               </children>
+            </HBox>
+         </children>
+      </HBox>
+   </top>
+</BorderPane>

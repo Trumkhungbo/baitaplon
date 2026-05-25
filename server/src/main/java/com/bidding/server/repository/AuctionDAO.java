@@ -108,7 +108,7 @@ public class AuctionDAO extends BaseDAO {
         }
         return list;
     }
-
+    
     public List<Auction> findByStatus(AuctionStatus status) {
         List<Auction> list = new ArrayList<>();
         String sql = """
@@ -233,14 +233,14 @@ public class AuctionDAO extends BaseDAO {
     }
 
     // ---- MAPPER ----
-
+    
     private Auction map(ResultSet rs) throws SQLException {
         Auction a = new Auction();
         a.setId(rs.getLong("id"));
         a.setSellerUsername(rs.getString("seller_username"));
         a.setStartTime(rs.getTimestamp("start_time").toLocalDateTime());
         a.setEndTime(rs.getTimestamp("end_time").toLocalDateTime());
-        a.setStatus(AuctionStatus.valueOf(rs.getString("status")));
+        a.setStatus(parseStatus(rs.getString("status")));
         a.setCurrentHighestBid(rs.getDouble("current_highest_bid"));
         a.setHighestBidderUsername(rs.getString("highest_bidder_username"));
 
@@ -268,7 +268,6 @@ public class AuctionDAO extends BaseDAO {
         };
         item.setId(rs.getLong("i_id"));
         item.setName(rs.getString("i_name"));
-        item.setDescription(rs.getString("i_description"));
         item.setStartingPrice(rs.getDouble("i_starting_price"));
         item.setItemType(itemType);
         item.setImageUrl(rs.getString("i_image_url")); // cần thêm field + cột DB

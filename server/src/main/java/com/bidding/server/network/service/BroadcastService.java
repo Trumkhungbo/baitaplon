@@ -19,13 +19,15 @@ public class BroadcastService {
             return;
         }
 
+        // Khắc phục lỗi in chữ "null" ra màn hình người dùng
+        String bidder = auction.getHighestBidder() != null ? auction.getHighestBidder() : "NONE";
+
         server.broadcastToAuctionRoom(
                 "BID_UPDATE|auctionId=" + auctionId
                         + "|highestBid=" + (long) auction.getCurrentPrice()
-                        + "|bidder=" + auction.getHighestBidder()
-                        + "|startDate=" + auction.getStartDate()
-                        + "|startTime=" + auction.getStartClockTime()
-                        + "|duration=" + auction.getDurationMinutes(),
+                        + "|bidder=" + bidder
+                        + "|duration=" + auction.getDurationMinutes()
+                        + "|endTime=" + auction.getEndTime(),
                 auctionId
         );
     }
@@ -36,9 +38,12 @@ public class BroadcastService {
             return;
         }
 
+        // Khắc phục lỗi in chữ "null" khi cuộc đấu giá không có người mua
+        String winner = auction.getHighestBidder() != null ? auction.getHighestBidder() : "NONE";
+
         server.broadcastToAuctionRoom(
                 "AUCTION_CLOSED|auctionId=" + auctionId
-                        + "|winner=" + auction.getHighestBidder()
+                        + "|winner=" + winner
                         + "|finalPrice=" + (long) auction.getCurrentPrice(),
                 auctionId
         );
@@ -46,16 +51,26 @@ public class BroadcastService {
 
     public void broadcastAuctionClosedMessage(String message) {
         String auctionId = extractAuctionId(message);
-        server.broadcastToAuctionRoom(message, auctionId);
+        // Kiểm tra an toàn để bảo vệ Server không bị crash do NullPointerException
+        if (auctionId != null) {
+            server.broadcastToAuctionRoom(message, auctionId);
+        }
+    }
+
+    public void broadcastLobbyUpdate(String message) {
+        server.broadcastToLobby(message);
     }
 
     public void broadcastLobbyUpdate() {
-        server.broadcastToLobby(auctionService.getAuctionList());
+        broadcastLobbyUpdate(auctionService.getAuctionList(false));
     }
 
     private String extractAuctionId(String message) {
-        String[] parts = message.split("\\|");
+        if (message == null || message.isEmpty()) {
+            return null;
+        }
 
+        String[] parts = message.split("\\|");
         for (String part : parts) {
             if (part.startsWith("auctionId=")) {
                 return part.substring("auctionId=".length());

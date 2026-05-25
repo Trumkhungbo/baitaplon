@@ -1,12 +1,79 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 
-
-<StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="CONTROLLER_NAME">
+<StackPane prefHeight="720.0" prefWidth="1180.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.Authentication.PaymentBuyingStuffHandle">
    <children>
-      <AnchorPane prefHeight="400.0" prefWidth="600.0">
+      <VBox maxWidth="1180.0" spacing="18.0" style="-fx-padding: 26;">
+         <children>
+            <HBox alignment="CENTER_LEFT">
+               <children>
+                  <VBox spacing="4.0">
+                     <children>
+                        <Label style="-fx-text-fill: #F8FAFC; -fx-font-size: 28px; -fx-font-weight: bold;" text="THANH TOÁN PHIÊN ĐẤU GIÁ" />
+                        <Label style="-fx-text-fill: #8B8B92; -fx-font-size: 13px;" text="Hoàn tất thanh toán cho phiên đấu giá mà bạn đã thắng." />
+                     </children>
+                  </VBox>
+                  <Region HBox.hgrow="ALWAYS" />
+                  <Label fx:id="paymentStatusLabel" style="-fx-background-color: rgba(239,68,68,0.18); -fx-text-fill: #FCA5A5; -fx-background-radius: 10; -fx-padding: 8 12; -fx-font-weight: bold;" text="CHỜ THANH TOÁN" />
+               </children>
+            </HBox>
 
-</AnchorPane>
+            <Label fx:id="feedbackLabel" style="-fx-text-fill: #94A3B8; -fx-font-size: 12px;" text="" />
+
+            <HBox spacing="18.0">
+               <children>
+                  <VBox spacing="14.0" style="-fx-background-color: #111318; -fx-background-radius: 18; -fx-border-color: rgba(255,255,255,0.06); -fx-border-radius: 18; -fx-padding: 20;" HBox.hgrow="ALWAYS">
+                     <children>
+                        <Label style="-fx-text-fill: #FACC15; -fx-font-size: 18px; -fx-font-weight: bold;" text="Thông tin sản phẩm thắng" />
+                        <Separator style="-fx-background-color: rgba(255,255,255,0.08);" />
+                        <Label fx:id="itemNameLabel" style="-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;" text="Tên sản phẩm" />
+                        <Label fx:id="auctionCodeLabel" style="-fx-text-fill: #CBD5E1; -fx-font-size: 13px;" text="Mã phiên" />
+                        <Label fx:id="sellerLabel" style="-fx-text-fill: #CBD5E1; -fx-font-size: 13px;" text="Người bán" />
+                        <Label fx:id="auctionStatusLabel" style="-fx-text-fill: #CBD5E1; -fx-font-size: 13px;" text="Trạng thái phiên" />
+                        <Label fx:id="winnerLabel" style="-fx-text-fill: #CBD5E1; -fx-font-size: 13px;" text="Người thắng" />
+                     </children>
+                  </VBox>
+
+                  <VBox spacing="14.0" style="-fx-background-color: #111318; -fx-background-radius: 18; -fx-border-color: rgba(255,255,255,0.06); -fx-border-radius: 18; -fx-padding: 20;" prefWidth="420.0">
+                     <children>
+                        <Label style="-fx-text-fill: #FACC15; -fx-font-size: 18px; -fx-font-weight: bold;" text="Thông tin thanh toán" />
+                        <Separator style="-fx-background-color: rgba(255,255,255,0.08);" />
+                        <HBox>
+                           <children>
+                              <Label style="-fx-text-fill: #8B8B92;" text="Giá thắng" />
+                              <Region HBox.hgrow="ALWAYS" />
+                              <Label fx:id="priceLabel" style="-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;" text="0 VND" />
+                           </children>
+                        </HBox>
+                        <HBox>
+                           <children>
+                              <Label style="-fx-text-fill: #8B8B92;" text="Số dư hiện tại" />
+                              <Region HBox.hgrow="ALWAYS" />
+                              <Label fx:id="balanceLabel" style="-fx-text-fill: #4ADE80; -fx-font-size: 18px; -fx-font-weight: bold;" text="0 VND" />
+                           </children>
+                        </HBox>
+                        <HBox>
+                           <children>
+                              <Label style="-fx-text-fill: #8B8B92;" text="Số dư sau thanh toán" />
+                              <Region HBox.hgrow="ALWAYS" />
+                              <Label fx:id="balanceAfterLabel" style="-fx-text-fill: #FACC15; -fx-font-size: 18px; -fx-font-weight: bold;" text="0 VND" />
+                           </children>
+                        </HBox>
+                        <Button fx:id="payButton" maxWidth="Infinity" mnemonicParsing="false" onAction="#payNow" styleClass="btn-gold" text="THANH TOÁN NGAY" />
+                        <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#goBack" styleClass="outline-gold-button" text="QUAY LẠI" />
+                     </children>
+                  </VBox>
+               </children>
+            </HBox>
+         </children>
+      </VBox>
    </children>
 </StackPane>
