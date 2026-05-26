@@ -1,36 +1,33 @@
 package action.Authentication;
 
-import action.Core.SceneSwitch;
-import action.SocketClient;
-import action.SocketListener;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import action.Core.SceneSwitch;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
+import javafx.stage.Stage;
+import java.io.File;
 import java.io.IOException;
 
-public class ForgotPasswordHandle implements SocketListener {
+public class ForgotPasswordHandle {
     @FXML
     public TextField username;
     @FXML
     public TextField Id;
     @FXML
     public TextField phoneNumber;
-    SceneSwitch sceneswitch = new SceneSwitch();
-
-    @FXML
-    public void initialize() {
-        SocketClient.getInstance().addListener(this);
-    }
-
     public void TakePass(ActionEvent event) throws IOException {
         String Username = username.getText();
         String id = Id.getText();
         String phone = phoneNumber.getText();
-
+        SceneSwitch sceneswitch = new SceneSwitch();
 
         if(Username.isBlank() || id.isBlank() || phone.isBlank()){
             sceneswitch.SwitchToLockPage(event, "/views/SomeThingUnFill.fxml");
@@ -48,42 +45,49 @@ public class ForgotPasswordHandle implements SocketListener {
             req.addProperty("phone", phone);
             req.addProperty("personalID", id);
 
-            SocketClient.getInstance().requestData(req.toString());
+            action.Core.StartScence.client.sendMessage(req.toString());
+
+            // 2. LẮNG NGHE KẾT QUẢ TỪ SERVER
+            action.Core.StartScence.client.setServerListener(message -> {
+                Platform.runLater(() -> {
+                    try {
+                        JsonObject res = JsonParser.parseString(message).getAsJsonObject();
+
+                        if (res.has("command") && res.get("command").getAsString().equals("FORGOT_PASSWORD_RESULT")) {
+                            if (res.get("status").getAsString().equals("SUCCESS")) {
+                                Platform.runLater(() -> {
+                                    try {
+                                        // 1. Lưu tạm username vào biến static
+                                        StoreDataInput.username = Username;
+                                        // 2. Chuyển sang màn hình FXML mới
+                                        SceneSwitch sceneSwitch = new SceneSwitch();
+                                        sceneSwitch.SwitchToAnyWhere(event, "/views/ResetPassword.fxml");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                });
+
+                            } else {
+                                // Sai thông tin -> Hiện màn hình lỗi
+                                try {
+                                    sceneswitch.SwitchToLockPage(event, "/views/WrongValueShow.fxml");
+                                } catch (IOException e) { e.printStackTrace(); }
+                            }
+                        }
+                    } catch (Exception e) {}
+                });
+            });
         }
 
     }
     public void BackToLogin(ActionEvent event) throws IOException {
-        SocketClient.getInstance().removeListener(this);
+        SceneSwitch sceneswitch = new SceneSwitch();
         sceneswitch.SwitchToLogin(event);
     }
 
-    @Override
-    public void onDataReceived(String data) {
-        Platform.runLater(() -> {
-            try {
-                JsonObject res = JsonParser.parseString(data).getAsJsonObject();
 
-                if (res.has("command") && res.get("command").getAsString().equals("FORGOT_PASSWORD_RESULT")) {
-                    if (res.get("status").getAsString().equals("SUCCESS")) {
-                            try {
-                                // 1. Lưu tạm username vào biến static
-                                StoreDataInput.username = username.getText();
-                                // 2. Chuyển sang màn hình FXML mới
-                                SocketClient.getInstance().removeListener(this);
-                                SceneSwitch sceneSwitch = new SceneSwitch();
-                                sceneSwitch.SwitchToAnyWhere(new ActionEvent(username.getScene().getWindow(), null), "/views/ResetPassword.fxml");
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
 
-                    } else {
-                        // Sai thông tin -> Hiện màn hình lỗi
-                        try {
-                            sceneswitch.SwitchToLockPage(new ActionEvent(username.getScene().getWindow(), null), "/views/WrongValueShow.fxml");
-                        } catch (IOException e) { e.printStackTrace(); }
-                    }
-                }
-            } catch (Exception e) {}
-        });
-    }
+
+
+
 }
