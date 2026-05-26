@@ -17,6 +17,12 @@ import java.util.concurrent.TimeUnit;
 
 import com.bidding.server.core.AuctionService;
 
+/**
+ * Server TCP chính của hệ thống đấu giá.
+ * Lắng nghe kết nối client trên port 888 (mặc định), mỗi client được xử lý bởi
+ * một thread riêng từ pool (tối đa 50 threads). AuctionMonitor chạy định kỳ mỗi
+ * giây để đóng các phiên hết giờ và broadcast thông báo.
+ */
 public class AuctionServer {
 
     private static final int DEFAULT_PORT = 888;
@@ -38,6 +44,11 @@ public class AuctionServer {
         this(DEFAULT_PORT);
     }
       
+    /**
+     * Khởi tạo server với port tùy chỉnh.
+     * Tạo sẵn: thread pool cho client, AuctionService, AuthService,
+     * BroadcastService, CommandDispatcher và AuctionMonitor.
+     */
     public AuctionServer(int port) {
         this.port = port;
         this.clientPool = Executors.newFixedThreadPool(MAX_CLIENT_THREADS);
@@ -105,6 +116,10 @@ public class AuctionServer {
         }
     }
 
+    /**
+     * Gửi message cho tất cả client đang theo dõi một phiên đấu giá cụ thể.
+     * Chỉ những client có watchingAuctionId khớp mới nhận được.
+     */
     public void broadcastToAuctionRoom(String message, String auctionId) {
         for (ClientHandler client : connectedClients) {
             if (auctionId != null && auctionId.equals(client.getWatchingAuctionId())) {
@@ -127,6 +142,10 @@ public class AuctionServer {
         );
     }
 
+    /**
+     * Khởi động bộ giám sát phiên đấu giá: mỗi 1 giây quét tất cả phiên,
+     * đóng những phiên đã hết giờ và broadcast kết quả cho client.
+     */
     private void startAuctionMonitor() {
         auctionMonitor.scheduleAtFixedRate(() -> {
             try {

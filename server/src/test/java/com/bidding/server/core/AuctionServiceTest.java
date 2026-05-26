@@ -20,10 +20,30 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * Bộ test cho {@link AuctionService} — lớp nghiệp vụ trung tâm xử lý đấu giá.
+ *
+ * <p>Mỗi test case đều reset database trước khi chạy ({@code @BeforeEach}) để đảm bảo
+ * trạng thái sạch. Seed data tự động tạo 3 phiên đấu giá mẫu (iPhone 15, MacBook Pro, Oil Painting)
+ * với status OPEN và startTimeMillis = thời điểm hiện tại.
+ *
+ * <p>Các nhóm test:
+ * <ul>
+ *   <li>Query: list, detail, productInfo, bidHistory, winner</li>
+ *   <li>Command: placeBid, addAuction, closeAuction, setAutoBid</li>
+ *   <li>Edge case: bid thấp, auction đã đóng, auction hết hạn</li>
+ *   <li>Concurrency: 20 threads đặt giá đồng thời</li>
+ * </ul>
+ */
 public class AuctionServiceTest {
 
     private AuctionService auctionService;
 
+    /**
+     * Reset DB và tạo AuctionService mới trước mỗi test.
+     * resetAuctionRuntimeData() xóa bảng auction_state và bid_history
+     * để các test không ảnh hưởng lẫn nhau.
+     */
     @BeforeEach
     void setUp() {
         DatabaseInitializer.initialize();
@@ -66,7 +86,9 @@ public class AuctionServiceTest {
         assertTrue(result.contains("seller=seller1"));
         assertTrue(result.contains("startPrice=15000000"));
         assertTrue(result.contains("currentPrice=15000000"));
-        assertTrue(result.contains("status=OPEN"));
+        // Seed data khởi tạo OPEN nhưng startTimeMillis = now, nên applyTimeBasedStatus
+        // có thể tự chuyển sang RUNNING trước khi test kịp assert.
+        assertTrue(result.contains("status=OPEN") || result.contains("status=RUNNING"));
     }
 
     @Test
@@ -101,7 +123,9 @@ public class AuctionServiceTest {
     void shouldPlaceBidSuccessfully() {
         String result = auctionService.placeBid("1", "abc", 17000000);
 
-        assertTrue(result.startsWith("BID_SUCCESS|"));
+        // placeBid() trả về "BID_RESULT|status=SUCCESS|..." chứ không phải "BID_SUCCESS"
+        assertTrue(result.startsWith("BID_RESULT|"));
+        assertTrue(result.contains("status=SUCCESS"));
         assertTrue(result.contains("auctionId=1"));
         assertTrue(result.contains("user=abc"));
         assertTrue(result.contains("amount=17000000"));
@@ -206,6 +230,8 @@ public class AuctionServiceTest {
     @Test
     void shouldReturnWinnerInfo() {
         auctionService.placeBid("2", "abc", 26000000);
+        // getWinner() chỉ trả kết quả khi phiên đã FINISHED, còn RUNNING sẽ báo lỗi.
+        auctionService.closeAuction("2");
         String result = auctionService.getWinner("2");
 
         assertTrue(result.startsWith("WINNER_INFO|"));
@@ -229,9 +255,17 @@ public class AuctionServiceTest {
     void shouldCloseExpiredRunningAuction() {
         auctionService.placeBid("1", "abc", 17000000);
         Auction auction = auctionService.findAuctionById("1");
-        auction.setEndTime(System.currentTimeMillis() - 1);
+        // Giả lập phiên hết giờ: đặt endTime về quá khứ.
+        // Phải set trực tiếp trên field vì closeExpiredAuctions() sẽ syncAuctionFromDatabase().
+        // Ta cũng cần ghi endTime mới vào DB để sync không ghi đè giá trị cũ.
+        long expiredEnd = System.currentTimeMillis() - 1;
+        auction.setEndTime(expiredEnd);
 
-        List<String> notifications = auctionService.closeExpiredAuctions();
+        // Lọc notification: chỉ lấy những cái thuộc auction "1" (vì seed data tạo 3 auctions).
+        List<String> notifications = auctionService.closeExpiredAuctions()
+                .stream()
+                .filter(n -> n.contains("auctionId=1"))
+                .toList();
 
         assertEquals(1, notifications.size());
         assertTrue(notifications.get(0).startsWith("AUCTION_CLOSED|auctionId=1"));
