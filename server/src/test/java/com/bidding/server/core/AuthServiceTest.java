@@ -5,6 +5,7 @@ import com.bidding.common.model.user.Bidder;
 import com.bidding.common.model.user.User;
 import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.repository.TopUpRequestDAO;
+import com.bidding.server.repository.TransactionDAO;
 import com.bidding.server.repository.UserDAO;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -34,6 +35,9 @@ public class AuthServiceTest {
     @Mock
     private TopUpRequestDAO topUpRequestDAO;
 
+    @Mock
+    private TransactionDAO transactionDAO;
+
     @InjectMocks
     private AuthService authService;
 
@@ -49,6 +53,7 @@ public class AuthServiceTest {
         // Inject các mock DAO vào AuthService (vì AuthService dùng 'new' thay vì Dependency Injection)
         injectMock(authService, "userDAO", userDAO);
         injectMock(authService, "topUpRequestDAO", topUpRequestDAO);
+        injectMock(authService, "transactionDAO", transactionDAO);
     }
 
     @AfterEach

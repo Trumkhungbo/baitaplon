@@ -21,12 +21,15 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.VBox;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -46,6 +49,9 @@ public class ActionInformationHandle implements Initializable, SocketListener {
     @FXML private Label openStatusLabel;
     @FXML private Label runningStatusLabel;
     @FXML private Label finishedStatusLabel;
+    @FXML private VBox auctionHistoryPane;
+    @FXML private ToggleButton auctionHistoryTab;
+    @FXML private ToggleButton transactionHistoryTab;
 
     @FXML private TableView<AccountAuctionRow> ItemsTable;
     @FXML private TableColumn<AccountAuctionRow, Number> sttColumn;
@@ -58,15 +64,26 @@ public class ActionInformationHandle implements Initializable, SocketListener {
     @FXML private TableColumn<AccountAuctionRow, String> timeColumn;
     @FXML private TableColumn<AccountAuctionRow, AccountAuctionRow> actionColumn;
 
+    @FXML private TableView<TransactionRow> transactionTable;
+    @FXML private TableColumn<TransactionRow, Number> transactionSttColumn;
+    @FXML private TableColumn<TransactionRow, String> transactionTypeColumn;
+    @FXML private TableColumn<TransactionRow, String> transactionAmountColumn;
+    @FXML private TableColumn<TransactionRow, String> transactionDescriptionColumn;
+    @FXML private TableColumn<TransactionRow, String> transactionStatusColumn;
+    @FXML private TableColumn<TransactionRow, String> transactionTimeColumn;
+
     private final ObservableList<AccountAuctionRow> rows = FXCollections.observableArrayList();
+    private final ObservableList<TransactionRow> transactionRows = FXCollections.observableArrayList();
     private final DecimalFormat moneyFormat = new DecimalFormat("#,###");
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         SocketClient.getInstance().addListener(this);
         setupTable();
+        setupTransactionTable();
         loadAccountInfo();
         loadMyAuctions();
+        loadTransactions();
     }
 
     private void setupTable() {
@@ -162,6 +179,50 @@ public class ActionInformationHandle implements Initializable, SocketListener {
         });
     }
 
+    private void setupTransactionTable() {
+        Label placeholder = new Label("Chưa có giao dịch nào");
+        placeholder.setStyle("-fx-text-fill: #8B8B92;");
+        transactionTable.setPlaceholder(placeholder);
+        transactionSttColumn.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(transactionTable.getItems().indexOf(param.getValue()) + 1));
+        transactionTypeColumn.setCellValueFactory(param -> new SimpleStringProperty(normalizeTransactionType(param.getValue().type())));
+        transactionAmountColumn.setCellValueFactory(param -> new SimpleStringProperty(formatTransactionAmount(param.getValue())));
+        transactionDescriptionColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().description()));
+        transactionStatusColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().status()));
+        transactionTimeColumn.setCellValueFactory(param -> new SimpleStringProperty(formatTimestamp(param.getValue().createdAt())));
+
+        transactionAmountColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                setText(item);
+                setStyle(item.startsWith("-")
+                        ? "-fx-text-fill: #F87171; -fx-font-weight: bold;"
+                        : "-fx-text-fill: #4ADE80; -fx-font-weight: bold;");
+            }
+        });
+
+        transactionStatusColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                setText(item);
+                setStyle("-fx-text-fill: #4ADE80; -fx-font-weight: bold;");
+            }
+        });
+
+        transactionTable.setItems(transactionRows);
+    }
+
     private void loadAccountInfo() {
         JsonObject req = new JsonObject();
         req.addProperty("command", "GET_ACCOUNTINFORMATION");
@@ -174,6 +235,34 @@ public class ActionInformationHandle implements Initializable, SocketListener {
         req.addProperty("command", "LIST_ACCOUNT_AUCTIONS");
         req.addProperty("username", StoreDataInput.username);
         SocketClient.getInstance().requestData(req.toString());
+    }
+
+    private void loadTransactions() {
+        JsonObject req = new JsonObject();
+        req.addProperty("command", "GET_TRANSACTIONS");
+        req.addProperty("username", StoreDataInput.username);
+        SocketClient.getInstance().requestData(req.toString());
+    }
+
+    @FXML
+    public void showAuctionHistory() {
+        auctionHistoryTab.setSelected(true);
+        transactionHistoryTab.setSelected(false);
+        auctionHistoryPane.setVisible(true);
+        auctionHistoryPane.setManaged(true);
+        transactionTable.setVisible(false);
+        transactionTable.setManaged(false);
+    }
+
+    @FXML
+    public void showTransactionHistory() {
+        auctionHistoryTab.setSelected(false);
+        transactionHistoryTab.setSelected(true);
+        auctionHistoryPane.setVisible(false);
+        auctionHistoryPane.setManaged(false);
+        transactionTable.setVisible(true);
+        transactionTable.setManaged(true);
+        loadTransactions();
     }
 
     public void addMoney(ActionEvent event) throws IOException {
@@ -257,6 +346,8 @@ public class ActionInformationHandle implements Initializable, SocketListener {
                     parseMyAuctions(data.substring("ACCOUNT_AUCTIONS|".length()));
                 } else if (data.startsWith("MY_AUCTIONS|")) {
                     parseMyAuctions(data.substring("MY_AUCTIONS|".length()));
+                } else if (data.startsWith("TRANSACTIONS|")) {
+                    parseTransactions(data.substring("TRANSACTIONS|".length()));
                 } else if (data.startsWith("ERROR|")) {
                     setFeedback(data.substring("ERROR|".length()));
                 }
@@ -293,6 +384,28 @@ public class ActionInformationHandle implements Initializable, SocketListener {
 
         rows.sort(Comparator.comparingInt((AccountAuctionRow item) -> parseInt(item.auctionId())).reversed());
         updateStatusSummary();
+    }
+
+    private void parseTransactions(String payload) {
+        transactionRows.clear();
+        if (!payload.isBlank()) {
+            String[] recordRows = payload.split(";");
+            for (String row : recordRows) {
+                String[] attr = row.split(":", -1);
+                if (attr.length < 7) {
+                    continue;
+                }
+                transactionRows.add(new TransactionRow(
+                        attr[0],
+                        attr[1],
+                        parseDouble(attr[2]),
+                        attr[3],
+                        attr[4],
+                        attr[5],
+                        parseLong(attr[6])
+                ));
+            }
+        }
     }
 
     private void updateStatusSummary() {
@@ -376,6 +489,36 @@ public class ActionInformationHandle implements Initializable, SocketListener {
         return moneyFormat.format(value);
     }
 
+    private String formatTransactionAmount(TransactionRow row) {
+        String sign = "PAYMENT".equalsIgnoreCase(row.type()) ? "-" : "+";
+        return sign + formatMoney(row.amount()) + " VND";
+    }
+
+    private String normalizeTransactionType(String type) {
+        return switch (type.toUpperCase(Locale.ROOT)) {
+            case "TOPUP" -> "Nạp tiền";
+            case "RECEIVE_PAYMENT" -> "Nhận thanh toán";
+            case "PAYMENT" -> "Thanh toán";
+            default -> type;
+        };
+    }
+
+    private String formatTimestamp(long epochMillis) {
+        if (epochMillis <= 0) {
+            return "";
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(epochMillis);
+        return String.format(
+                "%02d/%02d/%04d %02d:%02d",
+                calendar.get(Calendar.DAY_OF_MONTH),
+                calendar.get(Calendar.MONTH) + 1,
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE)
+        );
+    }
+
     private String formatMoneyText(String raw) {
         String normalized = normalizeNumber(raw);
         if (normalized.isEmpty()) {
@@ -419,6 +562,14 @@ public class ActionInformationHandle implements Initializable, SocketListener {
         }
     }
 
+    private long parseLong(String raw) {
+        try {
+            return Long.parseLong(raw);
+        } catch (Exception ignored) {
+            return 0L;
+        }
+    }
+
     private void setFeedback(String message) {
         feedbackLabel.setText(message == null ? "" : message);
     }
@@ -437,6 +588,17 @@ public class ActionInformationHandle implements Initializable, SocketListener {
             String role,
             String result,
             boolean canPay
+    ) {
+    }
+
+    private record TransactionRow(
+            String id,
+            String type,
+            double amount,
+            String description,
+            String status,
+            String relatedAuctionId,
+            long createdAt
     ) {
     }
 }

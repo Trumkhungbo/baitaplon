@@ -113,6 +113,20 @@ public class DatabaseInitializer {
                     )
                     """);
 
+            st.execute("""
+                    CREATE TABLE IF NOT EXISTS transactions (
+                        id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username           TEXT    NOT NULL,
+                        type               TEXT    NOT NULL,
+                        amount             REAL    NOT NULL,
+                        description        TEXT,
+                        status             TEXT    NOT NULL,
+                        related_auction_id TEXT,
+                        created_at         BIGINT  NOT NULL,
+                        FOREIGN KEY (username) REFERENCES users(username)
+                    )
+                    """);
+
             ensureColumnExists("items", "information1", "TEXT");
             ensureColumnExists("items", "information2", "TEXT");
             ensureColumnExists("items", "description", "TEXT");
@@ -125,6 +139,7 @@ public class DatabaseInitializer {
             st.execute("CREATE INDEX IF NOT EXISTS idx_auto_bid_auction_id ON auto_bid_settings(auction_id)");
             st.execute("CREATE INDEX IF NOT EXISTS idx_auto_bid_active ON auto_bid_settings(auction_id, is_active)");
             st.execute("CREATE INDEX IF NOT EXISTS idx_topup_status ON topup_requests(status)");
+            st.execute("CREATE INDEX IF NOT EXISTS idx_transactions_username_time ON transactions(username, created_at DESC)");
 
             st.execute("""
                     INSERT OR IGNORE INTO users (username, password_hash, email, phone, personal_id, role, created_at)
@@ -153,9 +168,10 @@ public class DatabaseInitializer {
             st.executeUpdate("DELETE FROM bid_transactions");
             st.executeUpdate("DELETE FROM auction_runtime_state");
             st.executeUpdate("DELETE FROM auto_bid_settings");
+            st.executeUpdate("DELETE FROM transactions");
             st.executeUpdate("DELETE FROM auctions");
             st.executeUpdate("DELETE FROM items");
-            st.executeUpdate("DELETE FROM sqlite_sequence WHERE name IN ('bid_transactions', 'auto_bid_settings', 'auctions', 'items')");
+            st.executeUpdate("DELETE FROM sqlite_sequence WHERE name IN ('bid_transactions', 'auto_bid_settings', 'transactions', 'auctions', 'items')");
         } catch (Exception e) {
             throw new RuntimeException("Loi reset du lieu auction runtime: " + e.getMessage(), e);
         }

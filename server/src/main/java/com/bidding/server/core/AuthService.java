@@ -5,6 +5,7 @@ import com.bidding.common.model.user.Bidder;
 import com.bidding.common.model.user.User;
 import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.repository.TopUpRequestDAO;
+import com.bidding.server.repository.TransactionDAO;
 import com.bidding.server.repository.UserDAO;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -15,6 +16,7 @@ public class AuthService {
 
     private final UserDAO userDAO = new UserDAO();
     private final TopUpRequestDAO topUpRequestDAO = new TopUpRequestDAO();
+    private final TransactionDAO transactionDAO = new TransactionDAO();
 
     public AuthService() {
         DatabaseInitializer.initialize();
@@ -292,6 +294,15 @@ public class AuthService {
             double newBalance = request.currentBalance() + request.amount();
             userDAO.updateBalance(request.username(), newBalance);
             topUpRequestDAO.markApproved(id);
+            transactionDAO.save(
+                    request.username(),
+                    "TOPUP",
+                    request.amount(),
+                    "Admin đã duyệt nạp tiền",
+                    "thành công",
+                    null,
+                    System.currentTimeMillis()
+            );
             response.addProperty("status", "SUCCESS");
             response.addProperty("message", "Approved top-up request");
             return response.toString();
@@ -300,6 +311,42 @@ public class AuthService {
             response.addProperty("message", "Unable to approve top-up: " + e.getMessage());
             return response.toString();
         }
+    }
+
+    public String getTransactions(String username) {
+        if (username == null || username.isBlank()) {
+            return "TRANSACTIONS|";
+        }
+
+        StringBuilder sb = new StringBuilder("TRANSACTIONS|");
+        boolean first = true;
+        for (TransactionDAO.TransactionRecord record : transactionDAO.findByUsername(username)) {
+            if (!first) {
+                sb.append(";");
+            }
+            first = false;
+            sb.append(record.id()).append(":")
+                    .append(sanitizeListValue(record.type())).append(":")
+                    .append((long) record.amount()).append(":")
+                    .append(sanitizeListValue(record.description())).append(":")
+                    .append(sanitizeListValue(record.status())).append(":")
+                    .append(sanitizeListValue(record.relatedAuctionId())).append(":")
+                    .append(record.createdAt());
+        }
+        return sb.toString();
+    }
+
+    private String sanitizeListValue(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replace(":", " ")
+                .replace(";", " ")
+                .replace("|", " ")
+                .replace("\r", " ")
+                .replace("\n", " ")
+                .trim();
     }
 
     private String safe(String value) {

@@ -47,6 +47,7 @@ class AuctionServiceTest {
     @Mock private ItemDAO itemDAO;
     @Mock private SellerAuctionDAO sellerAuctionDAO;
     @Mock private UserDAO userDAO;
+    @Mock private TransactionDAO transactionDAO;
 
     // ── System under test ────────────────────────────────────────────────────
 
@@ -72,6 +73,7 @@ class AuctionServiceTest {
         injectField(service, "itemDAO",        itemDAO);
         injectField(service, "sellerAuctionDAO",sellerAuctionDAO);
         injectField(service, "userDAO",        userDAO);
+        injectField(service, "transactionDAO", transactionDAO);
     }
 
     // ════════════════════════════════════════════════════════════════════════

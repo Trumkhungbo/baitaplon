@@ -14,6 +14,7 @@ import com.bidding.server.repository.AutoBidDAO;
 import com.bidding.server.repository.BidHistoryDAO;
 import com.bidding.server.repository.ItemDAO;
 import com.bidding.server.repository.SellerAuctionDAO;
+import com.bidding.server.repository.TransactionDAO;
 import com.bidding.server.repository.UserDAO;
 
 import java.util.ArrayList;
@@ -43,6 +44,7 @@ public class AuctionService {
     private final ItemDAO itemDAO;
     private final SellerAuctionDAO sellerAuctionDAO;
     private final UserDAO userDAO;
+    private final TransactionDAO transactionDAO;
 
     public AuctionService() {
 
@@ -55,6 +57,7 @@ public class AuctionService {
         this.itemDAO = new ItemDAO();
         this.sellerAuctionDAO = new SellerAuctionDAO();
         this.userDAO = new UserDAO();
+        this.transactionDAO = new TransactionDAO();
 
         loadPersistedRuntimeAuctions();
 
@@ -1084,6 +1087,25 @@ public class AuctionService {
             double sellerBalance = userDAO.getBalanceByUsername(sellerUsername);
             userDAO.updateBalance(username, buyerBalance - amount);
             userDAO.updateBalance(sellerUsername, sellerBalance + amount);
+            long paidAt = System.currentTimeMillis();
+            transactionDAO.save(
+                    username,
+                    "PAYMENT",
+                    amount,
+                    "Thanh toán cho phiên đấu giá " + auction.getItemName(),
+                    "thành công",
+                    auctionId,
+                    paidAt
+            );
+            transactionDAO.save(
+                    sellerUsername,
+                    "RECEIVE_PAYMENT",
+                    amount,
+                    "Nhận tiền thanh toán từ phiên đấu giá " + auction.getItemName(),
+                    "thành công",
+                    auctionId,
+                    paidAt
+            );
 
             auction.setStatus(AuctionStatus.PAID);
             persistAuctionState(auction, bidHistoryDAO.countByAuctionId(auctionId));
