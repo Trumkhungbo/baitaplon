@@ -18,6 +18,7 @@ import com.bidding.server.repository.UserDAO;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -858,10 +859,17 @@ public class AuctionService {
                 );
             }
 
-            if (amount <= auction.getCurrentPrice()) {
+            double minIncrement = calculateMinIncrement(
+                    auction.getCurrentPrice()
+            );
+
+            double minimumValidBid =
+                    auction.getCurrentPrice() + minIncrement;
+
+            if (amount < minimumValidBid) {
 
                 throw new InvalidBidException(
-                        "Bid amount must be greater than current price"
+                        "Minimum valid bid is " + (long) minimumValidBid
                 );
             }
 
@@ -916,7 +924,12 @@ public class AuctionService {
                     )
             );
 
-            processAutoBidChain(auction, now);
+            applyProxyAutoBidAfterManualBid(
+                    auction,
+                    username,
+                    amount,
+                    now
+            );
 
             return "BID_RESULT"
                     + "|status=SUCCESS"
@@ -953,9 +966,21 @@ public class AuctionService {
                 return "ERROR|Auto-bid is only available when auction is running";
             }
 
-            if (maxBid <= auction.getCurrentPrice()) {
+            double minIncrement = calculateMinIncrement(
+                    auction.getCurrentPrice()
+            );
 
-                return "ERROR|Max bid must be greater than current price";
+            if (increment < minIncrement) {
+                return "ERROR|Increment too small";
+            }
+
+            double minimumValidBid =
+                    auction.getCurrentPrice() + minIncrement;
+
+            if (maxBid < minimumValidBid) {
+
+                return "ERROR|Max bid must be at least "
+                        + (long) minimumValidBid;
             }
 
             AutoBid autoBid = new AutoBid(
@@ -967,16 +992,10 @@ public class AuctionService {
 
             autoBidDAO.upsert(autoBid);
 
-            if (auction.getHighestBidder() != null
-                    && !username.equals(
-                    auction.getHighestBidder()
-            )) {
-
-                processAutoBidChain(
-                        auction,
-                        System.currentTimeMillis()
-                );
-            }
+            repriceAuctionFromAutoBids(
+                    auction,
+                    System.currentTimeMillis()
+            );
 
             return "AUTO_BID_SET"
                     + "|auctionId=" + auctionId
@@ -1249,155 +1268,179 @@ public class AuctionService {
         auctionRecordDAO.updateState(auction);
     }
 
-    /**
-     * Xử lý chuỗi auto-bid: khi có bid mới, tìm auto-bidder tiếp theo và đặt giá tự động.
-     * Lặp cho đến khi không còn auto-bidder nào đủ điều kiện hoặc cùng người thắng.
-     *
-     * <p>Ví dụ: User A set auto-bid max=20tr, User B set max=18tr.
-     * Khi C bid 16tr → A auto-bid 16.5tr → B auto-bid 17tr → A auto-bid 17.5tr → B dừng (vượt max).
-     *
-     * <p>Safety counter = 100 vòng lặp tối đa để tránh infinite loop.
-     */
-    private void processAutoBidChain(
+    public double calculateMinIncrement(double currentPrice) {
+        return Math.max(
+                1000,
+                Math.ceil(currentPrice * 0.005)
+        );
+    }
+
+    private void applyProxyAutoBidAfterManualBid(
+            Auction auction,
+            String manualBidder,
+            double manualAmount,
+            long now
+    ) {
+
+        AutoBid winner = findHighestAutoBid(
+                auction,
+                manualBidder
+        );
+
+        if (winner == null
+                || winner.getMaxBid() <= manualAmount) {
+            return;
+        }
+
+        double minIncrement = calculateMinIncrement(manualAmount);
+
+        double proxyPrice = Math.min(
+                winner.getMaxBid(),
+                manualAmount + minIncrement
+        );
+
+        applyProxyBidResult(
+                auction,
+                winner.getBidderUsername(),
+                proxyPrice,
+                now
+        );
+    }
+
+    private void repriceAuctionFromAutoBids(
             Auction auction,
             long now
     ) {
 
-        int safetyCounter = 0;
+        List<AutoBid> autoBids =
+                findActiveAutoBidsSorted(auction);
 
-        while (safetyCounter < 100) {
+        if (autoBids.isEmpty()) {
+            return;
+        }
 
-            safetyCounter++;
+        AutoBid winner = autoBids.get(0);
 
-            AutoBid nextAutoBid =
-                    findNextAutoBidder(auction);
-
-            if (nextAutoBid == null) {
-                return;
-            }
-
-            double nextAmount = Math.min(
-                    nextAutoBid.getMaxBid(),
+        double proxyPrice;
+        if (autoBids.size() == 1) {
+            double minIncrement = calculateMinIncrement(
                     auction.getCurrentPrice()
-                            + nextAutoBid.getIncrement()
             );
+            proxyPrice = Math.min(
+                    winner.getMaxBid(),
+                    auction.getCurrentPrice() + minIncrement
+            );
+        } else {
+            AutoBid runnerUp = autoBids.get(1);
+            double minIncrement = calculateMinIncrement(
+                    runnerUp.getMaxBid()
+            );
+            proxyPrice = Math.min(
+                    winner.getMaxBid(),
+                    runnerUp.getMaxBid() + minIncrement
+            );
+            proxyPrice = Math.max(
+                    auction.getCurrentPrice(),
+                    proxyPrice
+            );
+        }
 
-            if (nextAmount
-                    <= auction.getCurrentPrice()) {
+        applyProxyBidResult(
+                auction,
+                winner.getBidderUsername(),
+                proxyPrice,
+                now
+        );
+    }
 
-                return;
+    /**
+     * Returns the highest active auto-bidder, excluding the normal bidder
+     * when proxy bidding reacts to a manual bid.
+     */
+    private AutoBid findHighestAutoBid(
+            Auction auction,
+            String excludedBidder
+    ) {
+
+        List<AutoBid> autoBids =
+                findActiveAutoBidsSorted(auction);
+
+        for (AutoBid autoBid : autoBids) {
+            if (!autoBid.getBidderUsername()
+                    .equals(excludedBidder)) {
+                return autoBid;
             }
+        }
 
-            String previousBidder =
-                    auction.getHighestBidder();
+        return null;
+    }
 
-            auction.setCurrentPrice(nextAmount);
+    private List<AutoBid> findActiveAutoBidsSorted(
+            Auction auction
+    ) {
 
-            auction.setHighestBidder(
-                    nextAutoBid.getBidderUsername()
-            );
+        List<AutoBid> autoBids = new ArrayList<>(
+                autoBidDAO.findActiveByAuction(
+                        Long.parseLong(auction.getId())
+                )
+        );
 
-            applyAntiSniping(auction, now);
+        autoBids.removeIf(autoBid ->
+                !autoBid.isActive()
+                        || autoBid.getBidderUsername() == null
+                        || autoBid.getMaxBid()
+                        <= auction.getCurrentPrice()
+        );
 
+        autoBids.sort(
+                Comparator
+                        .comparingDouble(AutoBid::getMaxBid)
+                        .reversed()
+        );
+
+        return autoBids;
+    }
+
+    private void applyProxyBidResult(
+            Auction auction,
+            String bidder,
+            double amount,
+            long now
+    ) {
+
+        if (amount < auction.getCurrentPrice()) {
+            return;
+        }
+
+        boolean stateChanged =
+                amount != auction.getCurrentPrice()
+                        || !bidder.equals(
+                        auction.getHighestBidder()
+                );
+
+        auction.setCurrentPrice(amount);
+        auction.setHighestBidder(bidder);
+
+        applyAntiSniping(auction, now);
+
+        if (stateChanged) {
             bidHistoryDAO.save(
                     auction.getId(),
-                    nextAutoBid.getBidderUsername(),
-                    nextAmount,
+                    bidder,
+                    amount,
                     now
             );
 
             auction.addBidRecord(
                     new BidRecord(
-                            nextAutoBid.getBidderUsername(),
-                            nextAmount,
+                            bidder,
+                            amount,
                             now
                     )
             );
-
-            persistAuctionState(auction);
-
-            if (previousBidder != null
-                    && previousBidder.equals(
-                    auction.getHighestBidder()
-            )) {
-
-                return;
-            }
         }
 
-        throw new RuntimeException(
-                "AutoBid exceeded safety limit"
-        );
-    }
-
-    /**
-     * Tìm auto-bidder phù hợp nhất cho lượt đặt giá tiếp theo.
-     *
-     * <p>Tiêu chí chọn (ưu tiên theo thứ tự):
-     * 1. Không phải người đang thắng (tránh tự bid)
-     * 2. maxBid > giá hiện tại (còn khả năng bid)
-     * 3. targetBid = min(maxBid, currentPrice + increment) > currentPrice
-     * 4. Ai có targetBid cao hơn thì ưu tiên. Nếu bằng nhau → chọn ai có maxBid lớn hơn.
-     *
-     * @return auto-bidder được chọn, hoặc null nếu không ai đủ điều kiện
-     */
-    private AutoBid findNextAutoBidder(
-            Auction auction
-    ) {
-
-        AutoBid chosen = null;
-
-        double chosenTarget = 0;
-
-        for (AutoBid autoBid
-                : autoBidDAO.findActiveByAuction(
-                Long.parseLong(auction.getId())
-        )) {
-
-            if (!autoBid.isActive()) {
-                continue;
-            }
-
-            if (autoBid.getBidderUsername()
-                    .equals(
-                            auction.getHighestBidder()
-                    )) {
-
-                continue;
-            }
-
-            if (autoBid.getMaxBid()
-                    <= auction.getCurrentPrice()) {
-
-                continue;
-            }
-
-            double targetBid = Math.min(
-                    autoBid.getMaxBid(),
-                    auction.getCurrentPrice()
-                            + autoBid.getIncrement()
-            );
-
-            if (targetBid
-                    <= auction.getCurrentPrice()) {
-
-                continue;
-            }
-
-            if (chosen == null
-                    || targetBid > chosenTarget
-                    || (
-                    targetBid == chosenTarget
-                            && autoBid.getMaxBid()
-                            > chosen.getMaxBid()
-            )) {
-
-                chosen = autoBid;
-                chosenTarget = targetBid;
-            }
-        }
-
-        return chosen;
+        persistAuctionState(auction);
     }
 
     /**
