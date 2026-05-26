@@ -123,6 +123,11 @@ public class AuctionService {
         persistAuctionState(auction, 0);
     }
 
+    /**
+     * Khôi phục trạng thái runtime của tất cả phiên đấu giá từ DB khi server khởi động lại.
+     * Dữ liệu trong bảng auction_state chứa snapshot mới nhất (giá, bidder, status, thời gian).
+     * Nếu bảng trống (lần đầu chạy), seedData() sẽ tạo dữ liệu mẫu.
+     */
     private void loadPersistedRuntimeAuctions() {
 
         for (AuctionStateDAO.AuctionStateSnapshot snapshot
@@ -761,6 +766,22 @@ public class AuctionService {
         return auction;
     }
 
+    /**
+     * Xử lý đặt giá cho một phiên đấu giá.
+     *
+     * <p>Flow:
+     * 1. Validate input (username, amount, auction tồn tại, seller không tự bid)
+     * 2. Kiểm tra trạng thái phiên (phải đang OPEN hoặc RUNNING, chưa hết giờ)
+     * 3. Cập nhật giá và bidder trên in-memory object
+     * 4. Áp dụng anti-sniping (nếu bid gần cuối phiên, gia hạn thêm 60s)
+     * 5. Persist vào DB (bid_history + auction_state)
+     * 6. Nếu fail DB → rollback in-memory state về giá trị cũ
+     * 7. Trigger auto-bid chain cho các bidder khác
+     *
+     * @throws AuctionNotFoundException nếu phiên không tồn tại
+     * @throws AuctionClosedException nếu phiên đã đóng hoặc hết giờ
+     * @throws InvalidBidException nếu giá không hợp lệ
+     */
     public String placeBid(
             String auctionId,
             String username,
@@ -1058,6 +1079,15 @@ public class AuctionService {
         }
     }
 
+    /**
+     * Quét tất cả phiên đấu giá và đóng những phiên đã hết giờ.
+     * Được gọi định kỳ bởi AuctionServer (mỗi 5 giây) để tự động kết thúc phiên.
+     *
+     * <p>Logic quan trọng: endTime runtime có thể khác DB (do anti-sniping gia hạn),
+     * nên phải lưu lại localEndTime trước sync, rồi restore nếu bị DB ghi đè.
+     *
+     * @return danh sách notification cần broadcast cho client (AUCTION_STARTED, AUCTION_CLOSED)
+     */
     public List<String> closeExpiredAuctions() {
 
         List<String> notifications =
@@ -1070,9 +1100,12 @@ public class AuctionService {
 
             synchronized (auction) {
 
+                // Lưu lại endTime runtime trước khi sync, vì syncAuctionFromDatabase() gọi
+                // setStartTimeMillis() → tính lại endTime từ duration, có thể ghi đè giá trị
+                // đã được anti-sniping hoặc hệ thống điều chỉnh.
                 long localEndTime = auction.getEndTime();
                 syncAuctionFromDatabase(auction);
-                if (localEndTime > auction.getEndTime()) {
+                if (localEndTime != auction.getEndTime()) {
                     auction.setEndTime(localEndTime);
                     persistAuctionState(auction, 0);
                 }
@@ -1110,6 +1143,15 @@ public class AuctionService {
                 == AuctionStatus.PENDING;
     }
 
+    /**
+     * Đánh dấu phiên đấu giá là FINISHED và persist vào DB.
+     * Nếu phiên đã FINISHED rồi thì trả về message ngắn (idempotent).
+     *
+     * @param auction   phiên cần đóng
+     * @param bidCount  số lượt bid hiện tại (để lưu vào snapshot)
+     * @param messageType loại message trả về ("AUCTION_CLOSED" hoặc "CLOSE_AUCTION_SUCCESS")
+     * @return chuỗi notification dạng "AUCTION_CLOSED|auctionId=X|winner=Y|finalPrice=Z"
+     */
     private String finishAuction(
             Auction auction,
             int bidCount,
@@ -1140,6 +1182,14 @@ public class AuctionService {
                 + (long) auction.getCurrentPrice();
     }
 
+    /**
+     * Đồng bộ trạng thái in-memory của auction với DB.
+     * Cần thiết vì nhiều instance AuctionService có thể cùng chạy (hoặc restart),
+     * nên phải đọc lại giá trị mới nhất từ bảng auction_state.
+     *
+     * <p>Lưu ý: setStartTimeMillis() sẽ tính lại endTime = start + duration,
+     * có thể ghi đè endTime đã được anti-sniping gia hạn. Caller cần bảo vệ endTime nếu cần.
+     */
     private AuctionStateDAO.AuctionStateSnapshot
     syncAuctionFromDatabase(Auction auction) {
 
@@ -1199,6 +1249,15 @@ public class AuctionService {
         auctionRecordDAO.updateState(auction);
     }
 
+    /**
+     * Xử lý chuỗi auto-bid: khi có bid mới, tìm auto-bidder tiếp theo và đặt giá tự động.
+     * Lặp cho đến khi không còn auto-bidder nào đủ điều kiện hoặc cùng người thắng.
+     *
+     * <p>Ví dụ: User A set auto-bid max=20tr, User B set max=18tr.
+     * Khi C bid 16tr → A auto-bid 16.5tr → B auto-bid 17tr → A auto-bid 17.5tr → B dừng (vượt max).
+     *
+     * <p>Safety counter = 100 vòng lặp tối đa để tránh infinite loop.
+     */
     private void processAutoBidChain(
             Auction auction,
             long now
@@ -1271,6 +1330,17 @@ public class AuctionService {
         );
     }
 
+    /**
+     * Tìm auto-bidder phù hợp nhất cho lượt đặt giá tiếp theo.
+     *
+     * <p>Tiêu chí chọn (ưu tiên theo thứ tự):
+     * 1. Không phải người đang thắng (tránh tự bid)
+     * 2. maxBid > giá hiện tại (còn khả năng bid)
+     * 3. targetBid = min(maxBid, currentPrice + increment) > currentPrice
+     * 4. Ai có targetBid cao hơn thì ưu tiên. Nếu bằng nhau → chọn ai có maxBid lớn hơn.
+     *
+     * @return auto-bidder được chọn, hoặc null nếu không ai đủ điều kiện
+     */
     private AutoBid findNextAutoBidder(
             Auction auction
     ) {
@@ -1330,6 +1400,13 @@ public class AuctionService {
         return chosen;
     }
 
+    /**
+     * Chống snipe: nếu bid được đặt trong 30 giây cuối phiên, gia hạn thêm 60 giây.
+     * Đảm bảo các bidder khác có thời gian phản ứng, tránh chiến thuật "chờ giây cuối mới bid".
+     *
+     * <p>Chỉ kích hoạt khi: remaining > 0 VÀ remaining <= 30s (ANTI_SNIPE_THRESHOLD_MS).
+     * endTime mới sẽ được persist ngay vào DB.
+     */
     private void applyAntiSniping(
             Auction auction,
             long now

@@ -1,58 +1,88 @@
 # 🏆 Hệ Thống Đấu Giá Trực Tuyến (Online Auction Platform)
-Đây là đồ án môn học xây dựng hệ thống đấu giá thời gian thực (Real-time) áp dụng kiến trúc **Java Multi-module** chuẩn mực. Dự án là sự kết hợp giữa giao diện người dùng JavaFX hiện đại và hệ thống Backend xử lý đồng thời (Concurrency) hiệu suất cao qua giao thức TCP/IP Socket.
 
----
+## 1. Mô tả ngắn gọn bài toán và phạm vi hệ thống
+Hệ thống phần mềm hỗ trợ đấu giá tài sản trực tuyến thời gian thực (Real-time).
+* **Phạm vi hệ thống:** Ứng dụng hoạt động theo mô hình Client-Server đa luồng. Cung cấp nền tảng cho người bán (Seller) đăng tải tài sản, thiết lập thời gian/giá khởi điểm và người mua (Bidder) tham gia trả giá trực tiếp. Hệ thống tích hợp thuật toán đặt giá tự động (Auto-bid), đếm ngược thời gian phiên hoàn toàn tự động.
 
-## 🌟 Tính Năng Nổi Bật (Key Features)
+## 2. Công nghệ sử dụng, môi trường chạy và yêu cầu cài đặt
+* **Ngôn ngữ phát triển:** Java 17+
+* **Giao diện người dùng (GUI):** JavaFX
+* **Cơ sở dữ liệu:** SQLite. CSDL tự động khởi tạo trong lần chạy đầu tiên, không cần cài đặt Database Server bên ngoài.
+* **Kiến trúc mạng:** TCP/Socket thuần kết hợp giao thức truyền tải định dạng JSON (Gson).
+* **Bảo mật:** Băm mật khẩu người dùng theo chuẩn an toàn PBKDF2.
+* **Môi trường chạy:** Yêu cầu máy tính cài đặt sẵn JRE/JDK 17 trở lên.
 
-- **Đấu giá thời gian thực (Real-time Bidding):** Cập nhật giá thầu và trạng thái phiên đấu giá ngay lập tức cho toàn bộ Client nhờ cơ chế Broadcast Socket.
-- **Auto-Bidding Engine (Chống bắn tỉa):** Hệ thống tự động tính toán thời gian và gia hạn (Anti-sniping) ở những giây cuối cùng để đảm bảo công bằng.
-- **Kiến trúc Multi-module:** Phân tách hoàn toàn logic theo nguyên lý SOLID (Client - Server - Common), tối ưu hóa việc quản lý mã nguồn và làm việc nhóm.
-- **Bảo mật & Phiên đăng nhập:** Xác thực người dùng an toàn, cấp quyền linh hoạt (Admin/Seller/Bidder).
-- **Giao diện Cao cấp (Premium UI):** Trải nghiệm hệ thống mượt mà, thân thiện với người dùng nhờ bộ thư viện **AtlantaFX** và hệ thống icon **Ikonli**.
-- **Lưu trữ CSDL (Persistence):** Quản lý toàn bộ giao dịch, lịch sử đấu giá an toàn với cơ sở dữ liệu SQLite.
+## 3. Cấu trúc thư mục và các module chính
+Dự án được phân chia thành 3 module độc lập, quản lý tập trung thông qua Maven:
 
----
-
-## 💻 Công Nghệ Sử Dụng (Tech Stack)
-
-### Core Technologies
-- **Ngôn ngữ (Language):** Java 21
-- **Quản lý gói (Build System):** Maven 3.x
-- **Giao tiếp mạng (Network):** Java Socket API (TCP/IP)
-- **Luồng (Concurrency):** ExecutorService, Thread Pool, ConcurrentHashMap
----
-
-
-## Project Structure
-```text
-bidding-system/ (Thư mục gốc của toàn bộ dự án)
-├── pom.xml (Nếu dùng Maven) hoặc build.gradle (Nếu dùng Gradle)
-└── README.md (File cực kỳ quan trọng để ghi chú cách chạy app cho giảng viên)
-
-common/ (Module CHUNG: chứa code cả Server và Client đều cần)
-└── src/main/java/com/bidding/common/
-    ├── model/         (Chứa Entity, Item, User, Bidder, Electronics...)
-    ├── enums/         (Chứa các hằng số: AuctionStatus, UserRole...)
-    ├── payload/       (Chứa các lớp định dạng dữ liệu gửi qua Socket, ví dụ: BidRequest, ResponseMsg)
-    └── utils/         (Các hàm tiện ích dùng chung: validate email, format tiền tệ...)
-
-server/ (Module SERVER: Xử lý logic nghiệp vụ, chạy ngầm)
-└── src/main/java/com/bidding/server/
-    ├── ServerApplication.java (Class chứa hàm main() để khởi động Server)
-    ├── network/        (Chứa ServerSocket, ClientHandler để lắng nghe kết nối)
-    ├── core/           (Chứa Auction, AuctionManager - Singleton, AutoBidThread)
-    ├── factory/        (Chứa ItemFactory...)
-    └── repository/     (Nơi xử lý đọc/ghi dữ liệu vào file TXT/JSON hoặc Database)
-
-client/ (Module CLIENT: Giao diện người dùng JavaFX)
-├── src/main/java/com/bidding/client/
-│   ├── ClientApplication.java (Class kế thừa Application của JavaFX để chạy app)
-│   ├── controller/      (Controller điều khiển giao diện: LoginController, AuctionRoomController...)
-│   └── network/         (SocketClient để gửi/nhận dữ liệu với Server)
-└── src/main/resources/com/bidding/client/
-    ├── views/           (Chứa toàn bộ file giao diện .fxml tạo từ SceneBuilder)
-    ├── css/             (Chứa file style để làm đẹp giao diện)
-    └── assets/          (Hình ảnh, icon sản phẩm...)
 ```
----
+bidding-system/ (Thư mục gốc)
+├── pom.xml
+├── README.md (File tài liệu hướng dẫn)
+├── data/ (Chứa `auction.db` và dữ liệu ảnh cục bộ)
+├── logs/ (Chứa các file ghi nhận lỗi và nhật ký hoạt động của server)
+│
+├── common/ (Module CHUNG: chứa các thành phần cả Server và Client đều sử dụng)
+│   ├── pom.xml
+│   └── src/main/java/com/bidding/common/
+│       ├── enums/         (Các hằng số hệ thống: AuctionStatus, ItemType, UserRole...)
+│       ├── model/         (Các thực thể: Auction, AutoBid, Item (Art, Electronics...), User...)
+│       └── payload/       (Các lớp định dạng gói tin Request/Response cũ)
+│
+├── server/ (Module SERVER: Xử lý logic nghiệp vụ, kết nối CSDL, chạy ngầm)
+│   ├── pom.xml
+│   └── src/main/java/com/bidding/server/
+│       ├── core/          (Logic cốt lõi: AuctionService, AuthService, PasswordHasher...)
+│       ├── database/      (Khởi tạo cấu trúc và quản lý kết nối CSDL WAL Mode)
+│       ├── exception/     (Các lớp ngoại lệ tự định nghĩa: AuctionClosedException...)
+│       ├── network/       (Quản lý Socket: AuctionServer, ClientHandler, Command Pattern)
+│       ├── repository/    (Các lớp DAO xử lý truy vấn: AuctionDAO, UserDAO, ItemDAO...)
+│       └── ServerApplication.java (Class chứa hàm main() khởi động Server)
+│
+└── client/ (Module CLIENT: Xử lý giao diện người dùng JavaFX)
+    ├── pom.xml
+    ├── src/main/java/action/
+    │   ├── Authentication/ (Các Handle xử lý Đăng nhập, Đăng ký, Đổi mật khẩu...)
+    │   ├── Core/           (Gốc khởi chạy: lớp `laucher`, StartScence)
+    │   ├── MainUI/         (Các Handle xử lý giao diện quản trị Admin và sảnh Lobby)
+    │   ├── SellingJobs/    (Các Handle quản lý luồng người bán đăng đồ và người mua trả giá)
+    │   └── Utilities/      (Xử lý luồng mạng phía Client: SocketClient, SocketListener)
+    └── src/main/resources/
+        ├── assets/         (Tài nguyên tĩnh: hình ảnh, icon, profile pic...)
+        └── views/          (Chứa toàn bộ file giao diện `.fxml` thiết kế bằng SceneBuilder)
+```
+
+## 4. Vị trí các file `.jar`
+Các file Executable Fat JAR được định vị tại:
+* **Server:** `server/target/server-1.0-SNAPSHOT.jar`
+* **Client:** `client/target/client-1.0-SNAPSHOT.jar`
+
+## 5. Hướng dẫn chạy Server/Client theo thứ tự cụ thể
+Hệ thống yêu cầu chạy Server trước để mở cổng mạng, sau đó mới khởi động Client. Vui lòng mở 2 cửa sổ Terminal/Command Prompt song song.
+
+**Bước 1: Khởi động Server**
+1. Mở Terminal tại thư mục chứa file jar của Server.
+2. Gõ lệnh: `java -jar server-1.0-SNAPSHOT.jar`
+   *(Server sẽ thông báo "AuctionServer is running on port 888" và tự động load Database).*
+
+**Bước 2: Khởi động Client**
+1. Mở một Terminal mới tại thư mục chứa file jar của Client.
+2. Gõ lệnh: `java -jar client-1.0-SNAPSHOT.jar`
+   *(Có thể mở nhiều Terminal chạy Client cùng lúc để kiểm thử các tính năng).*
+
+> **Tài khoản Admin kiểm thử:**
+> * Username: `admin`
+> * Password: `admin123`
+
+## 6. Danh sách chức năng đã hoàn thành
+* [x] Đăng nhập, Đăng ký, Quên mật khẩu (Bảo vệ thông tin bằng PBKDF2).
+* [x] Phân quyền người dùng chi tiết (Admin, Seller, Bidder).
+* [x] Quản lý phiên đấu giá (Tạo mới, Duyệt, Cập nhật trạng thái tự động).
+* [x] Đấu giá trực tiếp thời gian thực (Broadcasting qua Socket).
+* [x] Thuật toán Auto-bid (Tự động tính toán bước giá bảo vệ người mua).
+* [x] Chống Snipe (Tự động gia hạn thời gian khi có lượt đặt giá ở giây cuối).
+* [x] Quản lý ví điện tử nội bộ (Nạp tiền, Admin duyệt, tự động trừ tiền).
+
+## 7. Link báo cáo PDF và video demo
+* **Báo cáo PDF:** 
+* **Video Demo:** 
