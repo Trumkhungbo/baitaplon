@@ -1,7 +1,7 @@
 package com.bidding.server;
 
-import com.bidding.server.database.DatabaseInitializer;
 import com.bidding.server.network.AuctionServer;
+import com.bidding.server.database.DatabaseInitializer;
 
 public class ServerApplication {
     public static void main(String[] args) {

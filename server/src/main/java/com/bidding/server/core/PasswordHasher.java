@@ -14,6 +14,7 @@ public final class PasswordHasher {
     private static final int SALT_LENGTH = 16;
 
     private PasswordHasher() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
     public static String hash(String password) {
