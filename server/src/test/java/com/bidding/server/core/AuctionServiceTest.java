@@ -148,16 +148,38 @@ public class AuctionServiceTest {
         assertTrue(result.contains("abc,17000000,"));
         assertTrue(result.contains("xyz,18000000,"));
     }
-
     @Test
     void shouldConfigureAutoBidSuccessfully() {
-        String result = auctionService.setAutoBid("1", "auto-user", 20000000, 500000);
+        String createResult = auctionService.addAuction(
+                "seller1",
+                "Test Auto Bid Item",
+                1000000
+        );
+        System.out.println("CREATE_RESULT = " + createResult);
+        // Lấy auctionId an toàn
+        String[] parts = createResult.split("\\|");
+        assertTrue(parts.length >= 2, createResult);
+        String auctionId = parts[1];
+        // Nếu response kiểu auctionId=12
+        if (auctionId.contains("=")) {
+            auctionId = auctionId.split("=")[1];
+        }
 
-        assertTrue(result.startsWith("AUTO_BID_SET|"));
-        assertTrue(result.contains("auctionId=1"));
-        assertTrue(result.contains("user=auto-user"));
+        auctionService.approveAuction(auctionId);
+
+        String result = auctionService.setAutoBid(
+                auctionId,
+                "auto-user",
+                20000000,
+                500000
+        );
+
+        System.out.println("AUTO_BID_RESULT = " + result);
+
+        assertTrue(result.startsWith("AUTO_BID_SET"), result);
+        assertTrue(result.contains("auctionId=" + auctionId), result);
+        assertTrue(result.contains("user=auto-user"), result);
     }
-
     @Test
     void shouldAutoBidWhenAnotherUserOutbids() {
         auctionService.setAutoBid("1", "auto-user", 20000000, 500000);
