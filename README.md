@@ -84,5 +84,5 @@ Hệ thống yêu cầu chạy Server trước để mở cổng mạng, sau đ�
 * [x] Quản lý ví điện tử nội bộ (Nạp tiền, Admin duyệt, tự động trừ tiền).
 
 ## 7. Link báo cáo PDF và video demo
-* **Báo cáo PDF:** 
-* **Video Demo:** 
+* **Báo cáo PDF:** [📄 Xem Báo cáo Bài tập lớn (PDF)](./docs/OnlineAuction.pdf)
+* **Video Demo:**

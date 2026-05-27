@@ -26,6 +26,7 @@ public class CommandDispatcher {
         register("GET_BID_HISTORY", new GetBidHistoryCommand(auctionService));
         register("LIST_MY_AUCTIONS", new ListMyAuctionsCommand(auctionService));
         register("LIST_ACCOUNT_AUCTIONS", new ListAccountAuctionsCommand(auctionService));
+        register("GET_TRANSACTIONS", new GetTransactionsCommand(authService));
         register("ADD_AUCTION", new AddAuctionCommand(auctionService, broadcastService));
         register("UPDATE_AUCTION", new UpdateAuctionCommand(auctionService, broadcastService));
         register("APPROVE_AUCTION", new ApproveAuctionCommand(auctionService, broadcastService));

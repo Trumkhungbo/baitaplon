@@ -56,27 +56,27 @@ class AuctionServerRealtimeTest {
              AsyncClient bidder = new AsyncClient("127.0.0.1", port);
              AsyncClient watcher1 = new AsyncClient("127.0.0.1", port);
              AsyncClient watcher2 = new AsyncClient("127.0.0.1", port);
-             AsyncClient lobby = new AsyncClient("127.0.0.1", port)) {
+            AsyncClient lobby = new AsyncClient("127.0.0.1", port)) {
 
             seller.send("REGISTER|" + sellerUsername + "|pw");
-            assertTrue(seller.awaitMessage("REGISTER_SUCCESS|", 3_000).startsWith("REGISTER_SUCCESS|"));
+            assertJsonSuccess(seller.awaitMessageContaining("\"command\":\"REGISTER_RESULT\"", 3_000));
             seller.send("LOGIN|" + sellerUsername + "|pw");
-            assertTrue(seller.awaitMessage("LOGIN_SUCCESS|", 3_000).startsWith("LOGIN_SUCCESS|"));
+            assertJsonSuccess(seller.awaitMessageContaining("\"command\":\"LOGIN_RESULT\"", 3_000));
 
             bidder.send("REGISTER|" + bidderUsername + "|pw");
-            assertTrue(bidder.awaitMessage("REGISTER_SUCCESS|", 3_000).startsWith("REGISTER_SUCCESS|"));
+            assertJsonSuccess(bidder.awaitMessageContaining("\"command\":\"REGISTER_RESULT\"", 3_000));
             bidder.send("LOGIN|" + bidderUsername + "|pw");
-            assertTrue(bidder.awaitMessage("LOGIN_SUCCESS|", 3_000).startsWith("LOGIN_SUCCESS|"));
+            assertJsonSuccess(bidder.awaitMessageContaining("\"command\":\"LOGIN_RESULT\"", 3_000));
 
             watcher1.send("REGISTER|" + watcher1Username + "|pw");
-            assertTrue(watcher1.awaitMessage("REGISTER_SUCCESS|", 3_000).startsWith("REGISTER_SUCCESS|"));
+            assertJsonSuccess(watcher1.awaitMessageContaining("\"command\":\"REGISTER_RESULT\"", 3_000));
             watcher1.send("LOGIN|" + watcher1Username + "|pw");
-            assertTrue(watcher1.awaitMessage("LOGIN_SUCCESS|", 3_000).startsWith("LOGIN_SUCCESS|"));
+            assertJsonSuccess(watcher1.awaitMessageContaining("\"command\":\"LOGIN_RESULT\"", 3_000));
 
             watcher2.send("REGISTER|" + watcher2Username + "|pw");
-            assertTrue(watcher2.awaitMessage("REGISTER_SUCCESS|", 3_000).startsWith("REGISTER_SUCCESS|"));
+            assertJsonSuccess(watcher2.awaitMessageContaining("\"command\":\"REGISTER_RESULT\"", 3_000));
             watcher2.send("LOGIN|" + watcher2Username + "|pw");
-            assertTrue(watcher2.awaitMessage("LOGIN_SUCCESS|", 3_000).startsWith("LOGIN_SUCCESS|"));
+            assertJsonSuccess(watcher2.awaitMessageContaining("\"command\":\"LOGIN_RESULT\"", 3_000));
 
             lobby.send("LIST_AUCTIONS");
             assertTrue(lobby.awaitMessage("AUCTION_LIST|", 3_000).startsWith("AUCTION_LIST|"));
@@ -92,7 +92,7 @@ class AuctionServerRealtimeTest {
             assertTrue(watcher2.awaitMessage("WATCHING|", 3_000).startsWith("WATCHING|"));
 
             bidder.send("BID|" + auctionId + "|6500");
-            assertTrue(bidder.awaitMessage("BID_SUCCESS|", 3_000).startsWith("BID_SUCCESS|"));
+            assertTrue(bidder.awaitMessage("BID_RESULT|status=SUCCESS", 3_000).startsWith("BID_RESULT|status=SUCCESS"));
 
             String roomUpdate1 = watcher1.awaitMessage("BID_UPDATE|", 3_000);
             String roomUpdate2 = watcher2.awaitMessage("BID_UPDATE|", 3_000);
@@ -125,6 +125,10 @@ class AuctionServerRealtimeTest {
             }
         }
         throw new AssertionError("Field not found: " + key + " in " + message);
+    }
+
+    private static void assertJsonSuccess(String message) {
+        assertTrue(message.contains("\"status\":\"SUCCESS\""), message);
     }
 
     private static int findFreePort() throws IOException {
@@ -177,8 +181,7 @@ class AuctionServerRealtimeTest {
             readerThread.setDaemon(true);
             readerThread.start();
 
-            awaitMessage("CONNECTED|", 3_000);
-            awaitMessage("INFO|", 3_000);
+            awaitMessageContaining("\"command\":\"INFO\"", 3_000);
         }
 
         private void send(String request) {

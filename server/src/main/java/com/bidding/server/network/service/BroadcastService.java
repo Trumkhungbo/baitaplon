@@ -1,7 +1,6 @@
 package com.bidding.server.network.service;
-
-import com.bidding.server.core.AuctionService;
 import com.bidding.server.network.AuctionServer;
+import com.bidding.server.core.AuctionService;
 
 public class BroadcastService {
 

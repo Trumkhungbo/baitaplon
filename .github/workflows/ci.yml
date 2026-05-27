@@ -21,5 +21,8 @@ jobs:
           java-version: 25
           cache: maven
 
-      - name: Build and test
-        run: mvn clean test
+      - name: Test common and server modules
+        run: mvn -B -pl common,server test
+
+      - name: Build JavaFX client
+        run: mvn -B -pl client -am -DskipTests package

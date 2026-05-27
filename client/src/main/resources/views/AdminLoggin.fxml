@@ -30,14 +30,16 @@
 
             <VBox spacing="10.0">
                <children>
-                  <Label style="-fx-text-fill: #A0A0A0; -fx-font-size: 13px;" text="Chọn ngày xác thực:" />
-                  <DatePicker fx:id="datePicker" maxWidth="Infinity" prefHeight="45.0" promptText="DD/MM/YYYY" styleClass="input-field" />
+                  <Label style="-fx-text-fill: #A0A0A0; -fx-font-size: 13px;" text="Tên đăng nhập" />
+                  <TextField fx:id="usernameField" maxWidth="Infinity" prefHeight="45.0" promptText="Nhập tài khoản admin" styleClass="input-field" />
+                  <Label style="-fx-text-fill: #A0A0A0; -fx-font-size: 13px;" text="Mật khẩu" />
+                  <PasswordField fx:id="passwordField" maxWidth="Infinity" prefHeight="45.0" promptText="Nhập mật khẩu" styleClass="input-field" />
                </children>
             </VBox>
 
             <VBox spacing="15.0" alignment="CENTER">
                <children>
-                  <Button fx:id="button" maxWidth="Infinity" mnemonicParsing="false" onAction="#Submitting" styleClass="btn-gold" text="Submit Access" />
+                  <Button fx:id="button" maxWidth="Infinity" mnemonicParsing="false" onAction="#Submitting" styleClass="btn-gold" text="Đăng nhập Admin" />
                   <Button mnemonicParsing="false" onAction="#ReturnLogin" style="-fx-background-color: transparent; -fx-text-fill: #A0A0A0; -fx-font-size: 13px; -fx-cursor: hand;" text="Quay lại Đăng nhập" />
                </children>
             </VBox>
