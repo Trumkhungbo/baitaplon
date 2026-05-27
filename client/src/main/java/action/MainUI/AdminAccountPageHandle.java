@@ -161,7 +161,6 @@ public class AdminAccountPageHandle implements Initializable, SocketListener {
     private void setFeedback(String message) {
         feedbackLabel.setText(message == null ? "" : message);
     }
-
-    private record UserRow(long id, String username, double balance, String email, String phone, String personalId, String role) {
+    public static record UserRow(long id, String username, double balance, String email, String phone, String personalId, String role) {
     }
 }

@@ -2,6 +2,9 @@ package action.MainUI;
 
 import action.SocketClient;
 import action.SocketListener;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;

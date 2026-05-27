@@ -249,6 +249,48 @@ public class ActionInformationHandle implements Initializable, SocketListener {
                         setFeedback(getAsString(res, "message"));
                     }
                     case "ERROR" -> setFeedback(getAsString(res, "message"));
+                    case "MY_AUCTIONS_RESULT" -> {
+                        rows.clear();
+                        if (res.has("auctions") && res.get("auctions").isJsonArray()) {
+                            for (com.google.gson.JsonElement el : res.getAsJsonArray("auctions")) {
+                                try {
+                                    JsonObject a = el.getAsJsonObject();
+                                    String id = a.has("id") ? a.get("id").getAsString() : "";
+                                    String itemName = a.has("itemName") ? a.get("itemName").getAsString() : "";
+                                    String itemType = a.has("itemType") ? a.get("itemType").getAsString() : "";
+                                    double curPrice = a.has("currentPrice") && !a.get("currentPrice").isJsonNull() ? a.get("currentPrice").getAsDouble() : 0.0;
+                                    String status = a.has("status") ? a.get("status").getAsString() : "";
+                                    String startDate = a.has("startDate") ? a.get("startDate").getAsString() : "";
+                                    String startClock = a.has("startClockTime") ? a.get("startClockTime").getAsString() : "";
+                                    String imageUrl = a.has("imageUrl") ? a.get("imageUrl").getAsString() : "";
+                                    String info1 = a.has("information1") ? a.get("information1").getAsString() : "";
+                                    String info2 = a.has("information2") ? a.get("information2").getAsString() : "";
+                                    String role = a.has("role") ? a.get("role").getAsString() : "Bidder";
+                                    String result = a.has("result") ? a.get("result").getAsString() : "";
+                                    boolean canPay = a.has("canPay") && a.get("canPay").getAsBoolean();
+
+                                    rows.add(new AccountAuctionRow(
+                                            id,
+                                            itemName,
+                                            itemType,
+                                            curPrice,
+                                            status,
+                                            startDate,
+                                            startClock,
+                                            imageUrl,
+                                            info1,
+                                            info2,
+                                            role,
+                                            result,
+                                            canPay
+                                    ));
+                                } catch (Exception ignored) {
+                                }
+                            }
+                        }
+                        rows.sort(Comparator.comparingInt((AccountAuctionRow item) -> parseInt(item.auctionId())).reversed());
+                        updateStatusSummary();
+                    }
                     default -> {
                     }
                 }

@@ -59,8 +59,6 @@
             <version>5.11.0</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- Sửa version TestFX ở đây -->
         <dependency>
             <groupId>org.testfx</groupId>
             <artifactId>testfx-junit5</artifactId>
@@ -85,6 +83,23 @@
                 <version>3.1.0</version> <!-- Cập nhật bản ổn định -->
                 <configuration>
                     <mainClass>action.Core.laucher</mainClass>
+                </configuration>
+            </plugin>
+
+            <!-- Configure Surefire to pass JVM flags for tests to work with newer JDKs -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <!--
+                      - Enable experimental Byte Buddy support when running on very new JDKs
+                      - Allow dynamic agent loading if tests require instrumentation
+                      - Open modules for JavaFX native access warnings
+                    -->
+                    <argLine>-Dnet.bytebuddy.experimental=true -XX:+EnableDynamicAgentLoading --add-opens=java.base/java.lang=ALL-UNNAMED --enable-native-access=ALL-UNNAMED</argLine>
+                    <!-- Increase forked JVM memory to avoid OOME during GUI tests -->
+                    <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
                 </configuration>
             </plugin>
 
@@ -118,6 +133,24 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.11</version> <executions>
+                <execution>
+                    <goals>
+                        <goal>prepare-agent</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>report</id>
+                    <phase>test</phase>
+                    <goals>
+                        <goal>report</goal>
+                    </goals>
+                </execution>
+            </executions>
             </plugin>
         </plugins>
     </build>

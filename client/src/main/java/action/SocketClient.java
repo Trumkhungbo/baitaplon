@@ -19,7 +19,10 @@ public class SocketClient {
 
     private static SocketClient instance;
 
-    private SocketClient() {}
+    // Allow tests to create lightweight test-subclasses by making the constructor
+    // protected instead of private. This improves testability without affecting
+    // production usage (getInstance() remains the standard access pattern).
+    protected SocketClient() {}
 
     public static synchronized SocketClient getInstance() {
         if (instance == null) {
