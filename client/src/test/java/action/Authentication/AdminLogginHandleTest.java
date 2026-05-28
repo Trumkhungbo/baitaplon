@@ -5,8 +5,9 @@ import action.SocketClient;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
-import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,6 @@ import org.testfx.util.WaitForAsyncUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,43 +30,42 @@ class AdminLogginHandleTest {
     private StubSceneSwitch sceneSwitchMock;
     private FakeSocketClient fakeSocketClient;
 
-    private DatePicker datePicker;
+    private TextField usernameField;
+    private PasswordField passwordField;
     private Label label;
     private Button button;
 
     @BeforeAll
     static void initJfx() {
-        // Khởi tạo JFX Toolkit cho các UI components
-        Platform.startup(() -> {});
+        try {
+            Platform.startup(() -> {});
+        } catch (IllegalStateException e) {
+            // Toolkit đã được khởi tạo trước đó. Bỏ qua.
+        }
     }
 
     @BeforeEach
     void setUp() throws Exception {
         controller = new AdminLogginHandle();
 
-        // Khởi tạo các UI Control thật thay vì Mock để DatePicker hoạt động chuẩn
-        datePicker = new DatePicker();
+        usernameField = new TextField();
+        passwordField = new PasswordField();
         label = new Label();
         button = new Button();
 
-        // Create a lightweight SceneSwitch stub to avoid Mockito inline instrumentation
         sceneSwitchMock = new StubSceneSwitch();
-
-        // Create a fake SocketClient instance to capture outgoing requests
         fakeSocketClient = new FakeSocketClient();
 
-        // Sử dụng reflection để inject UI controls and sceneSwitch stub into controller
-        injectField("datePicker", datePicker);
+        injectField("usernameField", usernameField);
+        injectField("passwordField", passwordField);
         injectField("label", label);
         injectField("button", button);
         injectField("sceneSwitch", sceneSwitchMock);
 
-        // Chạy initialize
         Platform.runLater(() -> controller.initialize(null, null));
         WaitForAsyncUtils.waitForFxEvents();
     }
 
-    // Named stub so tests can inspect call flags without Mockito bytecode instrumentation
     private static class StubSceneSwitch extends SceneSwitch {
         public boolean lockCalled = false;
         public boolean anyWhereCalled = false;
@@ -95,7 +94,6 @@ class AdminLogginHandleTest {
         }
     }
 
-    // Simple fake SocketClient that records outgoing messages
     private static class FakeSocketClient extends SocketClient {
         public final List<String> messages = new ArrayList<>();
 
@@ -112,9 +110,10 @@ class AdminLogginHandleTest {
     }
 
     @Test
-    void testSubmittingEmptyDate() throws IOException {
+    void testSubmittingEmptyCredentials() throws IOException {
         Platform.runLater(() -> {
-            datePicker.setValue(null);
+            usernameField.setText("");
+            passwordField.setText("");
             try {
                 controller.Submitting(new ActionEvent());
             } catch (IOException e) {
@@ -123,32 +122,12 @@ class AdminLogginHandleTest {
         });
         WaitForAsyncUtils.waitForFxEvents();
 
-        // Nếu date trống, phải gọi cảnh báo SomeThingUnFill
         assertTrue(sceneSwitchMock.lockCalled, "Expected SwitchToLockPage to be called");
         assertEquals("/views/SomeThingUnFill.fxml", sceneSwitchMock.lastFXML);
     }
 
     @Test
-    void testSubmittingWrongDate() throws IOException {
-        Platform.runLater(() -> {
-            datePicker.setValue(LocalDate.of(2025, 1, 1));
-            try {
-                controller.Submitting(new ActionEvent());
-            } catch (IOException e) {
-                fail("Không nên văng lỗi IOException");
-            }
-        });
-        WaitForAsyncUtils.waitForFxEvents();
-
-        // Ngày sai thì không switch scene, label báo lỗi
-        assertFalse(sceneSwitchMock.lockCalled);
-        assertFalse(sceneSwitchMock.anyWhereCalled);
-        assertEquals("Sai ngày xác thực. Hãy nhập 30/04/2026.", label.getText());
-    }
-
-    @Test
-    void testSubmittingCorrectDate() throws Exception {
-        // Inject our fake SocketClient into the singleton via reflection
+    void testSubmittingCredentials() throws Exception {
         Field instanceField = SocketClient.class.getDeclaredField("instance");
         instanceField.setAccessible(true);
         Object previous = instanceField.get(null);
@@ -156,8 +135,8 @@ class AdminLogginHandleTest {
 
         try {
             Platform.runLater(() -> {
-                // Ngày độc lập 30/04/2026 là ngày đúng trong AdminLogginHandle
-                datePicker.setValue(LocalDate.of(2026, 4, 30));
+                usernameField.setText("admin");
+                passwordField.setText("password");
                 try {
                     controller.Submitting(new ActionEvent());
                 } catch (IOException e) {
@@ -166,11 +145,8 @@ class AdminLogginHandleTest {
             });
             WaitForAsyncUtils.waitForFxEvents();
 
-            // Sẽ gửi yêu cầu qua socket và đổi cảnh sang Lobby
-            assertTrue(fakeSocketClient.messages.stream().anyMatch(s -> s.contains("\"command\":\"ELEVATE\"")));
-            // Scene switch should have been called to AdminLobby
-            assertTrue(sceneSwitchMock.anyWhereCalled, "Expected SwitchToAnyWhere to be called");
-            assertEquals("/views/AdminLobby.fxml", sceneSwitchMock.lastFXML);
+            assertTrue(fakeSocketClient.messages.stream().anyMatch(s -> s.contains("\"command\":\"LOGIN\"")));
+            assertEquals("Đang đăng nhập admin...", label.getText());
         } finally {
             instanceField.set(null, previous);
         }

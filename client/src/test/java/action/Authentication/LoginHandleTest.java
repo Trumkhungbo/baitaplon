@@ -161,4 +161,5 @@ public class LoginHandleTest {
         boolean hasAdminLabel = robot.lookup("ADMIN").tryQuery().isPresent();
         assertTrue(hasAdminLabel, "Phải chuyển sang trang đăng nhập của Admin (Có chữ ADMIN).");
     }
+
 }
