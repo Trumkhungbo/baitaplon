@@ -16,7 +16,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.*?>
 
-<StackPane prefHeight="700.0" prefWidth="900.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.Authentication.LoginHandle">
+<StackPane prefHeight="700.0" prefWidth="900.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.controller.auth.LoginHandle">
    <children>
       <VBox alignment="CENTER" maxHeight="500.0" maxWidth="400.0" spacing="20.0" styleClass="card">
          <padding>

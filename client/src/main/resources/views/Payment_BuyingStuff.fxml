@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane prefHeight="720.0" prefWidth="1180.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.Authentication.PaymentBuyingStuffHandle">
+<StackPane prefHeight="720.0" prefWidth="1180.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.controller.payment.PaymentBuyingStuffHandle">
    <children>
       <VBox maxWidth="1180.0" spacing="18.0" style="-fx-padding: 26;">
          <children>

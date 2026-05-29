@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<StackPane prefHeight="800.0" prefWidth="1200.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.LobbypaneHandle">
+<StackPane prefHeight="800.0" prefWidth="1200.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.controller.main.LobbypaneHandle">
    <children>
       <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
          <content>

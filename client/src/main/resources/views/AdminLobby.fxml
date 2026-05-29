@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane fx:id="ShowingStage" prefHeight="768.0" prefWidth="1200.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.AdminLobbyHandle">
+<BorderPane fx:id="ShowingStage" prefHeight="768.0" prefWidth="1200.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.controller.admin.AdminLobbyHandle">
    <top>
       <HBox alignment="CENTER_LEFT" prefHeight="92.0" style="-fx-background-color: #1A1A1A; -fx-border-color: #333333; -fx-border-width: 0 0 1px 0;" BorderPane.alignment="CENTER">
          <padding>

@@ -1,6 +1,6 @@
 package action.Core;
 
-import action.SocketClient;
+import action.network.SocketClient;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;

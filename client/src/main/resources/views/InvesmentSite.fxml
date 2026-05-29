@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.SellingJobs.InvesmentSiteHandle" style="-fx-background-color: transparent;">
+<StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.controller.SellingJobs.InvesmentSiteHandle" style="-fx-background-color: transparent;">
    <children>
       <VBox spacing="18.0" style="-fx-padding: 22 18 30 18;">
          <children>

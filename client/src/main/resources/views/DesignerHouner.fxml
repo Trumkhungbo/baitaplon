@@ -14,7 +14,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane style="-fx-background-color: linear-gradient(to bottom right, #07111B, #0C1520 40%, #081018);" stylesheets="@global.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.DesignerHounerHandle">
+<StackPane style="-fx-background-color: linear-gradient(to bottom right, #07111B, #0C1520 40%, #081018);" stylesheets="@global.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.controller.main.DesignerHounerHandle">
    <children>
       <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: transparent; -fx-background-color: transparent;" vbarPolicy="AS_NEEDED">
          <content>
