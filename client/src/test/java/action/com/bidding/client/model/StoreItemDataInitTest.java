@@ -2,12 +2,14 @@ package action.com.bidding.client.model;
 
 import action.model.StoreItemDataInit;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class StoreItemDataInitTest {
 
+    @BeforeEach
     @AfterEach
     void tearDown() {
         StoreItemDataInit.name = null;
