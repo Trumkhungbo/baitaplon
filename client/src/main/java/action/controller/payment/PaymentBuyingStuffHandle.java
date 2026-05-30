@@ -4,6 +4,7 @@ import action.controller.main.LobbyHandle;
 import action.model.StoreDataInput;
 import action.model.StoreItemDataInit;
 import action.network.SocketClient;
+import action.network.SocketClientWrapper; // Đã thêm
 import action.network.SocketListener;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -42,9 +43,12 @@ public class PaymentBuyingStuffHandle implements Initializable, SocketListener {
     private String currentWinner = "NONE";
     private String currentSeller = "";
 
+    // Đã thêm biến này
+    private final SocketClientWrapper socketClientWrapper = new SocketClientWrapper();
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        SocketClient.getInstance().addListener(this);
+        socketClientWrapper.addListener(this); // Đã sửa
         itemNameLabel.setText(StoreItemDataInit.name == null ? "Sản phẩm" : StoreItemDataInit.name);
         auctionCodeLabel.setText("#AU" + StoreItemDataInit.description);
         requestAuctionDetail();
@@ -54,28 +58,33 @@ public class PaymentBuyingStuffHandle implements Initializable, SocketListener {
     }
 
     private void requestAuctionDetail() {
-        SocketClient.getInstance().requestData("GET_AUCTION_DETAIL|" + StoreItemDataInit.description);
+        // ĐÃ SỬA DÒNG NÀY: Phải dùng socketClientWrapper
+        socketClientWrapper.requestData("GET_AUCTION_DETAIL|" + StoreItemDataInit.description);
     }
 
     private void requestWinnerInfo() {
-        SocketClient.getInstance().requestData("GET_WINNER|" + StoreItemDataInit.description);
+        // ĐÃ SỬA DÒNG NÀY: Phải dùng socketClientWrapper
+        socketClientWrapper.requestData("GET_WINNER|" + StoreItemDataInit.description);
     }
 
     private void requestAccountInfo() {
         JsonObject req = new JsonObject();
         req.addProperty("command", "GET_ACCOUNTINFORMATION");
         req.addProperty("username", StoreDataInput.getUsername());
-        SocketClient.getInstance().requestData(req.toString());
+        // Đã sửa
+        socketClientWrapper.requestData(req.toString());
     }
 
     @FXML
     public void payNow(ActionEvent event) {
-        SocketClient.getInstance().requestData("PAY_AUCTION|" + StoreItemDataInit.description);
+        // Đã sửa
+        socketClientWrapper.requestData("PAY_AUCTION|" + StoreItemDataInit.description);
     }
 
     @FXML
     public void goBack(ActionEvent event) throws IOException {
-        SocketClient.getInstance().removeListener(this);
+        // Đã sửa
+        socketClientWrapper.removeListener(this);
         if (LobbyHandle.getInstance() != null) {
             LobbyHandle.getInstance().MovingCenter("/views/AccountInformation.fxml");
         }

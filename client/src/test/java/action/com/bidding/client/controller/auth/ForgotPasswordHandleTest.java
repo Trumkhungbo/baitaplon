@@ -35,4 +35,34 @@ public class ForgotPasswordHandleTest {
         assertTrue(robot.lookup("#Id").tryQuery().isPresent(), "ID field must exist");
         assertTrue(robot.lookup("Lấy lại mật khẩu").tryQuery().isPresent(), "Submit button should be present");
     }
+    @Test
+    public void testTakePass_BlankFields(FxRobot robot) {
+        // Để trống các trường, nhấn nút Lấy lại mật khẩu
+        robot.clickOn("Lấy lại mật khẩu");
+        // Kiểm tra xem màn hình lỗi có hiện không (ví dụ: title của popup là "Thông báo")
+        // Hoặc kiểm tra xem controller có gọi SwitchToLockPage không
+    }
+
+    @Test
+    public void testTakePass_WrongPhoneFormat(FxRobot robot) {
+        robot.clickOn("#username").write("user123");
+        robot.clickOn("#Id").write("123456789012");
+        robot.clickOn("#phoneNumber").write("123"); // Sai định dạng (dưới 10 số)
+        robot.clickOn("Lấy lại mật khẩu");
+    }
+
+    @Test
+    public void testTakePass_WrongIdFormat(FxRobot robot) {
+        robot.clickOn("#username").write("user123");
+        robot.clickOn("#Id").write("123"); // Sai định dạng (dưới 12 số)
+        robot.clickOn("#phoneNumber").write("0912345678");
+        robot.clickOn("Lấy lại mật khẩu");
+    }
+    @Test
+    public void testTakePass_ValidInput(FxRobot robot) {
+        robot.clickOn("#username").write("user123");
+        robot.clickOn("#Id").write("123456789012");
+        robot.clickOn("#phoneNumber").write("0912345678");
+        robot.clickOn("Lấy lại mật khẩu");
+    }
 }
