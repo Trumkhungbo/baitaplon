@@ -1,20 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Priority?>
-<?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
 
-<StackPane style="-fx-background-color: linear-gradient(to bottom right, #07111B, #0C1520 40%, #081018);" stylesheets="@global.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.DesignerHounerHandle">
+<StackPane style="-fx-background-color: linear-gradient(to bottom right, #07111B, #0C1520 40%, #081018);" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.controller.main.DesignerHounerHandle">
    <children>
       <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: transparent; -fx-background-color: transparent;" vbarPolicy="AS_NEEDED">
          <content>
@@ -78,9 +68,9 @@
 
                   <HBox alignment="CENTER" spacing="18.0">
                      <children>
-                        <Region HBox.hgrow="ALWAYS" style="-fx-background-color: rgba(246, 183, 60, 0.75);" />
+                        <Region style="-fx-background-color: rgba(246, 183, 60, 0.75);" HBox.hgrow="ALWAYS" />
                         <Label style="-fx-text-fill: #F6B73C; -fx-font-size: 28px; -fx-font-weight: 900;" text="TÍNH NĂNG CHÍNH" />
-                        <Region HBox.hgrow="ALWAYS" style="-fx-background-color: rgba(246, 183, 60, 0.75);" />
+                        <Region style="-fx-background-color: rgba(246, 183, 60, 0.75);" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
 
@@ -137,13 +127,16 @@
                            </children>
                         </VBox>
                      </children>
+                     <rowConstraints>
+                        <RowConstraints />
+                     </rowConstraints>
                   </GridPane>
 
                   <HBox alignment="CENTER" spacing="18.0">
                      <children>
-                        <Region HBox.hgrow="ALWAYS" style="-fx-background-color: rgba(246, 183, 60, 0.75);" />
+                        <Region style="-fx-background-color: rgba(246, 183, 60, 0.75);" HBox.hgrow="ALWAYS" />
                         <Label style="-fx-text-fill: #F6B73C; -fx-font-size: 28px; -fx-font-weight: 900;" text="HƯỚNG DẪN SỬ DỤNG" />
-                        <Region HBox.hgrow="ALWAYS" style="-fx-background-color: rgba(246, 183, 60, 0.75);" />
+                        <Region style="-fx-background-color: rgba(246, 183, 60, 0.75);" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
 
@@ -206,97 +199,9 @@
                            </children>
                         </VBox>
                      </children>
-                  </GridPane>
-
-                  <HBox alignment="CENTER" spacing="18.0">
-                     <children>
-                        <Region HBox.hgrow="ALWAYS" style="-fx-background-color: rgba(246, 183, 60, 0.75);" />
-                        <Label style="-fx-text-fill: #F6B73C; -fx-font-size: 28px; -fx-font-weight: 900;" text="NHÀ SÁNG LẬP" />
-                        <Region HBox.hgrow="ALWAYS" style="-fx-background-color: rgba(246, 183, 60, 0.75);" />
-                     </children>
-                  </HBox>
-
-                  <GridPane hgap="10.0" vgap="10.0">
-                     <columnConstraints>
-                        <ColumnConstraints percentWidth="25.0" />
-                        <ColumnConstraints percentWidth="25.0" />
-                        <ColumnConstraints percentWidth="25.0" />
-                        <ColumnConstraints percentWidth="25.0" />
-                     </columnConstraints>
-                     <children>
-                        <VBox prefHeight="184.0" prefWidth="330.0" spacing="10.0" style="-fx-background-color: rgba(9, 19, 30, 0.95); -fx-border-color: rgba(246, 183, 60, 0.25); -fx-border-radius: 18; -fx-background-radius: 18; -fx-padding: 18 16 16 16;" GridPane.columnIndex="0">
-                           <children>
-                              <HBox alignment="CENTER_LEFT" spacing="14.0">
-                                 <children>
-                                    <Label style="-fx-text-fill: #F6B73C; -fx-font-size: 42px;" text="◌" />
-                                    <VBox spacing="4.0">
-                                       <children>
-                                          <Label style="-fx-text-fill: #F6B73C; -fx-font-size: 18px; -fx-font-weight: 900;" text="LÃ QUỐC SỬ" />
-                                          <Label style="-fx-text-fill: #F6F7FB; -fx-font-size: 16px;" text="Server Developer" />
-                                       </children>
-                                    </VBox>
-                                 </children>
-                              </HBox>
-                              <Label style="-fx-text-fill: #F0F4FA; -fx-font-size: 15px;" text="• Logic server, đấu giá realtime" />
-                              <Label style="-fx-text-fill: #F0F4FA; -fx-font-size: 15px;" text="• Auto-bid &amp; Anti-sniping" />
-                              <Label style="-fx-text-fill: #F0F4FA; -fx-font-size: 15px;" text="• Multi-threading" />
-                           </children>
-                        </VBox>
-                        <VBox prefHeight="184.0" prefWidth="330.0" spacing="10.0" style="-fx-background-color: rgba(9, 19, 30, 0.95); -fx-border-color: rgba(246, 183, 60, 0.25); -fx-border-radius: 18; -fx-background-radius: 18; -fx-padding: 18 16 16 16;" GridPane.columnIndex="1">
-                           <children>
-                              <HBox alignment="CENTER_LEFT" spacing="14.0">
-                                 <children>
-                                    <Label style="-fx-text-fill: #F6B73C; -fx-font-size: 42px;" text="◌" />
-                                    <VBox spacing="4.0">
-                                       <children>
-                                          <Label style="-fx-text-fill: #F6B73C; -fx-font-size: 18px; -fx-font-weight: 900;" text="NGÔ TRUNG KIÊN" />
-                                          <Label style="-fx-text-fill: #F6F7FB; -fx-font-size: 16px;" text="Database Developer" />
-                                       </children>
-                                    </VBox>
-                                 </children>
-                              </HBox>
-                              <Label style="-fx-text-fill: #F0F4FA; -fx-font-size: 15px;" text="• Thiết kế CSDL SQLite" />
-                              <Label style="-fx-text-fill: #F0F4FA; -fx-font-size: 15px;" text="• Xử lý lưu trữ dữ liệu" />
-                              <Label style="-fx-text-fill: #F0F4FA; -fx-font-size: 15px;" text="• Quản lý phiên đấu giá" />
-                           </children>
-                        </VBox>
-                        <VBox prefHeight="184.0" prefWidth="330.0" spacing="10.0" style="-fx-background-color: rgba(9, 19, 30, 0.95); -fx-border-color: rgba(246, 183, 60, 0.25); -fx-border-radius: 18; -fx-background-radius: 18; -fx-padding: 18 16 16 16;" GridPane.columnIndex="2">
-                           <children>
-                              <HBox alignment="CENTER_LEFT" spacing="14.0">
-                                 <children>
-                                    <Label style="-fx-text-fill: #F6B73C; -fx-font-size: 42px;" text="◌" />
-                                    <VBox spacing="4.0">
-                                       <children>
-                                          <Label style="-fx-text-fill: #F6B73C; -fx-font-size: 18px; -fx-font-weight: 900;" text="LÊ ĐỨC TIẾN" />
-                                          <Label style="-fx-text-fill: #F6F7FB; -fx-font-size: 16px;" text="Client Developer" />
-                                       </children>
-                                    </VBox>
-                                 </children>
-                              </HBox>
-                              <Label style="-fx-text-fill: #F0F4FA; -fx-font-size: 15px;" text="• Thiết kế giao diện JavaFX" />
-                              <Label style="-fx-text-fill: #F0F4FA; -fx-font-size: 15px;" text="• Kết nối &amp; đồng bộ dữ liệu" />
-                              <Label style="-fx-text-fill: #F0F4FA; -fx-font-size: 15px;" text="• Trải nghiệm người dùng" />
-                           </children>
-                        </VBox>
-                        <VBox prefHeight="184.0" prefWidth="330.0" spacing="10.0" style="-fx-background-color: rgba(9, 19, 30, 0.95); -fx-border-color: rgba(246, 183, 60, 0.25); -fx-border-radius: 18; -fx-background-radius: 18; -fx-padding: 18 16 16 16;" GridPane.columnIndex="3">
-                           <children>
-                              <HBox alignment="CENTER_LEFT" spacing="14.0">
-                                 <children>
-                                    <Label style="-fx-text-fill: #F6B73C; -fx-font-size: 42px;" text="◌" />
-                                    <VBox spacing="4.0">
-                                       <children>
-                                          <Label style="-fx-text-fill: #F6B73C; -fx-font-size: 18px; -fx-font-weight: 900;" text="HOÀNG KHÁNH HUY" />
-                                          <Label style="-fx-text-fill: #F6F7FB; -fx-font-size: 16px;" text="Network Developer" />
-                                       </children>
-                                    </VBox>
-                                 </children>
-                              </HBox>
-                              <Label style="-fx-text-fill: #F0F4FA; -fx-font-size: 15px;" text="• Socket client" />
-                              <Label style="-fx-text-fill: #F0F4FA; -fx-font-size: 15px;" text="• Giao thức trao đổi dữ liệu" />
-                              <Label style="-fx-text-fill: #F0F4FA; -fx-font-size: 15px;" text="• Đồng bộ realtime" />
-                           </children>
-                        </VBox>
-                     </children>
+                     <rowConstraints>
+                        <RowConstraints />
+                     </rowConstraints>
                   </GridPane>
 
                   <BorderPane style="-fx-padding: 8 8 0 8;">

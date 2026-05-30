@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.Circle?>
 
-<StackPane prefHeight="750.0" prefWidth="900.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.Authentication.RegisterHandle">
+<StackPane prefHeight="750.0" prefWidth="900.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.controller.auth.RegisterHandle">
    <children>
       <VBox alignment="CENTER" maxHeight="650.0" maxWidth="450.0" spacing="15.0" styleClass="card">
          <padding>

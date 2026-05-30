@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.SellingJobs.InvesmentWaitHandle" style="-fx-background-color: transparent;">
+<StackPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.controller.SellingJobs.InvesmentWaitHandle" style="-fx-background-color: transparent;">
    <children>
       <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
          <content>

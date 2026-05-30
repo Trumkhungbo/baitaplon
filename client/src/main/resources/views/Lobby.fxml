@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane fx:id="ShowingStage" prefHeight="768.0" prefWidth="1366.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.MainUI.LobbyHandle">
+<BorderPane fx:id="ShowingStage" prefHeight="768.0" prefWidth="1366.0" styleClass="root-container" stylesheets="@global.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="action.controller.main.LobbyHandle">
    <top>
       <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="top-navbar" BorderPane.alignment="CENTER">
          <padding>

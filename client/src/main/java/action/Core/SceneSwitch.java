@@ -70,14 +70,12 @@ public class SceneSwitch {
     public void SwitchToLockPage(ActionEvent event, String FXML) throws IOException {
         Parent root = FXMLLoader.load(getClass().getResource(FXML));
 
-        // Tạo một popup Stage mới (Modal)
         Stage modalStage = new Stage();
         scene = new Scene(root);
         modalStage.setScene(scene);
         modalStage.centerOnScreen();
         modalStage.initModality(Modality.APPLICATION_MODAL);
 
-        // Thêm icon an toàn
         try {
             Image icon = new Image(getClass().getResourceAsStream("/assets/Icon.png"));
             modalStage.getIcons().add(icon);

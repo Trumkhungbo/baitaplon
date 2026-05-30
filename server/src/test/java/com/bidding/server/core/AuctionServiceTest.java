@@ -47,6 +47,7 @@ class AuctionServiceTest {
     @Mock private ItemDAO itemDAO;
     @Mock private SellerAuctionDAO sellerAuctionDAO;
     @Mock private UserDAO userDAO;
+    @Mock private TransactionDAO transactionDAO;
 
     // ── System under test ────────────────────────────────────────────────────
 
@@ -72,6 +73,7 @@ class AuctionServiceTest {
         injectField(service, "itemDAO",        itemDAO);
         injectField(service, "sellerAuctionDAO",sellerAuctionDAO);
         injectField(service, "userDAO",        userDAO);
+        injectField(service, "transactionDAO", transactionDAO);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -297,6 +299,25 @@ class AuctionServiceTest {
         }
 
         @Test
+        void belowMinimumIncrement_throwsInvalidBid() {
+            Auction auction = runningAuction("1", "seller", 1_000_000);
+            auctions.put("1", auction);
+            stubNoAutoBids("1");
+
+            InvalidBidException ex = assertThrows(InvalidBidException.class,
+                    () -> service.placeBid("1", "buyer", 1_004_000));
+
+            assertEquals("Minimum valid bid is 1005000", ex.getMessage());
+        }
+
+        @Test
+        void calculateMinIncrement_usesHalfPercentWithMinimumFloor() {
+            assertEquals(1_000, service.calculateMinIncrement(100_000), 0.01);
+            assertEquals(100_000, service.calculateMinIncrement(20_000_000), 0.01);
+            assertEquals(2_500_000, service.calculateMinIncrement(500_000_000), 0.01);
+        }
+
+        @Test
         void auctionPending_throwsAuctionClosed() {
             Auction auction = auctionWithStatus("1", "seller", AuctionStatus.PENDING, 1_000_000);
             auctions.put("1", auction);
@@ -358,6 +379,39 @@ class AuctionServiceTest {
             service.placeBid("2", "bidder1", 600_000);
 
             assertEquals("bidder1", auction.getHighestBidder());
+        }
+
+        @Test
+        void regularBidBelowAutoBidMax_isOvertakenByProxyAutoBid() {
+            Auction auction = runningAuction("20", "seller", 10_300_000);
+            auction.setHighestBidder("B");
+            auctions.put("20", auction);
+            when(autoBidDAO.findActiveByAuction(20L))
+                    .thenReturn(List.of(autoBid(20L, "B", 15_000_000, 500_000)));
+            when(bidHistoryDAO.countByAuctionId("20")).thenReturn(2);
+
+            service.placeBid("20", "C", 12_000_000);
+
+            assertEquals("B", auction.getHighestBidder());
+            assertEquals(12_060_000, auction.getCurrentPrice(), 0.01);
+            verify(bidHistoryDAO).save(eq("20"), eq("C"), eq(12_000_000.0), anyLong());
+            verify(bidHistoryDAO).save(eq("20"), eq("B"), eq(12_060_000.0), anyLong());
+        }
+
+        @Test
+        void regularBidAboveAutoBidMax_winsImmediately() {
+            Auction auction = runningAuction("21", "seller", 12_060_000);
+            auction.setHighestBidder("B");
+            auctions.put("21", auction);
+            when(autoBidDAO.findActiveByAuction(21L))
+                    .thenReturn(List.of(autoBid(21L, "B", 15_000_000, 500_000)));
+            when(bidHistoryDAO.countByAuctionId("21")).thenReturn(3);
+
+            service.placeBid("21", "C", 16_000_000);
+
+            assertEquals("C", auction.getHighestBidder());
+            assertEquals(16_000_000, auction.getCurrentPrice(), 0.01);
+            verify(bidHistoryDAO, never()).save(eq("21"), eq("B"), eq(15_000_000.0), anyLong());
         }
 
         @Test
@@ -909,8 +963,18 @@ class AuctionServiceTest {
             auctions.put("92", auction);
             when(auctionStateDAO.findByAuctionId("92")).thenReturn(null);
 
-            assertEquals("ERROR|Max bid must be greater than current price",
+            assertEquals("ERROR|Max bid must be at least 3015000",
                     service.setAutoBid("92", "user", 2_000_000, 100_000));
+        }
+
+        @Test
+        void incrementBelowMinimumIncrement_returnsError() {
+            Auction auction = runningAuction("94", "seller", 1_000_000);
+            auctions.put("94", auction);
+            when(auctionStateDAO.findByAuctionId("94")).thenReturn(null);
+
+            assertEquals("ERROR|Increment too small",
+                    service.setAutoBid("94", "buyer", 5_000_000, 4_000));
         }
 
         @Test
@@ -923,6 +987,26 @@ class AuctionServiceTest {
             String result = service.setAutoBid("93", "buyer", 5_000_000, 100_000);
             assertTrue(result.startsWith("AUTO_BID_SET"), result);
             assertTrue(result.contains("|active=true"), result);
+        }
+
+        @Test
+        void twoAutoBids_highestMaxWinsAtRunnerUpPlusMinimumIncrement() {
+            Auction auction = runningAuction("95", "seller", 1_000_000);
+            auctions.put("95", auction);
+            when(auctionStateDAO.findByAuctionId("95")).thenReturn(null);
+            when(autoBidDAO.findActiveByAuction(95L)).thenReturn(List.of(
+                    autoBid(95L, "A", 10_000_000, 500_000),
+                    autoBid(95L, "B", 15_000_000, 500_000)
+            ));
+            when(bidHistoryDAO.countByAuctionId("95")).thenReturn(2);
+
+            String result = service.setAutoBid("95", "B", 15_000_000, 500_000);
+
+            assertTrue(result.startsWith("AUTO_BID_SET"), result);
+            assertEquals("B", auction.getHighestBidder());
+            assertEquals(10_050_000, auction.getCurrentPrice(), 0.01);
+            assertTrue(auction.getCurrentPrice() < 15_000_000);
+            verify(bidHistoryDAO).save(eq("95"), eq("B"), eq(10_050_000.0), anyLong());
         }
     }
 
@@ -1223,6 +1307,10 @@ class AuctionServiceTest {
     private void stubNoAutoBids(String auctionId) {
         when(autoBidDAO.findActiveByAuction(Long.parseLong(auctionId)))
                 .thenReturn(Collections.emptyList());
+    }
+
+    private AutoBid autoBid(long auctionId, String username, double maxBid, double increment) {
+        return new AutoBid(auctionId, username, maxBid, increment);
     }
 
     private void stubSyncSnapshotWithStatus(

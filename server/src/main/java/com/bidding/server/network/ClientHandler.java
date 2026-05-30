@@ -134,8 +134,8 @@ public class ClientHandler implements Runnable {
                     "LIST_MY_AUCTIONS",
                     firstJsonString(json, "sellerUsername", "seller", "username")
             };
-            case "LIST_ACCOUNT_AUCTIONS" -> new String[]{
-                    "LIST_ACCOUNT_AUCTIONS",
+            case "LIST_ACCOUNT_AUCTIONS", "GET_TRANSACTIONS" -> new String[]{
+                    command,
                     firstJsonString(json, "username", "sellerUsername", "seller")
             };
             case "BID" -> new String[]{
