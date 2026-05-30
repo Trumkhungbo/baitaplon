@@ -18,7 +18,9 @@ import javafx.scene.control.Label;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 
@@ -36,7 +38,12 @@ public class PaymentBuyingStuffHandle implements Initializable, SocketListener {
     @FXML private Label balanceAfterLabel;
     @FXML private Button payButton;
 
-    private final DecimalFormat moneyFormat = new DecimalFormat("#,###");
+    private final DecimalFormat moneyFormat;
+    {
+        DecimalFormatSymbols s = DecimalFormatSymbols.getInstance(Locale.US);
+        s.setGroupingSeparator('.');
+        moneyFormat = new DecimalFormat("#,###", s);
+    }
     private double currentPrice;
     private double currentBalance;
     private String currentStatus = "UNKNOWN";

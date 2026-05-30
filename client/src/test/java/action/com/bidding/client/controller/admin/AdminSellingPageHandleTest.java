@@ -50,15 +50,20 @@ public class AdminSellingPageHandleTest {
         instanceField.set(null, fakeSocketClient);
 
         try {
-            String data = "AUCTION_LIST|1:Test Item:1000:PENDING:x:x:x:x:2026-06-01:10:30";
-            controller.onDataReceived(data);
-            Thread.sleep(600);
-            // Select the first item's checkbox programmatically via reflection
+            // 1. Nhận dữ liệu và đợi JavaFX cập nhật UI hoàn toàn
+            Platform.runLater(() -> {
+                String data = "AUCTION_LIST|1:Test Item:1000:PENDING:x:x:x:x:2026-06-01:10:30";
+                controller.onDataReceived(data);
+            });
+            WaitForAsyncUtils.waitForFxEvents();
+
+            // 2. Tích chọn CheckBox thông qua Reflection trên luồng FX
             Platform.runLater(() -> {
                 try {
                     java.lang.reflect.Field itemsField = AdminSellingPageHandle.class.getDeclaredField("ItemsTable");
                     itemsField.setAccessible(true);
                     TableView<?> itemsTable = (TableView<?>) itemsField.get(controller);
+
                     if (!itemsTable.getItems().isEmpty()) {
                         Object first = itemsTable.getItems().get(0);
                         java.lang.reflect.Method getCheck = first.getClass().getMethod("getCheckBox");
@@ -69,12 +74,19 @@ public class AdminSellingPageHandleTest {
                     throw new RuntimeException(e);
                 }
             });
-            WaitForAsyncUtils.waitForFxEvents();
-            Thread.sleep(1300);
 
-            // Click Confirm button
+            // Ép đợi cho đến khi trạng thái CheckBox thực sự được thay đổi và cập nhật vào Model
+            WaitForAsyncUtils.waitForFxEvents();
+
+            // 3. Thực hiện Click nút Xác nhận bằng FxRobot
             robot.clickOn("Xác nhận duyệt");
-            Thread.sleep(1600);
+
+            // Đợi các event phát sinh sau khi click (như việc gọi hàm gửi dữ liệu socket) thực thi xong
+            WaitForAsyncUtils.waitForFxEvents();
+
+            // 4. In log debug nếu cần (Nếu vẫn lỗi, hãy bỏ comment dòng dưới để check xem client gửi gì)
+            // System.out.println("Thực tế gửi đi: " + fakeSocketClient.messages);
+
             boolean hasApprove = fakeSocketClient.messages.stream().anyMatch(s -> s.contains("APPROVE_AUCTION"));
             assertTrue(hasApprove, "Should have sent APPROVE_AUCTION for selected item");
         } finally {

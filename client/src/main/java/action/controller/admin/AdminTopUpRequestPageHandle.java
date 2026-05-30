@@ -36,7 +36,12 @@ public class AdminTopUpRequestPageHandle implements Initializable, SocketListene
     @FXML private TableColumn<TopUpRow, TopUpRow> actionColumn;
 
     private final ObservableList<TopUpRow> rows = FXCollections.observableArrayList();
-    private final DecimalFormat moneyFormat = new DecimalFormat("#,###", DecimalFormatSymbols.getInstance(Locale.US));
+    private final DecimalFormat moneyFormat;
+    {
+        DecimalFormatSymbols s = DecimalFormatSymbols.getInstance(Locale.US);
+        s.setGroupingSeparator('.');
+        moneyFormat = new DecimalFormat("#,###", s);
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {

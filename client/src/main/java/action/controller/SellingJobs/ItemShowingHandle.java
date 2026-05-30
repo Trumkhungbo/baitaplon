@@ -814,7 +814,7 @@ public class ItemShowingHandle implements Initializable, SocketListener {
     private String formatMoney(String raw) {
         try {
             double value = Double.parseDouble(raw);
-            return String.format("%,.0f", value);
+            return String.format(java.util.Locale.US, "%,.0f", value).replace(",", ".");
         } catch (NumberFormatException e) {
             return raw == null || raw.isBlank() ? "0" : raw;
         }

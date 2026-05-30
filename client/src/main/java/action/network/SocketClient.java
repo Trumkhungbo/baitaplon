@@ -28,6 +28,14 @@ public class SocketClient {
         return instance;
     }
 
+    /**
+     * Test seam: allow tests to inject a mock SocketClient instance instead of using static mocking.
+     * Protected visibility kept restricted; use in tests as SocketClient.setInstance(mock).
+     */
+    public static synchronized void setInstance(SocketClient customInstance) {
+        instance = customInstance;
+    }
+
     public void addListener(SocketListener listener) {
         if (!listeners.contains(listener)) {
             listeners.add(listener);

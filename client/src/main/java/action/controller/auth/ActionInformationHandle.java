@@ -76,7 +76,12 @@ public class ActionInformationHandle implements Initializable, SocketListener {
 
     private final ObservableList<AccountAuctionRow> rows = FXCollections.observableArrayList();
     private final ObservableList<TransactionRow> transactionRows = FXCollections.observableArrayList();
-    private final DecimalFormat moneyFormat = new DecimalFormat("#,###");
+    private final DecimalFormat moneyFormat;
+    {
+        DecimalFormatSymbols s = DecimalFormatSymbols.getInstance(Locale.US);
+        s.setGroupingSeparator('.');
+        moneyFormat = new DecimalFormat("#,###", s);
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -569,7 +574,9 @@ public class ActionInformationHandle implements Initializable, SocketListener {
             return "0";
         }
         try {
-            DecimalFormat formatter = new DecimalFormat("#,###", DecimalFormatSymbols.getInstance(Locale.US));
+            DecimalFormatSymbols s = DecimalFormatSymbols.getInstance(Locale.US);
+            s.setGroupingSeparator('.');
+            DecimalFormat formatter = new DecimalFormat("#,###", s);
             return formatter.format(new BigDecimal(normalized));
         } catch (NumberFormatException ignored) {
             return raw == null || raw.isBlank() ? "0" : raw.trim();

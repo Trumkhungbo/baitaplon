@@ -30,6 +30,7 @@
             <artifactId>javafx-media</artifactId>
             <version>21.0.1</version>
         </dependency>
+        <!-- Đã xóa bản controls v21 bị trùng ở đây -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
