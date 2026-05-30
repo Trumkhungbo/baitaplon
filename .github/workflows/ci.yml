@@ -21,8 +21,8 @@ jobs:
           java-version: 25
           cache: maven
 
-      - name: Test common and server modules
-        run: mvn -B -pl common,server test
+      - name: Install JavaFX test display dependencies
+        run: sudo apt-get update && sudo apt-get install -y xvfb
 
-      - name: Build JavaFX client
-        run: mvn -B -pl client -am -DskipTests package
+      - name: Test all modules
+        run: xvfb-run -a mvn -B test
