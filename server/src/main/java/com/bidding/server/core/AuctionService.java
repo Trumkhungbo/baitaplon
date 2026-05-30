@@ -1,13 +1,9 @@
 package com.bidding.server.core;
 
 import com.bidding.common.enums.AuctionStatus;
-import com.bidding.common.model.AutoBid;
 import com.bidding.common.model.item.Art;
 import com.bidding.common.model.item.Item;
 import com.bidding.server.database.DatabaseInitializer;
-import com.bidding.server.exception.AuctionClosedException;
-import com.bidding.server.exception.AuctionNotFoundException;
-import com.bidding.server.exception.InvalidBidException;
 import com.bidding.server.repository.AuctionRecordDAO;
 import com.bidding.server.repository.AuctionStateDAO;
 import com.bidding.server.repository.AutoBidDAO;
@@ -17,24 +13,22 @@ import com.bidding.server.repository.SellerAuctionDAO;
 import com.bidding.server.repository.TransactionDAO;
 import com.bidding.server.repository.UserDAO;
 
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Lớp trung gian chính cho các lệnh đấu giá mà máy chủ socket gọi vào.
+ * Điều phối đặt giá, auto-bid, thanh toán, vòng đời, truy vấn và định dạng phản hồi qua các service nhỏ hơn.
+ */
 public class AuctionService {
 
-    private static final long ANTI_SNIPE_THRESHOLD_MS = 30_000L;
-    private static final long ANTI_SNIPE_EXTENSION_MS = 60_000L;
+    private static final long MILLIS_PER_MINUTE = 60_000L;
     private static final int DEFAULT_DURATION_MINUTES = 5;
 
-    private final Map<String, Auction> auctions =
-            new ConcurrentHashMap<>();
-
+    private final Map<String, Auction> auctions = new ConcurrentHashMap<>();
     private final AtomicInteger nextAuctionId;
 
     private final BidHistoryDAO bidHistoryDAO;
@@ -45,9 +39,13 @@ public class AuctionService {
     private final SellerAuctionDAO sellerAuctionDAO;
     private final UserDAO userDAO;
     private final TransactionDAO transactionDAO;
+    private final AuctionResponseFormatter responseFormatter = new AuctionResponseFormatter();
+    private final AuctionValidationService validationService = new AuctionValidationService();
 
+    /**
+     * Khởi tạo DAO, nạp lại trạng thái chạy của auction từ cơ sở dữ liệu và tạo dữ liệu mẫu nếu chưa có dữ liệu.
+     */
     public AuctionService() {
-
         DatabaseInitializer.initialize();
 
         this.bidHistoryDAO = new BidHistoryDAO();
@@ -60,55 +58,79 @@ public class AuctionService {
         this.transactionDAO = new TransactionDAO();
 
         loadPersistedRuntimeAuctions();
-
         if (auctions.isEmpty()) {
             seedData();
         }
 
         long maxId = auctionRecordDAO.findMaxAuctionId();
+        this.nextAuctionId = new AtomicInteger(Math.toIntExact(maxId + 1));
+    }
 
-        this.nextAuctionId =
-                new AtomicInteger(Math.toIntExact(maxId + 1));
+    private AuctionLifecycleService lifecycleService() {
+        return new AuctionLifecycleService(auctions, bidHistoryDAO, auctionStateDAO, auctionRecordDAO);
+    }
+
+    private PaymentService paymentService() {
+        return new PaymentService(auctions, bidHistoryDAO, auctionStateDAO, auctionRecordDAO, userDAO, transactionDAO);
+    }
+
+    private AutoBidService autoBidService() {
+        return new AutoBidService(auctions, bidHistoryDAO, auctionStateDAO, auctionRecordDAO, autoBidDAO);
+    }
+
+    private BidService bidService() {
+        return new BidService(auctions, bidHistoryDAO, auctionStateDAO, auctionRecordDAO, autoBidDAO);
+    }
+
+    private AuctionQueryService queryService() {
+        return new AuctionQueryService(auctions, bidHistoryDAO, auctionStateDAO, auctionRecordDAO, itemDAO);
+    }
+
+    private AuctionValidationService validationService() {
+        return validationService == null ? new AuctionValidationService() : validationService;
+    }
+
+    private AuctionResponseFormatter responseFormatter() {
+        return responseFormatter == null ? new AuctionResponseFormatter() : responseFormatter;
+    }
+
+    /**
+     * Khôi phục trạng thái chạy của auction từ cơ sở dữ liệu khi máy chủ khởi động.
+     */
+    private void loadPersistedRuntimeAuctions() {
+        for (AuctionStateDAO.AuctionStateSnapshot snapshot : auctionStateDAO.findAll()) {
+            Auction auction = new Auction(
+                    snapshot.auctionId(),
+                    snapshot.sellerUsername(),
+                    snapshot.itemName(),
+                    snapshot.startPrice(),
+                    snapshot.status()
+            );
+            auction.setCurrentPrice(snapshot.currentPrice());
+            auction.setHighestBidder(snapshot.highestBidder());
+            auction.setStartTimeMillis(snapshot.startTimeMillis());
+            auction.setEndTime(snapshot.endTimeMillis());
+            auction.setItemId(auctionRecordDAO.findItemIdByAuctionId(snapshot.auctionId()));
+            auctions.put(snapshot.auctionId(), auction);
+        }
     }
 
     private void seedData() {
-
-        addInitialAuction("seller1", "iPhone 15", 15000000, AuctionStatus.OPEN);
-        addInitialAuction("seller2", "MacBook Pro", 25000000, AuctionStatus.OPEN);
-        addInitialAuction("seller3", "Oil Painting", 5000000, AuctionStatus.OPEN);
+        addInitialAuction("seller1", "iPhone 15", 15_000_000, AuctionStatus.OPEN);
+        addInitialAuction("seller2", "MacBook Pro", 25_000_000, AuctionStatus.OPEN);
+        addInitialAuction("seller3", "Oil Painting", 5_000_000, AuctionStatus.OPEN);
     }
 
-    private void addInitialAuction(
-            String sellerUsername,
-            String itemName,
-            double startPrice,
-            AuctionStatus status
-    ) {
-
-        String id =
-                String.valueOf(
-                        auctionRecordDAO.findMaxAuctionId() + 1
-                );
-
+    private void addInitialAuction(String sellerUsername, String itemName, double startPrice, AuctionStatus status) {
+        String id = String.valueOf(auctionRecordDAO.findMaxAuctionId() + 1);
         if (auctionRecordDAO.existsById(id)) {
             return;
         }
 
-        Auction auction = new Auction(
-                id,
-                sellerUsername,
-                itemName,
-                startPrice,
-                status
-        );
+        Auction auction = new Auction(id, sellerUsername, itemName, startPrice, status);
         auction.setDurationMinutes(DEFAULT_DURATION_MINUTES);
-        Item item = new Art(
-                itemName,
-                startPrice,
-                "",
-                "Unknown",
-                Calendar.getInstance().get(Calendar.YEAR)
-        );
+
+        Item item = new Art(itemName, startPrice, "", "Unknown", Calendar.getInstance().get(Calendar.YEAR));
         Item savedItem = itemDAO.save(item, sellerUsername);
         auction.setItemId(savedItem.getId());
         auctions.put(id, auction);
@@ -123,81 +145,20 @@ public class AuctionService {
                 auction.getDurationMinutes(),
                 status
         );
-
         persistAuctionState(auction, 0);
     }
 
     /**
-     * Khôi phục trạng thái runtime của tất cả phiên đấu giá từ DB khi server khởi động lại.
-     * Dữ liệu trong bảng auction_state chứa snapshot mới nhất (giá, bidder, status, thời gian).
-     * Nếu bảng trống (lần đầu chạy), seedData() sẽ tạo dữ liệu mẫu.
+     * Tạo auction mở ngay và trả về đúng định dạng phản hồi client-server hiện có.
      */
-    private void loadPersistedRuntimeAuctions() {
-
-        for (AuctionStateDAO.AuctionStateSnapshot snapshot
-                : auctionStateDAO.findAll()) {
-
-            Auction auction = new Auction(
-                    snapshot.auctionId(),
-                    snapshot.sellerUsername(),
-                    snapshot.itemName(),
-                    snapshot.startPrice(),
-                    snapshot.status()
-            );
-
-            auction.setCurrentPrice(
-                    snapshot.currentPrice()
-            );
-
-            auction.setHighestBidder(
-                    snapshot.highestBidder()
-            );
-
-            auction.setStartTimeMillis(
-                    snapshot.startTimeMillis()
-            );
-
-            auction.setEndTime(
-                    snapshot.endTimeMillis()
-            );
-
-            auction.setItemId(
-                    auctionRecordDAO.findItemIdByAuctionId(snapshot.auctionId())
-            );
-
-            auctions.put(
-                    snapshot.auctionId(),
-                    auction
-            );
-        }
-    }
-
-    public String createAuction(
-            String sellerUsername,
-            Item item
-    ) {
-
-        if (item == null) {
-            return "ERROR|Item is null";
+    public String createAuction(String sellerUsername, Item item) {
+        String validationError = validationService().validateAuctionInput(sellerUsername, item);
+        if (validationError != null) {
+            return validationError;
         }
 
-        if (sellerUsername == null
-                || sellerUsername.isBlank()) {
-
-            return "ERROR|Seller username required";
-        }
-
-        if (item.getStartingPrice() <= 0) {
-            return "ERROR|Invalid start price";
-        }
-
-        Item savedItem =
-                itemDAO.save(item, sellerUsername);
-
-        String auctionId =
-                String.valueOf(
-                        nextAuctionId.getAndIncrement()
-                );
+        Item savedItem = itemDAO.save(item, sellerUsername);
+        String auctionId = String.valueOf(nextAuctionId.getAndIncrement());
 
         Auction auction = new Auction(
                 auctionId,
@@ -207,47 +168,22 @@ public class AuctionService {
                 AuctionStatus.OPEN
         );
         auction.setDurationMinutes(DEFAULT_DURATION_MINUTES);
-
         auction.setItemId(savedItem.getId());
-
         auctions.put(auctionId, auction);
 
-        auctionRecordDAO.save(
-                auctionId,
-                savedItem.getId(),
-                sellerUsername,
-                savedItem.getStartingPrice(),
-                auction.getStartTimeMillis(),
-                auction.getEndTime(),
-                auction.getDurationMinutes(),
-                AuctionStatus.OPEN
-        );
-
+        saveAuctionRecord(auction, savedItem, sellerUsername, AuctionStatus.OPEN);
         persistAuctionState(auction, 0);
 
-        return "CREATE_AUCTION_SUCCESS"
-                + "|auctionId=" + auctionId
-                + "|itemId=" + savedItem.getId()
-                + "|itemType=" + savedItem.getItemType();
+        return responseFormatter().createAuctionSuccess(auctionId, savedItem);
     }
 
-    public String createPendingAuction(
-            String sellerUsername,
-            Item item,
-            long startTime,
-            long durationMinutes
-    ) {
-
-        if (item == null) {
-            return "ERROR|Item is null";
-        }
-
-        if (sellerUsername == null || sellerUsername.isBlank()) {
-            return "ERROR|Seller username required";
-        }
-
-        if (item.getStartingPrice() <= 0) {
-            return "ERROR|Invalid start price";
+    /**
+     * Tạo auction đang chờ với thời gian bắt đầu đã hẹn.
+     */
+    public String createPendingAuction(String sellerUsername, Item item, long startTime, long durationMinutes) {
+        String validationError = validationService().validateAuctionInput(sellerUsername, item);
+        if (validationError != null) {
+            return validationError;
         }
         if (startTime < System.currentTimeMillis()) {
             return "ERROR|Start time cannot be in the past";
@@ -257,7 +193,6 @@ public class AuctionService {
         }
 
         Item savedItem = itemDAO.save(item, sellerUsername);
-
         String auctionId = String.valueOf(nextAuctionId.getAndIncrement());
 
         Auction auction = new Auction(
@@ -270,10 +205,8 @@ public class AuctionService {
         auction.setItemId(savedItem.getId());
         auction.setStartTimeMillis(startTime);
         auction.setDurationMinutes(Math.toIntExact(durationMinutes));
-
-        long endTime = startTime + durationMinutes * 60_000L;
+        long endTime = startTime + durationMinutes * MILLIS_PER_MINUTE;
         auction.setEndTime(endTime);
-
         auctions.put(auctionId, auction);
 
         auctionRecordDAO.save(
@@ -286,174 +219,33 @@ public class AuctionService {
                 auction.getDurationMinutes(),
                 AuctionStatus.PENDING
         );
-
         persistAuctionState(auction, 0);
 
         return "ADD_AUCTION_PENDING|auctionId=" + auctionId;
     }
 
+    /**
+     * Lấy danh sách auction của người bán theo định dạng giao thức MY_AUCTIONS.
+     */
     public String getSellerAuctionList(String sellerUsername) {
-        if (sellerUsername == null || sellerUsername.isBlank()) {
-            return "ERROR|Seller username required";
-        }
-
-        StringBuilder sb = new StringBuilder("MY_AUCTIONS|");
-        boolean first = true;
-
-        for (Auction auction : auctions.values().stream()
-                .filter(a -> sellerUsername.equals(a.getSellerUsername()))
-                .sorted((left, right) -> Integer.compare(
-                        Integer.parseInt(right.getId()),
-                        Integer.parseInt(left.getId())))
-                .toList()) {
-
-            syncAuctionFromDatabase(auction);
-            applyTimeBasedStatus(auction, System.currentTimeMillis());
-
-            Item item = itemDAO.findById(auction.getItemId());
-            if (item == null) {
-                continue;
-            }
-
-            if (!first) {
-                sb.append(";");
-            }
-            first = false;
-
-            appendAccountAuctionRow(sb, auction, item, "Seller", auction.getStartDate(), auction.getStartClockTime(), "", false);
-        }
-
-        return sb.toString();
+        return queryService().getSellerAuctionList(sellerUsername);
     }
 
+    /**
+     * Lấy danh sách auction liên quan đến người đặt giá theo định dạng giao thức ACCOUNT_AUCTIONS.
+     */
     public String getAccountAuctionList(String username) {
-        if (username == null || username.isBlank()) {
-            return "ERROR|Username required";
-        }
-
-        StringBuilder sb = new StringBuilder("ACCOUNT_AUCTIONS|");
-        boolean first = true;
-
-        Map<String, Long> bidderAuctionTimes = bidHistoryDAO.findLatestBidTimesByBidder(username);
-        for (Map.Entry<String, Long> entry : bidderAuctionTimes.entrySet()) {
-            Auction auction = auctions.get(entry.getKey());
-            if (auction == null || username.equals(auction.getSellerUsername())) {
-                continue;
-            }
-            Item item = prepareAuctionForAccountList(auction);
-            if (item == null) {
-                continue;
-            }
-            if (!first) {
-                sb.append(";");
-            }
-            first = false;
-            String result = resolveBidderResultText(auction, username);
-            boolean canPay = "FINISHED".equalsIgnoreCase(auction.getStatus().name())
-                    && username.equalsIgnoreCase(auction.getHighestBidder());
-            appendAccountAuctionRow(sb, auction, item, "Bidder", formatEpochDate(entry.getValue()), formatEpochTime(entry.getValue()), result, canPay);
-        }
-
-        return sb.toString();
+        return queryService().getAccountAuctionList(username);
     }
 
-    private Item prepareAuctionForAccountList(Auction auction) {
-        syncAuctionFromDatabase(auction);
-        applyTimeBasedStatus(auction, System.currentTimeMillis());
-        return itemDAO.findById(auction.getItemId());
-    }
-
-    private void appendAccountAuctionRow(StringBuilder sb, Auction auction, Item item, String role, String displayDate, String displayTime, String result, boolean canPay) {
-        String itemType = item.getItemType() == null ? "" : item.getItemType().name();
-        String imageUrl = sanitizeListValue(item.getImageUrl());
-        String description = sanitizeListValue(item.getDescription());
-        String information1 = sanitizeListValue(itemDAO.resolveInformation1(item));
-        String information2 = sanitizeListValue(itemDAO.resolveInformation2(item));
-        int bidCount = bidHistoryDAO.countByAuctionId(auction.getId());
-
-        sb.append(auction.getId()).append(":")
-                .append(auction.getItemId()).append(":")
-                .append(sanitizeListValue(auction.getItemName())).append(":")
-                .append(itemType).append(":")
-                .append((long) auction.getStartPrice()).append(":")
-                .append((long) auction.getCurrentPrice()).append(":")
-                .append(auction.getStatus().name()).append(":")
-                .append(sanitizeListValue(displayDate)).append(":")
-                .append(sanitizeListValue(displayTime)).append(":")
-                .append(auction.getDurationMinutes()).append(":")
-                .append(bidCount).append(":")
-                .append(imageUrl).append(":")
-                .append(description).append(":")
-                .append(information1).append(":")
-                .append(information2).append(":")
-                .append(auction.getStartTimeMillis()).append(":")
-                .append(auction.getEndTime()).append(":")
-                .append(role).append(":")
-                .append(sanitizeListValue(result)).append(":")
-                .append(canPay);
-    }
-
-    private String resolveBidderResultText(Auction auction, String username) {
-        if (auction == null || username == null || username.isBlank()) {
-            return "";
-        }
-
-        String status = auction.getStatus() == null ? "" : auction.getStatus().name();
-        if ("RUNNING".equalsIgnoreCase(status)) {
-            int rank = calculateBidderRank(auction.getId(), username);
-            return rank > 0 ? "Top " + rank : "";
-        }
-
-        if ("FINISHED".equalsIgnoreCase(status) || "PAID".equalsIgnoreCase(status)) {
-            return username.equalsIgnoreCase(auction.getHighestBidder()) ? "winner" : "lost";
-        }
-
-        if ("CANCELED".equalsIgnoreCase(status)) {
-            return "canceled";
-        }
-
-        return "";
-    }
-
-    private int calculateBidderRank(String auctionId, String username) {
-        Map<String, BidRecord> ranking = buildBidderRanking(auctionId);
-        int rank = 1;
-        for (BidRecord record : ranking.values().stream()
-                .sorted((left, right) -> {
-                    int amountCompare = Double.compare(right.getAmount(), left.getAmount());
-                    if (amountCompare != 0) {
-                        return amountCompare;
-                    }
-                    return Long.compare(left.getTimestamp(), right.getTimestamp());
-                })
-                .toList()) {
-            if (username.equalsIgnoreCase(record.getBidderUsername())) {
-                return rank;
-            }
-            rank++;
-        }
-        return 0;
-    }
-
-    private Map<String, BidRecord> buildBidderRanking(String auctionId) {
-        Map<String, BidRecord> bestBids = new HashMap<>();
-        for (BidRecord record : bidHistoryDAO.findByAuctionId(auctionId)) {
-            BidRecord current = bestBids.get(record.getBidderUsername());
-            if (current == null
-                    || record.getAmount() > current.getAmount()
-                    || (record.getAmount() == current.getAmount() && record.getTimestamp() < current.getTimestamp())) {
-                bestBids.put(record.getBidderUsername(), record);
-            }
-        }
-        return bestBids;
-    }
-
+    /**
+     * Cập nhật auction của người bán khi auction chưa bắt đầu và chưa có lượt đặt giá.
+     */
     public String updateSellerAuction(String sellerUsername, String auctionId, Item item, long startTime, long durationMinutes) {
         Auction current = auctions.get(auctionId);
         if (current == null) {
             return "ERROR|Auction not found";
         }
-
         if (!sellerUsername.equals(current.getSellerUsername())) {
             return "ERROR|You can only edit your own auction";
         }
@@ -462,7 +254,6 @@ public class AuctionService {
         if (bidCount > 0 || current.getHighestBidder() != null) {
             return "ERROR|Auction already has bids and cannot be edited";
         }
-
         if (current.getStatus() == AuctionStatus.RUNNING || current.getStatus() == AuctionStatus.FINISHED) {
             return "ERROR|Auction cannot be edited after it has started";
         }
@@ -498,12 +289,14 @@ public class AuctionService {
         return "UPDATE_AUCTION_SUCCESS|auctionId=" + auctionId;
     }
 
+    /**
+     * Xóa auction của người bán khi auction chưa bắt đầu và chưa có lượt đặt giá.
+     */
     public String deleteSellerAuction(String sellerUsername, String auctionId) {
         Auction auction = auctions.get(auctionId);
         if (auction == null) {
             return "ERROR|Auction not found";
         }
-
         if (!sellerUsername.equals(auction.getSellerUsername())) {
             return "ERROR|You can only delete your own auction";
         }
@@ -512,7 +305,6 @@ public class AuctionService {
         if (bidCount > 0 || auction.getHighestBidder() != null) {
             return "ERROR|Auction already has bids and cannot be deleted";
         }
-
         if (auction.getStatus() == AuctionStatus.RUNNING || auction.getStatus() == AuctionStatus.FINISHED) {
             return "ERROR|Auction cannot be deleted after it has started";
         }
@@ -527,12 +319,10 @@ public class AuctionService {
         return "DELETE_AUCTION_SUCCESS|auctionId=" + auctionId;
     }
 
-    public String addAuction(
-            String sellerUsername,
-            String itemName,
-            double startPrice
-    ) {
-
+    /**
+     * Tạo auction dạng Art đơn giản cho lệnh cũ ADD_AUCTION.
+     */
+    public String addAuction(String sellerUsername, String itemName, double startPrice) {
         Item item = new Art(
                 itemName,
                 startPrice,
@@ -542,13 +332,11 @@ public class AuctionService {
         );
 
         String response = createAuction(sellerUsername, item);
-
         if (!response.startsWith("CREATE_AUCTION_SUCCESS")) {
             return response;
         }
 
         String auctionId = extractField(response, "auctionId");
-
         return "ADD_AUCTION_SUCCESS"
                 + "|id=" + auctionId
                 + "|seller=" + sellerUsername
@@ -556,1140 +344,156 @@ public class AuctionService {
                 + "|startPrice=" + (long) startPrice;
     }
 
+    /**
+     * Đóng thủ công một auction đang hoạt động.
+     */
     public String closeAuction(String auctionId) {
-
-        Auction auction = auctions.get(auctionId);
-
-        if (auction == null) {
-            return "ERROR|Auction not found";
-        }
-
-        synchronized (auction) {
-
-            AuctionStateDAO.AuctionStateSnapshot state =
-                    syncAuctionFromDatabase(auction);
-
-            if (!isActiveAuction(auction)) {
-                return "ERROR|Auction is not open";
-            }
-
-            return finishAuction(
-                    auction,
-                    resolveBidCount(auctionId, state),
-                    "CLOSE_AUCTION_SUCCESS"
-            );
-        }
+        return lifecycleService().closeAuction(auctionId);
     }
 
+    /**
+     * Cập nhật trạng thái chạy đã lưu của auction.
+     */
     public String updateStatus(String auctionId, AuctionStatus newStatus) {
-
-        Auction auction = auctions.get(auctionId);
-
-        // Chuẩn hóa chuỗi lỗi theo cấu trúc: TÊN_LỆNH|status=FAILED|message=Nội_dung
-        if (auction == null) {
-            return "UPDATE_STATUS_RESULT|status=FAILED|message=Auction not found";
-        }
-
-        if (newStatus == null) {
-            return "UPDATE_STATUS_RESULT|status=FAILED|message=Invalid status";
-        }
-
-        synchronized (auction) {
-            syncAuctionFromDatabase(auction);
-            auction.setStatus(newStatus);
-            persistAuctionState(auction);
-        }
-
-        // Chuẩn hóa chuỗi thành công theo cấu trúc cặp key=value rõ ràng
-        return "UPDATE_STATUS_RESULT"
-                + "|status=SUCCESS"
-                + "|auctionId=" + auctionId
-                + "|newStatus=" + newStatus.name()
-                + "|message=Auction " + auctionId + " is now " + newStatus.name();
+        return lifecycleService().updateStatus(auctionId, newStatus);
     }
 
+    /**
+     * Trả thông tin người thắng sau khi auction không còn hoạt động.
+     */
     public String getWinner(String auctionId) {
-
-        Auction auction = auctions.get(auctionId);
-
-        if (auction == null) {
-            return "ERROR|Auction not found";
-        }
-
-        syncAuctionFromDatabase(auction);
-
-        if (isActiveAuction(auction)) {
-            return "ERROR|Auction is still running";
-        }
-
-        String winner =
-                auction.getHighestBidder() == null
-                        ? "NONE"
-                        : auction.getHighestBidder();
-
-        return "WINNER_INFO|auctionId="
-                + auctionId
-                + "|winner=" + winner
-                + "|finalPrice="
-                + (long) auction.getCurrentPrice()
-                + "|status=" + auction.getStatus();
+        return lifecycleService().getWinner(auctionId);
     }
 
+    /**
+     * Trả danh sách auction hiển thị ở màn lobby.
+     */
     public String getAuctionList() {
         return getAuctionList(false);
     }
 
-    public String getAuctionList(boolean includePending) {
-        // Khởi tạo chuỗi kết quả ban đầu
-        StringBuilder sb = new StringBuilder("AUCTION_LIST|");
-        boolean first = true;
-
-        for (Auction auction : auctions.values()) {
-            // ĐÃ XÓA dòng syncAuctionFromDatabase(auction) tại đây để bảo vệ hệ thống khỏi lỗi N+1 Query
-
-            // Bộ lọc trạng thái (Đã bao gồm FINISHED)
-            if (!includePending
-                    && auction.getStatus() != AuctionStatus.OPEN
-                    && auction.getStatus() != AuctionStatus.RUNNING
-                    && auction.getStatus() != AuctionStatus.FINISHED) {
-                continue;
-            }
-
-            if (!first) {
-                sb.append(";");
-            }
-
-            // Kiểm tra an toàn để tránh nối chữ "null" nếu dữ liệu trống
-            String id = auction.getId() == null ? "" : auction.getId();
-            String itemName = sanitizeListValue(auction.getItemName() == null ? "Unknown Item" : auction.getItemName());
-            String status = auction.getStatus() == null ? "UNKNOWN" : auction.getStatus().name();
-            String imageUrl = "";
-            String description = "";
-            String information1 = "";
-            String information2 = "";
-            String itemType = "";
-            String startDate = sanitizeListValue(auction.getStartDate());
-            String startTime = sanitizeListValue(auction.getStartClockTime());
-            String duration = String.valueOf(auction.getDurationMinutes());
-            try {
-                com.bidding.common.model.item.Item item = itemDAO.findById(auction.getItemId());
-                if (item != null) {
-                    if (item.getItemType() != null) {
-                        itemType = sanitizeListValue(item.getItemType().name());
-                    }
-                    if (item.getImageUrl() != null) {
-                        imageUrl = sanitizeListValue(item.getImageUrl());
-                    }
-                    if (item.getDescription() != null) {
-                        description = sanitizeListValue(item.getDescription());
-                    }
-                    String resolvedInformation1 = itemDAO.resolveInformation1(item);
-                    String resolvedInformation2 = itemDAO.resolveInformation2(item);
-                    if (resolvedInformation1 != null) {
-                        information1 = sanitizeListValue(resolvedInformation1);
-                    }
-                    if (resolvedInformation2 != null) {
-                        information2 = sanitizeListValue(resolvedInformation2);
-                    }
-                }
-            } catch (RuntimeException e) {
-                System.err.println("[AUCTION_LIST] Cannot load image for auction " + id + ": " + e.getMessage());
-            }
-
-            // Tiến hành nối chuỗi theo cấu trúc id:itemName:currentPrice:status
-            sb.append(id)
-                    .append(":")
-                    .append(itemName)
-                    .append(":")
-                    .append((long) auction.getCurrentPrice())
-                    .append(":")
-                    .append(status)
-                    .append(":")
-                    .append(imageUrl)
-                    .append(":")
-                    .append(description)
-                    .append(":")
-                    .append(information1)
-                    .append(":")
-                    .append(information2)
-                    .append(":")
-                    .append(startDate)
-                    .append(":")
-                    .append(startTime)
-                    .append(":")
-                    .append(duration)
-                    .append(":")
-                    .append(itemType)
-                    .append(":")
-                    .append(auction.getEndTime())
-                    .append(":")
-                    .append(System.currentTimeMillis());
-
-            first = false;
-        }
-
-        return sb.toString();
-    }
-
-    public String approveAuction(String auctionId) {
-        Auction auction = auctions.get(auctionId);
-
-        if (auction == null) {
-            return "ERROR|Auction not found";
-        }
-
-        synchronized (auction) {
-            syncAuctionFromDatabase(auction);
-
-            if (auction.getStatus() != AuctionStatus.PENDING) {
-                return "ERROR|Auction is not pending";
-            }
-
-            if (!auctionRecordDAO.approvePendingAuction(auctionId)) {
-                return "ERROR|Auction approval failed";
-            }
-
-            auction.setStatus(AuctionStatus.OPEN);
-            persistAuctionState(auction, bidHistoryDAO.countByAuctionId(auctionId));
-        }
-
-        return "APPROVE_AUCTION_SUCCESS|auctionId=" + auctionId;
-    }
-
-    public Auction findAuctionById(String auctionId) {
-
-        Auction auction = auctions.get(auctionId);
-
-        if (auction == null) {
-            return null;
-        }
-
-        syncAuctionFromDatabase(auction);
-        applyTimeBasedStatus(auction, System.currentTimeMillis());
-
-        return auction;
-    }
-
     /**
-     * Xử lý đặt giá cho một phiên đấu giá.
-     *
-     * <p>Flow:
-     * 1. Validate input (username, amount, auction tồn tại, seller không tự bid)
-     * 2. Kiểm tra trạng thái phiên (phải đang OPEN hoặc RUNNING, chưa hết giờ)
-     * 3. Cập nhật giá và bidder trên in-memory object
-     * 4. Áp dụng anti-sniping (nếu bid gần cuối phiên, gia hạn thêm 60s)
-     * 5. Persist vào DB (bid_history + auction_state)
-     * 6. Nếu fail DB → rollback in-memory state về giá trị cũ
-     * 7. Trigger auto-bid chain cho các bidder khác
-     *
-     * @throws AuctionNotFoundException nếu phiên không tồn tại
-     * @throws AuctionClosedException nếu phiên đã đóng hoặc hết giờ
-     * @throws InvalidBidException nếu giá không hợp lệ
+     * Trả danh sách auction cho lobby, có thể kèm auction PENDING cho màn quản trị/người bán.
      */
-    public String placeBid(
-            String auctionId,
-            String username,
-            double amount
-    ) {
-
-        if (username == null
-                || username.isBlank()) {
-
-            throw new InvalidBidException(
-                    "Username is required"
-            );
-        }
-
-        if (amount <= 0) {
-            throw new InvalidBidException(
-                    "Invalid bid amount"
-            );
-        }
-
-        Auction auction = auctions.get(auctionId);
-
-        if (auction == null) {
-            throw new AuctionNotFoundException(
-                    "Auction not found"
-            );
-        }
-
-        if (auction.getSellerUsername().equals(username)) {
-            throw new InvalidBidException(
-                    "Seller cannot bid on their own auction"
-            );
-        }
-
-        synchronized (auction) {
-
-            long now = System.currentTimeMillis();
-            applyTimeBasedStatus(auction, now);
-
-            if (auction.getStatus() == AuctionStatus.OPEN
-                    && now < auction.getStartTimeMillis()) {
-                throw new AuctionClosedException(
-                        "Auction has not started yet"
-                );
-            }
-
-            if (isActiveAuction(auction)
-                    && now >= auction.getEndTime()) {
-
-                finishAuction(
-                        auction,
-                        bidHistoryDAO.countByAuctionId(
-                                auctionId
-                        ),
-                        "AUCTION_CLOSED"
-                );
-
-                throw new AuctionClosedException(
-                        "Auction is not available"
-                );
-            }
-
-            if (auction.getStatus()
-                    == AuctionStatus.PENDING
-                    || auction.getStatus()
-                    == AuctionStatus.FINISHED
-                    || auction.getStatus()
-                    == AuctionStatus.PAID
-                    || auction.getStatus()
-                    == AuctionStatus.CANCELED) {
-
-                throw new AuctionClosedException(
-                        "Auction is not available"
-                );
-            }
-
-            double minIncrement = calculateMinIncrement(
-                    auction.getCurrentPrice()
-            );
-
-            double minimumValidBid =
-                    auction.getCurrentPrice() + minIncrement;
-
-            if (amount < minimumValidBid) {
-
-                throw new InvalidBidException(
-                        "Minimum valid bid is " + (long) minimumValidBid
-                );
-            }
-
-            AuctionStatus previousStatus =
-                    auction.getStatus();
-
-            double previousPrice =
-                    auction.getCurrentPrice();
-
-            String previousHighestBidder =
-                    auction.getHighestBidder();
-
-            long previousEndTime =
-                    auction.getEndTime();
-
-            auction.setCurrentPrice(amount);
-            auction.setHighestBidder(username);
-
-            applyAntiSniping(auction, now);
-
-            try {
-
-                bidHistoryDAO.save(
-                        auctionId,
-                        username,
-                        amount,
-                        now
-                );
-
-                persistAuctionState(auction);
-
-            } catch (RuntimeException e) {
-
-                auction.setStatus(previousStatus);
-
-                auction.setCurrentPrice(previousPrice);
-
-                auction.setHighestBidder(
-                        previousHighestBidder
-                );
-
-                auction.setEndTime(previousEndTime);
-
-                throw e;
-            }
-
-            auction.addBidRecord(
-                    new BidRecord(
-                            username,
-                            amount,
-                            now
-                    )
-            );
-
-            applyProxyAutoBidAfterManualBid(
-                    auction,
-                    username,
-                    amount,
-                    now
-            );
-
-            return "BID_RESULT"
-                    + "|status=SUCCESS"
-                    + "|auctionId=" + auctionId
-                    + "|user=" + username
-                    + "|amount=" + (long) amount
-                    + "|message=Bid placed successfully";
-        }
-    }
-
-    public String setAutoBid(
-            String auctionId,
-            String username,
-            double maxBid,
-            double increment
-    ) {
-
-        Auction auction = auctions.get(auctionId);
-
-        if (auction == null) {
-            return "ERROR|Auction not found";
-        }
-
-        synchronized (auction) {
-
-            syncAuctionFromDatabase(auction);
-            applyTimeBasedStatus(auction, System.currentTimeMillis());
-
-            if (increment <= 0) {
-                return "ERROR|Increment invalid";
-            }
-
-            if (auction.getStatus() != AuctionStatus.RUNNING) {
-                return "ERROR|Auto-bid is only available when auction is running";
-            }
-
-            double minIncrement = calculateMinIncrement(
-                    auction.getCurrentPrice()
-            );
-
-            if (increment < minIncrement) {
-                return "ERROR|Increment too small";
-            }
-
-            double minimumValidBid =
-                    auction.getCurrentPrice() + minIncrement;
-
-            if (maxBid < minimumValidBid) {
-
-                return "ERROR|Max bid must be at least "
-                        + (long) minimumValidBid;
-            }
-
-            AutoBid autoBid = new AutoBid(
-                    Long.parseLong(auctionId),
-                    username,
-                    maxBid,
-                    increment
-            );
-
-            autoBidDAO.upsert(autoBid);
-
-            repriceAuctionFromAutoBids(
-                    auction,
-                    System.currentTimeMillis()
-            );
-
-            return "AUTO_BID_SET"
-                    + "|auctionId=" + auctionId
-                    + "|user=" + username
-                    + "|maxBid=" + (long) maxBid
-                    + "|increment=" + (long) increment
-                    + "|active=true";
-        }
-    }
-
-    public String getAutoBid(String auctionId, String username) {
-        if (auctionId == null || auctionId.isBlank()) {
-            return "ERROR|Auction id required";
-        }
-
-        AutoBid autoBid = autoBidDAO.findOne(Long.parseLong(auctionId), username);
-        if (autoBid == null) {
-            return "AUTO_BID_STATUS"
-                    + "|auctionId=" + auctionId
-                    + "|user=" + sanitizeMessageValue(username)
-                    + "|active=false";
-        }
-
-        return "AUTO_BID_STATUS"
-                + "|auctionId=" + auctionId
-                + "|user=" + sanitizeMessageValue(username)
-                + "|maxBid=" + (long) autoBid.getMaxBid()
-                + "|increment=" + (long) autoBid.getIncrement()
-                + "|active=" + autoBid.isActive();
-    }
-
-    public String disableAutoBid(String auctionId, String username) {
-        if (auctionId == null || auctionId.isBlank()) {
-            return "ERROR|Auction id required";
-        }
-
-        autoBidDAO.disable(Long.parseLong(auctionId), username);
-        return "AUTO_BID_DISABLED"
-                + "|auctionId=" + auctionId
-                + "|user=" + sanitizeMessageValue(username)
-                + "|active=false";
-    }
-
-    public String payAuction(String auctionId, String username) {
-        if (auctionId == null || auctionId.isBlank()) {
-            return "PAY_AUCTION_RESULT|status=FAILED|message=Auction id required";
-        }
-        if (username == null || username.isBlank()) {
-            return "PAY_AUCTION_RESULT|status=FAILED|message=Username required";
-        }
-
-        Auction auction = auctions.get(auctionId);
-        if (auction == null) {
-            return "PAY_AUCTION_RESULT|status=FAILED|message=Auction not found";
-        }
-
-        synchronized (auction) {
-            syncAuctionFromDatabase(auction);
-
-            if (auction.getStatus() == AuctionStatus.PAID) {
-                return "PAY_AUCTION_RESULT|status=FAILED|auctionId=" + auctionId + "|message=Auction already paid";
-            }
-
-            if (auction.getStatus() == AuctionStatus.CANCELED) {
-                return "PAY_AUCTION_RESULT|status=FAILED|auctionId=" + auctionId + "|message=Auction was canceled";
-            }
-
-            if (auction.getStatus() != AuctionStatus.FINISHED) {
-                return "PAY_AUCTION_RESULT|status=FAILED|auctionId=" + auctionId + "|message=Auction is not ready for payment";
-            }
-
-            String winner = auction.getHighestBidder();
-            if (winner == null || winner.isBlank() || !winner.equalsIgnoreCase(username)) {
-                return "PAY_AUCTION_RESULT|status=FAILED|auctionId=" + auctionId + "|message=Only the winner can pay";
-            }
-
-            double amount = auction.getCurrentPrice();
-            double buyerBalance = userDAO.getBalanceByUsername(username);
-            if (buyerBalance < amount) {
-                auction.setStatus(AuctionStatus.CANCELED);
-                persistAuctionState(auction, bidHistoryDAO.countByAuctionId(auctionId));
-                return "PAY_AUCTION_RESULT|status=FAILED|auctionId=" + auctionId + "|newStatus=CANCELED|message=Insufficient balance";
-            }
-
-            String sellerUsername = auction.getSellerUsername();
-            double sellerBalance = userDAO.getBalanceByUsername(sellerUsername);
-            userDAO.updateBalance(username, buyerBalance - amount);
-            userDAO.updateBalance(sellerUsername, sellerBalance + amount);
-            long paidAt = System.currentTimeMillis();
-            transactionDAO.save(
-                    username,
-                    "PAYMENT",
-                    amount,
-                    "Thanh toán cho phiên đấu giá " + auction.getItemName(),
-                    "thành công",
-                    auctionId,
-                    paidAt
-            );
-            transactionDAO.save(
-                    sellerUsername,
-                    "RECEIVE_PAYMENT",
-                    amount,
-                    "Nhận tiền thanh toán từ phiên đấu giá " + auction.getItemName(),
-                    "thành công",
-                    auctionId,
-                    paidAt
-            );
-
-            auction.setStatus(AuctionStatus.PAID);
-            persistAuctionState(auction, bidHistoryDAO.countByAuctionId(auctionId));
-
-            return "PAY_AUCTION_RESULT|status=SUCCESS"
-                    + "|auctionId=" + auctionId
-                    + "|newStatus=PAID"
-                    + "|paidAmount=" + (long) amount
-                    + "|buyerBalance=" + (long) (buyerBalance - amount)
-                    + "|seller=" + sanitizeMessageValue(sellerUsername)
-                    + "|message=Payment completed";
-        }
+    public String getAuctionList(boolean includePending) {
+        return queryService().getAuctionList(includePending);
     }
 
     /**
-     * Quét tất cả phiên đấu giá và đóng những phiên đã hết giờ.
-     * Được gọi định kỳ bởi AuctionServer (mỗi 5 giây) để tự động kết thúc phiên.
-     *
-     * <p>Logic quan trọng: endTime runtime có thể khác DB (do anti-sniping gia hạn),
-     * nên phải lưu lại localEndTime trước sync, rồi restore nếu bị DB ghi đè.
-     *
-     * @return danh sách notification cần broadcast cho client (AUCTION_STARTED, AUCTION_CLOSED)
+     * Duyệt auction PENDING và chuyển sang OPEN.
+     */
+    public String approveAuction(String auctionId) {
+        return lifecycleService().approveAuction(auctionId);
+    }
+
+    /**
+     * Tìm auction và đồng bộ trạng thái chạy trước khi trả về.
+     */
+    public Auction findAuctionById(String auctionId) {
+        return queryService().findAuctionById(auctionId);
+    }
+
+    /**
+     * Đặt giá thông qua BidService và giữ nguyên định dạng phản hồi socket.
+     */
+    public String placeBid(String auctionId, String username, double amount) {
+        return bidService().placeBid(auctionId, username, amount);
+    }
+
+    /**
+     * Bật hoặc cập nhật auto-bid cho người dùng trên auction đang chạy.
+     */
+    public String setAutoBid(String auctionId, String username, double maxBid, double increment) {
+        return autoBidService().setAutoBid(auctionId, username, maxBid, increment);
+    }
+
+    /**
+     * Trả cấu hình auto-bid hiện tại của người dùng trong auction.
+     */
+    public String getAutoBid(String auctionId, String username) {
+        return autoBidService().getAutoBid(auctionId, username);
+    }
+
+    /**
+     * Tắt cấu hình auto-bid của người dùng trong auction.
+     */
+    public String disableAutoBid(String auctionId, String username) {
+        return autoBidService().disableAutoBid(auctionId, username);
+    }
+
+    /**
+     * Xử lý thanh toán của người thắng và chuyển tiền từ người mua sang người bán.
+     */
+    public String payAuction(String auctionId, String username) {
+        return paymentService().payAuction(auctionId, username);
+    }
+
+    /**
+     * Đóng các auction hết hạn và trả thông báo thời gian thực để phát tới máy khách.
      */
     public List<String> closeExpiredAuctions() {
-
-        List<String> notifications =
-                new ArrayList<>();
-
-        long now = System.currentTimeMillis();
-
-        for (Auction auction : auctions.values()) {
-            applyTimeBasedStatus(auction, System.currentTimeMillis());
-
-            synchronized (auction) {
-
-                // Lưu lại endTime runtime trước khi sync, vì syncAuctionFromDatabase() gọi
-                // setStartTimeMillis() → tính lại endTime từ duration, có thể ghi đè giá trị
-                // đã được anti-sniping hoặc hệ thống điều chỉnh.
-                long localEndTime = auction.getEndTime();
-                syncAuctionFromDatabase(auction);
-                if (localEndTime != auction.getEndTime()) {
-                    auction.setEndTime(localEndTime);
-                    persistAuctionState(auction, 0);
-                }
-
-                if (applyTimeBasedStatus(auction, now)) {
-                    notifications.add("AUCTION_STARTED|auctionId=" + auction.getId());
-                }
-
-                if (isActiveAuction(auction)
-                        && now >= auction.getEndTime()) {
-
-                    notifications.add(
-                            finishAuction(
-                                    auction,
-                                    bidHistoryDAO.countByAuctionId(
-                                            auction.getId()
-                                    ),
-                                    "AUCTION_CLOSED"
-                            )
-                    );
-                }
-            }
-        }
-
-        return notifications;
-    }
-
-    private boolean isActiveAuction(Auction auction) {
-
-        return auction.getStatus()
-                == AuctionStatus.OPEN
-                || auction.getStatus()
-                == AuctionStatus.RUNNING
-                || auction.getStatus()
-                == AuctionStatus.PENDING;
+        return lifecycleService().closeExpiredAuctions();
     }
 
     /**
-     * Đánh dấu phiên đấu giá là FINISHED và persist vào DB.
-     * Nếu phiên đã FINISHED rồi thì trả về message ngắn (idempotent).
-     *
-     * @param auction   phiên cần đóng
-     * @param bidCount  số lượt bid hiện tại (để lưu vào snapshot)
-     * @param messageType loại message trả về ("AUCTION_CLOSED" hoặc "CLOSE_AUCTION_SUCCESS")
-     * @return chuỗi notification dạng "AUCTION_CLOSED|auctionId=X|winner=Y|finalPrice=Z"
+     * Tính bước giá tối thiểu hợp lệ từ giá hiện tại.
      */
-    private String finishAuction(
-            Auction auction,
-            int bidCount,
-            String messageType
-    ) {
-
-        if (auction.getStatus()
-                == AuctionStatus.FINISHED) {
-
-            return messageType
-                    + "|auctionId="
-                    + auction.getId();
-        }
-
-        auction.setStatus(AuctionStatus.FINISHED);
-
-        persistAuctionState(auction, bidCount);
-
-        String winner =
-                auction.getHighestBidder() == null
-                        ? "NONE"
-                        : auction.getHighestBidder();
-
-        return messageType
-                + "|auctionId=" + auction.getId()
-                + "|winner=" + winner
-                + "|finalPrice="
-                + (long) auction.getCurrentPrice();
+    public double calculateMinIncrement(double currentPrice) {
+        return validationService().calculateMinIncrement(currentPrice);
     }
 
     /**
-     * Đồng bộ trạng thái in-memory của auction với DB.
-     * Cần thiết vì nhiều instance AuctionService có thể cùng chạy (hoặc restart),
-     * nên phải đọc lại giá trị mới nhất từ bảng auction_state.
-     *
-     * <p>Lưu ý: setStartTimeMillis() sẽ tính lại endTime = start + duration,
-     * có thể ghi đè endTime đã được anti-sniping gia hạn. Caller cần bảo vệ endTime nếu cần.
+     * Trả thông tin chi tiết auction cho màn chi tiết sản phẩm.
      */
-    private AuctionStateDAO.AuctionStateSnapshot
-    syncAuctionFromDatabase(Auction auction) {
-
-        AuctionStateDAO.AuctionStateSnapshot state =
-                auctionStateDAO.findByAuctionId(
-                        auction.getId()
-                );
-
-        if (state == null) {
-            return null;
-        }
-
-        auction.setCurrentPrice(state.currentPrice());
-        auction.setStatus(state.status());
-        auction.setHighestBidder(state.highestBidder());
-        auction.setStartTimeMillis(state.startTimeMillis());
-        auction.setDurationMinutes(state.durationMinutes());
-        if (state.endTimeMillis() > auction.getEndTime()) {
-            auction.setEndTime(state.endTimeMillis());
-        }
-
-        return state;
+    public String getAuctionDetail(String auctionId) {
+        return queryService().getAuctionDetail(auctionId);
     }
 
-    private int resolveBidCount(
-            String auctionId,
-            AuctionStateDAO.AuctionStateSnapshot state
-    ) {
+    /**
+     * Trả thông tin sản phẩm rút gọn cho yêu cầu chi tiết sản phẩm cũ.
+     */
+    public String getProductInfo(String auctionId) {
+        return queryService().getProductInfo(auctionId);
+    }
 
-        return state != null
-                ? state.bidCount()
-                : bidHistoryDAO.countByAuctionId(
-                auctionId
+    /**
+     * Trả lịch sử đặt giá theo định dạng giao thức BID_HISTORY.
+     */
+    public String getBidHistory(String auctionId) {
+        return queryService().getBidHistory(auctionId);
+    }
+
+    private void saveAuctionRecord(Auction auction, Item savedItem, String sellerUsername, AuctionStatus status) {
+        auctionRecordDAO.save(
+                auction.getId(),
+                savedItem.getId(),
+                sellerUsername,
+                savedItem.getStartingPrice(),
+                auction.getStartTimeMillis(),
+                auction.getEndTime(),
+                auction.getDurationMinutes(),
+                status
         );
     }
 
+    /**
+     * Lưu bản chụp auction trong bộ nhớ xuống bảng trạng thái chạy và bảng danh sách.
+     */
     private void persistAuctionState(Auction auction) {
-
-        persistAuctionState(
-                auction,
-                bidHistoryDAO.countByAuctionId(
-                        auction.getId()
-                )
-        );
+        persistAuctionState(auction, bidHistoryDAO.countByAuctionId(auction.getId()));
     }
 
-    private void persistAuctionState(
-            Auction auction,
-            int bidCount
-    ) {
-
-        auctionStateDAO.upsert(
-                auction,
-                bidCount
-        );
-
+    private void persistAuctionState(Auction auction, int bidCount) {
+        auctionStateDAO.upsert(auction, bidCount);
         auctionRecordDAO.updateState(auction);
     }
 
-    public double calculateMinIncrement(double currentPrice) {
-        return Math.max(
-                1000,
-                Math.ceil(currentPrice * 0.005)
-        );
-    }
-
-    private void applyProxyAutoBidAfterManualBid(
-            Auction auction,
-            String manualBidder,
-            double manualAmount,
-            long now
-    ) {
-
-        AutoBid winner = findHighestAutoBid(
-                auction,
-                manualBidder
-        );
-
-        if (winner == null
-                || winner.getMaxBid() <= manualAmount) {
-            return;
-        }
-
-        double minIncrement = calculateMinIncrement(manualAmount);
-
-        double proxyPrice = Math.min(
-                winner.getMaxBid(),
-                manualAmount + minIncrement
-        );
-
-        applyProxyBidResult(
-                auction,
-                winner.getBidderUsername(),
-                proxyPrice,
-                now
-        );
-    }
-
-    private void repriceAuctionFromAutoBids(
-            Auction auction,
-            long now
-    ) {
-
-        List<AutoBid> autoBids =
-                findActiveAutoBidsSorted(auction);
-
-        if (autoBids.isEmpty()) {
-            return;
-        }
-
-        AutoBid winner = autoBids.get(0);
-
-        double proxyPrice;
-        if (autoBids.size() == 1) {
-            double minIncrement = calculateMinIncrement(
-                    auction.getCurrentPrice()
-            );
-            proxyPrice = Math.min(
-                    winner.getMaxBid(),
-                    auction.getCurrentPrice() + minIncrement
-            );
-        } else {
-            AutoBid runnerUp = autoBids.get(1);
-            double minIncrement = calculateMinIncrement(
-                    runnerUp.getMaxBid()
-            );
-            proxyPrice = Math.min(
-                    winner.getMaxBid(),
-                    runnerUp.getMaxBid() + minIncrement
-            );
-            proxyPrice = Math.max(
-                    auction.getCurrentPrice(),
-                    proxyPrice
-            );
-        }
-
-        applyProxyBidResult(
-                auction,
-                winner.getBidderUsername(),
-                proxyPrice,
-                now
-        );
-    }
-
-    /**
-     * Returns the highest active auto-bidder, excluding the normal bidder
-     * when proxy bidding reacts to a manual bid.
-     */
-    private AutoBid findHighestAutoBid(
-            Auction auction,
-            String excludedBidder
-    ) {
-
-        List<AutoBid> autoBids =
-                findActiveAutoBidsSorted(auction);
-
-        for (AutoBid autoBid : autoBids) {
-            if (!autoBid.getBidderUsername()
-                    .equals(excludedBidder)) {
-                return autoBid;
-            }
-        }
-
-        return null;
-    }
-
-    private List<AutoBid> findActiveAutoBidsSorted(
-            Auction auction
-    ) {
-
-        List<AutoBid> autoBids = new ArrayList<>(
-                autoBidDAO.findActiveByAuction(
-                        Long.parseLong(auction.getId())
-                )
-        );
-
-        autoBids.removeIf(autoBid ->
-                !autoBid.isActive()
-                        || autoBid.getBidderUsername() == null
-                        || autoBid.getMaxBid()
-                        <= auction.getCurrentPrice()
-        );
-
-        autoBids.sort(
-                Comparator
-                        .comparingDouble(AutoBid::getMaxBid)
-                        .reversed()
-        );
-
-        return autoBids;
-    }
-
-    private void applyProxyBidResult(
-            Auction auction,
-            String bidder,
-            double amount,
-            long now
-    ) {
-
-        if (amount < auction.getCurrentPrice()) {
-            return;
-        }
-
-        boolean stateChanged =
-                amount != auction.getCurrentPrice()
-                        || !bidder.equals(
-                        auction.getHighestBidder()
-                );
-
-        auction.setCurrentPrice(amount);
-        auction.setHighestBidder(bidder);
-
-        applyAntiSniping(auction, now);
-
-        if (stateChanged) {
-            bidHistoryDAO.save(
-                    auction.getId(),
-                    bidder,
-                    amount,
-                    now
-            );
-
-            auction.addBidRecord(
-                    new BidRecord(
-                            bidder,
-                            amount,
-                            now
-                    )
-            );
-        }
-
-        persistAuctionState(auction);
-    }
-
-    /**
-     * Chống snipe: nếu bid được đặt trong 30 giây cuối phiên, gia hạn thêm 60 giây.
-     * Đảm bảo các bidder khác có thời gian phản ứng, tránh chiến thuật "chờ giây cuối mới bid".
-     *
-     * <p>Chỉ kích hoạt khi: remaining > 0 VÀ remaining <= 30s (ANTI_SNIPE_THRESHOLD_MS).
-     * endTime mới sẽ được persist ngay vào DB.
-     */
-    private void applyAntiSniping(
-            Auction auction,
-            long now
-    ) {
-
-        long remaining =
-                auction.getEndTime() - now;
-
-        long oldEndTime =
-                auction.getEndTime();
-
-        if (remaining > 0
-                && remaining <= ANTI_SNIPE_THRESHOLD_MS) {
-
-            auction.extendEndTime(ANTI_SNIPE_EXTENSION_MS);
-
-            System.out.println(
-                    "[ANTI-SNIPING] Auction "
-                            + auction.getId()
-                            + " extended from "
-                            + oldEndTime
-                            + " to "
-                            + auction.getEndTime());
-            persistAuctionState(auction, 0);
-        }
-    }
-
-    private boolean applyTimeBasedStatus(Auction auction, long now) {
-        if (auction == null) {
-            return false;
-        }
-
-        if (auction.getStatus() == AuctionStatus.OPEN
-                && now >= auction.getStartTimeMillis()
-                && now < auction.getEndTime()) {
-            auction.setStatus(AuctionStatus.RUNNING);
-            persistAuctionState(auction);
-            return true;
-        }
-
-        return false;
-    }
-    public String getAuctionDetail(String auctionId) {
-        Auction auction = auctions.get(auctionId);
-
-        if (auction == null) {
-            return "ERROR|Auction not found";
-        }
-
-        syncAuctionFromDatabase(auction);
-        applyTimeBasedStatus(auction, System.currentTimeMillis());
-
-        String bidder = auction.getHighestBidder() == null ? "NONE" : auction.getHighestBidder();
-
-        String imageUrl = "";
-        String information1 = "";
-        String information2 = "";
-        String itemType = "";
-
-        try {
-            com.bidding.common.model.item.Item item = itemDAO.findById(auction.getItemId());
-            if (item != null) {
-                if (item.getImageUrl() != null) imageUrl = item.getImageUrl();
-                if (item.getItemType() != null) itemType = item.getItemType().name();
-                String description = item.getDescription();
-
-                String i1 = itemDAO.resolveInformation1(item);
-                String i2 = itemDAO.resolveInformation2(item);
-                if (i1 != null) information1 = i1;
-                if (i2 != null) information2 = i2;
-                if (description != null) {
-                    information2 = information2 == null ? "" : information2;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        String statusStr = auction.getStatus() == null ? "UNKNOWN" : auction.getStatus().name();
-
-        return "AUCTION_DETAIL"
-                + "|id=" + auction.getId()
-                + "|seller=" + auction.getSellerUsername()
-                + "|itemName=" + auction.getItemName()
-                + "|startPrice=" + (long) auction.getStartPrice()
-                + "|currentPrice=" + (long) auction.getCurrentPrice()
-                + "|highestBidder=" + bidder
-                + "|status=" + statusStr
-                + "|startDate=" + auction.getStartDate()
-                + "|startTime=" + auction.getStartClockTime()
-                + "|duration=" + auction.getDurationMinutes()
-                + "|bidCount=" + bidHistoryDAO.countByAuctionId(auctionId)
-                + "|imageUrl=" + imageUrl
-                + "|information1=" + information1
-                + "|information2=" + information2
-                + "|description=" + sanitizeMessageValue(getItemDescription(auction.getItemId()))
-                + "|itemType=" + itemType
-                + "|endTime=" + auction.getEndTime()
-                + "|serverTime=" + System.currentTimeMillis();
-    }
-
-    private String getItemDescription(long itemId) {
-        try {
-            com.bidding.common.model.item.Item item = itemDAO.findById(itemId);
-            return item == null ? "" : item.getDescription();
-        } catch (RuntimeException e) {
-            return "";
-        }
-    }
-
-    private String sanitizeMessageValue(String value) {
-        if (value == null) {
-            return "";
-        }
-        return value.replace("|", " ").replace("\r", " ").replace("\n", " ").trim();
-    }
-
-    private String sanitizeListValue(String value) {
-        if (value == null) {
-            return "";
-        }
-        return value
-                .replace(":", " ")
-                .replace(";", " ")
-                .replace("|", " ")
-                .replace("\r", " ")
-                .replace("\n", " ")
-                .trim();
-    }
-
-    private String formatEpochDate(long epochMillis) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(epochMillis);
-        return String.format("%04d-%02d-%02d",
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH) + 1,
-                calendar.get(Calendar.DAY_OF_MONTH));
-    }
-
-    private String formatEpochTime(long epochMillis) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(epochMillis);
-        return String.format("%02d:%02d:%02d",
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE),
-                calendar.get(Calendar.SECOND));
-    }
-
-
-    public String getProductInfo(String auctionId) {
-
-        Auction auction = auctions.get(auctionId);
-
-        if (auction == null) {
-            return "ERROR|Auction not found";
-        }
-
-        syncAuctionFromDatabase(auction);
-
-        String bidder =
-                auction.getHighestBidder() == null
-                        ? "NONE"
-                        : auction.getHighestBidder();
-
-        return "PRODUCT_INFO"
-                + "|id=" + auction.getId()
-                + "|seller=" + auction.getSellerUsername()
-                + "|itemName=" + auction.getItemName()
-                + "|startPrice=" + (long) auction.getStartPrice()
-                + "|currentPrice=" + (long) auction.getCurrentPrice()
-                + "|highestBidder=" + bidder
-                + "|status=" + auction.getStatus()
-                + "|bidCount="
-                + bidHistoryDAO.countByAuctionId(
-                auctionId
-        );
-    }
-
-    public String getBidHistory(String auctionId) {
-
-        if (!auctions.containsKey(auctionId)) {
-            return "ERROR|Auction not found";
-        }
-
-        StringBuilder sb = new StringBuilder(
-                "BID_HISTORY|auctionId="
-                        + auctionId
-                        + "|entries="
-        );
-
-        boolean first = true;
-
-        for (BidRecord record
-                : bidHistoryDAO.findByAuctionId(auctionId)) {
-
-            if (!first) {
-                sb.append(";");
-            }
-
-            sb.append(record.getBidderUsername())
-                    .append(",")
-                    .append((long) record.getAmount())
-                    .append(",")
-                    .append(record.getTimestamp());
-
-            first = false;
-        }
-
-        return sb.toString();
-    }
-
     private String extractField(String message, String key) {
-
         for (String part : message.split("\\|")) {
             if (part.startsWith(key + "=")) {
                 return part.substring((key + "=").length());
             }
         }
-
         return "";
     }
 }
