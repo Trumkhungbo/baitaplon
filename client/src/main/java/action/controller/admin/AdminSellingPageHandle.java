@@ -48,6 +48,20 @@ public class AdminSellingPageHandle implements Initializable, SocketListener {
         ProductTime.setCellValueFactory(new PropertyValueFactory<>("itemtime"));
         SellingTime.setCellValueFactory(new PropertyValueFactory<>("itemduration"));
         CheckBox.setCellValueFactory(new PropertyValueFactory<>("checkBox"));
+        // Ensure table cell uses the ItemsHolder's CheckBox instance (avoid cell-local copies)
+        CheckBox.setCellFactory(column -> new TableCell<ItemsHolder, CheckBox>() {
+            @Override
+            protected void updateItem(CheckBox item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    ItemsHolder row = (ItemsHolder) getTableRow().getItem();
+                    setGraphic(row.getCheckBox());
+                }
+            }
+        });
 
         STTColumn.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -124,21 +138,14 @@ public class AdminSellingPageHandle implements Initializable, SocketListener {
             String dataPart = data.substring("AUCTION_LIST|".length());
             if (!dataPart.isBlank()) {
                 for (String itemData : dataPart.split(";")) {
-                    String[] attr = itemData.split(":");
-                    if (attr.length >= 11) {
-                        list.add(List.of(
-                                attr[0],
-                                attr[1],
-                                attr[2],
-                                attr[3],
-                                attr[4],
-                                attr[5],
-                                attr[6],
-                                attr[7],
-                                attr[8],
-                                attr[9],
-                                attr[10]
-                        ));
+                    String[] attr = itemData.split(":", -1);
+                    // Accept both 10- and 11-field payloads from server and pad missing fields with empty string
+                    if (attr.length >= 10) {
+                        List<String> row = new ArrayList<>();
+                        for (int i = 0; i <= 10; i++) {
+                            row.add(i < attr.length ? attr[i] : "");
+                        }
+                        list.add(row);
                     }
                 }
             }

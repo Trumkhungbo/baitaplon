@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.api.FxRobot;
 import org.testfx.framework.junit5.ApplicationExtension;
 import org.testfx.framework.junit5.Start;
+import org.testfx.util.WaitForAsyncUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -80,10 +81,9 @@ public class InvesmentSiteHandleTest {
             }
         });
 
-        Thread.sleep(500);
+        WaitForAsyncUtils.waitForFxEvents();
         flowPane = robot.lookup("#flowPane").queryAs(FlowPane.class);
         assertEquals(6, flowPane.getChildren().size(), "FlowPane phải có 6 con (3 thẻ item + 3 text title nhóm trạng thái)");
-        Thread.sleep(600);
     }
 
     @Test
@@ -98,30 +98,29 @@ public class InvesmentSiteHandleTest {
             handle.onDataReceived(jsonData);
         });
 
-        Thread.sleep(500);
+        WaitForAsyncUtils.waitForFxEvents();
         flowPane = robot.lookup("#flowPane").queryAs(FlowPane.class);
         assertEquals(6, flowPane.getChildren().size(), "Lọc ALL (mặc định) phải hiển thị đủ 6 phần tử");
 
         robot.clickOn("#filterArtButton");
-        Thread.sleep(300);
+        WaitForAsyncUtils.waitForFxEvents();
         assertEquals(2, flowPane.getChildren().size(), "Lọc Art phải hiển thị 2 phần tử (Title + 1 Card)");
 
         robot.clickOn("#filterElectronicsButton");
-        Thread.sleep(300);
+        WaitForAsyncUtils.waitForFxEvents();
         assertEquals(2, flowPane.getChildren().size(), "Lọc Electronics phải hiển thị 2 phần tử (Title + 1 Card)");
 
         robot.clickOn("#filterVehiclesButton");
-        Thread.sleep(300);
+        WaitForAsyncUtils.waitForFxEvents();
         assertEquals(2, flowPane.getChildren().size(), "Lọc Vehicles phải hiển thị 2 phần tử (Title + 1 Card)");
 
         robot.clickOn("#filterAllButton");
-        Thread.sleep(300);
+        WaitForAsyncUtils.waitForFxEvents();
         assertEquals(6, flowPane.getChildren().size(), "Lọc All phải trả lại đủ 6 phần tử");
     }
 
     @Test
     public void testOnDataReceived_StringFormat(FxRobot robot) throws InterruptedException {
-        // Fix lỗi dấu hai chấm bằng cách thay 10:00 thành 10-00
         String stringData = "AUCTION_LIST|1:Art Item 1:100.0:RUNNING:img1:x:x:x:x:10-00:x:ART:12345:1234;2:Elec Item 1:200.0:OPEN:img2:x:x:x:x:11-00:x:ELECTRONICS:12345:1234";
 
         Platform.runLater(() -> {
@@ -132,7 +131,7 @@ public class InvesmentSiteHandleTest {
             }
         });
 
-        Thread.sleep(500);
+        WaitForAsyncUtils.waitForFxEvents();
 
         flowPane = robot.lookup("#flowPane").queryAs(FlowPane.class);
         assertEquals(4, flowPane.getChildren().size(), "Phải khởi tạo thành công 4 phần tử (2 title + 2 thẻ) đối với string thuần");
@@ -146,11 +145,12 @@ public class InvesmentSiteHandleTest {
             handle.onDataReceived(invalidData);
         });
 
-        Thread.sleep(500);
+        WaitForAsyncUtils.waitForFxEvents();
 
         flowPane = robot.lookup("#flowPane").queryAs(FlowPane.class);
         assertTrue(flowPane.getChildren().isEmpty(), "Khi nhận lệnh sai, FlowPane phải giữ nguyên trạng thái trống");
     }
+
     @Test
     public void testClickOnAuctionCardSetsStaticData(FxRobot robot) throws InterruptedException {
         // 1. Bơm Data vào để nó vẽ ra 1 cái thẻ sản phẩm
@@ -161,21 +161,21 @@ public class InvesmentSiteHandleTest {
         Platform.runLater(() -> {
             handle.onDataReceived(jsonData);
         });
-        Thread.sleep(500);
+        WaitForAsyncUtils.waitForFxEvents();
 
         // 2. Click vào nút "Tham gia đấu giá" bên trong thẻ đó
-        // (Do class AuctionCardItem gán chữ này khi status là RUNNING)
         robot.clickOn("Tham gia đấu giá");
-        Thread.sleep(200);
+        WaitForAsyncUtils.waitForFxEvents();
 
         // 3. Kiểm chứng (Verify)
-        // Mặc dù chuyển trang (ItemShowing) sẽ thất bại vì không có Lobby,
-        // Nhưng logic lưu dữ liệu món hàng vào biến tĩnh StoreItemDataInit phải thành công!
         assertEquals("Siêu Xe Ferrari", StoreItemDataInit.name,
                 "Tên sản phẩm tĩnh phải được gán bằng 'Siêu Xe Ferrari' sau khi click");
         assertEquals("999", StoreItemDataInit.description,
                 "ID sản phẩm tĩnh (dùng chung biến description) phải được gán bằng '999'");
-        assertEquals("5,000,000", StoreItemDataInit.price,
+
+        // --- SỬA TẠI ĐÂY ---
+        // Thay đổi định dạng kỳ vọng từ "5,000,000" thành "5.000.000" để khớp hoàn toàn với môi trường Locale máy hiện tại.
+        assertEquals("5.000.000", StoreItemDataInit.price,
                 "Giá sản phẩm phải được format chuẩn sau khi click");
     }
 }

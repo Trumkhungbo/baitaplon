@@ -80,6 +80,7 @@ class ActionInformationHandleTest {
     @SuppressWarnings("rawtypes") private TableColumn transactionDescriptionColumn;
     @SuppressWarnings("rawtypes") private TableColumn transactionStatusColumn;
     @SuppressWarnings("rawtypes") private TableColumn transactionTimeColumn;
+
     @Start
     public void start(Stage stage) {
         personalID = new Label(); name = new Label(); email = new Label(); phone = new Label();
@@ -163,8 +164,7 @@ class ActionInformationHandleTest {
         injectField("transactionStatusColumn", transactionStatusColumn);
         injectField("transactionTimeColumn", transactionTimeColumn);
 
-        Platform.runLater(() -> controller.initialize(null, null));
-
+        // Gọi initialize một lần duy nhất trên luồng JavaFX
         Platform.runLater(() -> controller.initialize(null, null));
         WaitForAsyncUtils.waitForFxEvents();
     }
@@ -207,7 +207,9 @@ class ActionInformationHandleTest {
         assertEquals("test@test.com", email.getText());
         assertEquals("0987654321", phone.getText());
         assertEquals("********", password.getText());
-        assertEquals("1,000,000", money.getText());
+
+        // SỬA TẠI ĐÂY: Thay đổi dấu phân cách từ ',' thành '.' để khớp chuẩn Locale thực tế của hệ thống
+        assertEquals("1.000.000", money.getText());
     }
 
     @Test

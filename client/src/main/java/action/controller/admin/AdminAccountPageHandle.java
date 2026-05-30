@@ -39,7 +39,12 @@ public class AdminAccountPageHandle implements Initializable, SocketListener {
     @FXML private TableColumn<UserRow, UserRow> actionColumn;
 
     private final ObservableList<UserRow> rows = FXCollections.observableArrayList();
-    private final DecimalFormat moneyFormat = new DecimalFormat("#,###", DecimalFormatSymbols.getInstance(Locale.US));
+    private final DecimalFormat moneyFormat;
+    {
+        DecimalFormatSymbols s = DecimalFormatSymbols.getInstance(Locale.US);
+        s.setGroupingSeparator('.');
+        moneyFormat = new DecimalFormat("#,###", s);
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {

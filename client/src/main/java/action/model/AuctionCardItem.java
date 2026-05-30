@@ -20,7 +20,9 @@ import javafx.util.Duration;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.Base64;
+import java.util.Locale;
 
 public class AuctionCardItem extends VBox implements SocketListener {
 
@@ -36,7 +38,12 @@ public class AuctionCardItem extends VBox implements SocketListener {
 
     private final ImageView productImage = new ImageView();
     private final Label timerLabel = new Label();
-    private final DecimalFormat formatter = new DecimalFormat("#,###");
+    private final DecimalFormat formatter;
+    {
+        DecimalFormatSymbols s = DecimalFormatSymbols.getInstance(Locale.US);
+        s.setGroupingSeparator('.');
+        formatter = new DecimalFormat("#,###", s);
+    }
     private Timeline timerTimeline;
 
     public AuctionCardItem(

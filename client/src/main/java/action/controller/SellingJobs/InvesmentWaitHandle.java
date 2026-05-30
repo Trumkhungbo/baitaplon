@@ -24,7 +24,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
@@ -42,7 +44,12 @@ public class InvesmentWaitHandle implements Initializable, SocketListener {
     @FXML private ChoiceBox<String> typeFilter;
     @FXML private ChoiceBox<String> statusFilter;
 
-    private final DecimalFormat moneyFormat = new DecimalFormat("#,###");
+    private final DecimalFormat moneyFormat;
+    {
+        DecimalFormatSymbols s = DecimalFormatSymbols.getInstance(Locale.US);
+        s.setGroupingSeparator('.');
+        moneyFormat = new DecimalFormat("#,###", s);
+    }
     private final List<MyProductRowData> products = new ArrayList<>();
 
     @Override
