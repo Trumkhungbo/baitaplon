@@ -191,7 +191,7 @@ Dự án đã hoàn thiện nhiều chức năng cơ bản và tích hợp thêm
 ## 7. Tài Liệu Báo Cáo & Trạng Thái Nộp Bài
 
 ### 7.1. Liên Kết Quan Trọng
-* **Báo cáo Kỹ thuật (PDF):** [📄 Xem Báo cáo Bài tập lớn](./docs/Báo cáo bài tập lớn Miniboom.pdf)
+* **Báo cáo Kỹ thuật (PDF):** [📄 Xem Báo cáo Bài tập lớn](.docs/Miniboom.pdf)
 * **Video Demo Thực Tế:** [🎥 Xem Video Đấu giá cạnh tranh](https://drive.google.com/file/d/1NYh1CwgOf8Cf2N453bZm7hvnPdLjFDQW/view?usp=drive_link)
 
 ### 7.2. Thông Tin Triển Khai & Nộp Bài
