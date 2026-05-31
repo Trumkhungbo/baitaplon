@@ -41,7 +41,7 @@ public class PaymentBuyingStuffHandle implements Initializable, SocketListener {
     private final DecimalFormat moneyFormat;
     {
         DecimalFormatSymbols s = DecimalFormatSymbols.getInstance(Locale.US);
-        s.setGroupingSeparator('.');
+        s.setGroupingSeparator(',');
         moneyFormat = new DecimalFormat("#,###", s);
     }
     private double currentPrice;
