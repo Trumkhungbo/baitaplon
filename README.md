@@ -143,7 +143,7 @@ Hệ thống yêu cầu chạy Server trước để mở cổng kết nối, sa
   `AuctionServer is running on port 888`
 
 * **Bước 2: Khởi chạy Giao diện Người dùng (MiniBoom Client)**
-  Mở một cửa sổ Terminal **mới** song song với Server và chạy lệnh:
+  Mở một cửa sổ Terminal **mới** song song với Server tại thư mục chứa file JAR của Client và chạy lệnh:
 
   ```bash
   java -jar client-1.0-SNAPSHOT.jar
@@ -191,9 +191,16 @@ Dự án đã hoàn thiện nhiều chức năng cơ bản và tích hợp thêm
 ## 7. Tài Liệu Báo Cáo & Trạng Thái Nộp Bài
 
 ### 7.1. Liên Kết Quan Trọng
-* **Báo cáo Kỹ thuật (PDF):** [📄 Xem Báo cáo Bài tập lớn](./docs/OnlineAuction.pdf)
-* **Video Demo Thực Tế:** [🎥 Xem Video Đấu giá cạnh tranh](LINK_VIDEO_CUA_EM_O_DAY)
+* **Báo cáo Kỹ thuật (PDF):** [📄 Xem Báo cáo Bài tập lớn](./docs/Báo cáo bài tập lớn Miniboom.pdf)
+* **Video Demo Thực Tế:** [🎥 Xem Video Đấu giá cạnh tranh](https://drive.google.com/file/d/1NYh1CwgOf8Cf2N453bZm7hvnPdLjFDQW/view?usp=drive_link)
 
 ### 7.2. Thông Tin Triển Khai & Nộp Bài
 * **Nhánh nộp bài chính thức:** `main`
 * **Hạn cuối commit nộp bài:** `23:59, ngày 31/05/2026`
+---
+## 8. Phụ Lục: Sơ Đồ Kỹ Thuật Chi Tiết
+
+Để giữ cho tài liệu README ngắn gọn, các biểu đồ kỹ thuật chuyên sâu đã được tách thành các tài liệu Markdown độc lập:
+
+* 🧩 **[Kiến Trúc Hệ Thống & Bản Đồ Lớp (Class Diagram & Architecture)](./docs/Class-Diagram.md)**: Chứa sơ đồ phân rã module, bản đồ package, sequence diagram của luồng đặt giá (Bidding) và mô hình đa hình (Polymorphism).
+* 🗄️ **[Thiết Kế Cơ Sở Dữ Liệu (Database ERD)](./docs/Database-ERD.md)**: Chứa sơ đồ thực thể liên kết (ERD), thiết kế bảng SQLite (WAL Mode), cấu trúc lưu trữ và các cơ chế khóa giao dịch (Transaction & Concurrency).
